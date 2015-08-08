@@ -1,7 +1,7 @@
 * Header
   #+BEGIN_SRC emacs-lisp
   ;; Filename: init.el
-  ;; Last Modified: Saturday, 08 August 2015 04:47 PM AEST
+  ;; Last Modified: Saturday, 08 August 2015 05:06 PM AEST
   #+END_SRC
 
 * Introduction
@@ -2834,7 +2834,7 @@
     the user
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-server.el
-      (when (*is-a-mac*)
+      (when *is-a-mac*
         (setq server-socket-dir "~/.emacs.d/server/socket"))
 
       (require 'server)
