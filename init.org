@@ -1,7 +1,7 @@
 * Header
   #+BEGIN_SRC emacs-lisp
   ;; Filename: init.el
-  ;; Last Modified: Saturday, 08 August 2015 05:06 PM AEST
+  ;; Last Modified: Saturday, 08 August 2015 05:47 PM AEST
   #+END_SRC
 
 * Introduction
@@ -1113,7 +1113,6 @@
 
       (dolist (mode '(magit-log-edit-mode
                       log-edit-mode org-mode text-mode haml-mode
-                      git-commit-mode
                       sass-mode yaml-mode csv-mode espresso-mode haskell-mode
                       html-mode nxml-mode sh-mode smarty-mode clojure-mode
                       lisp-mode textile-mode markdown-mode tuareg-mode
