@@ -1,7 +1,7 @@
 * Header
   #+BEGIN_SRC emacs-lisp
   ;; Filename: init.el
-  ;; Last Modified: Saturday, 13 June 2015 10:59 AM AEST
+  ;; Last Modified: Saturday, 08 August 2015 04:47 PM AEST
   #+END_SRC
 
 * Introduction
@@ -589,12 +589,6 @@
       (provide 'init-exec-path)
 
     #+END_SRC
-** Start emacs server
-   #+BEGIN_SRC emacs-lisp
-     (require 'server)
-
-     (server-start)
-   #+END_SRC
 ** Custom
    We use different custom files on Linux and OS X. Originally, this was so that I
    could just keep all my init files in Dropbox or in a git repository. 
@@ -1167,8 +1161,6 @@
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-git.el
       (require-package 'magit)
       (require-package 'git-blame)
-      (require-package 'git-commit-mode)
-      (require-package 'git-rebase-mode)
       (require-package 'gitignore-mode)
       (require-package 'gitconfig-mode)
       (require-package 'git-messenger) ;; Though see also vc-annotate's "n" & "p" bindings
@@ -1185,10 +1177,6 @@
 
       (after-load 'magit
         (define-key magit-status-mode-map (kbd "C-M-<up>") 'magit-goto-parent-section))
-
-      (add-hook 'git-commit-mode-hook 'goto-address-mode)
-      (after-load 'session
-        (add-to-list 'session-mode-disable-list 'git-commit-mode))
 
       ;;; When we start working on git-backed files, use git-wip if available
 
@@ -2727,6 +2715,16 @@
     #+END_SRC
 
 ** Spelling
+   When running on OSX it is necessary to 
+   - Install a spell checker. I prefer to use /homebrew/ to install both emacs and
+     associated programs i.e
+     : brew install hunspell
+   - Note that you also need to install the dictionaries. I use the dictionaries from
+     openOffice. These are distributed in /*.oxt/ files, which are just /zip/
+     archives. Unzip them and put the /*.aff/ and /*.dic/ files in
+     /~/Library/Spelling/ directory.
+   - I also setup symbolic links from the dictionaries I want to /default.aff/ and /default.dic/
+
    #+BEGIN_SRC emacs-lisp
    (when *spell-check-support-enabled*
       (require 'init-spelling))
@@ -2765,6 +2763,10 @@
 
 *** init-spelling.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-spelling.el
+      (if *is-a-mac*
+          (setq ispell-dictionary "british")
+        (setq ispell-dictionary "british-ise"))
+
       (require 'ispell)
 
       (when (executable-find ispell-program-name)
@@ -2815,6 +2817,33 @@
 
        (provide 'init-edit-server)
      #+END_SRC
+** Emacs Server
+   #+BEGIN_SRC emacs-lisp
+     (require 'init-server)
+   #+END_SRC
+
+*** init-server
+    Seem to run into some problems on my OSX due to directory permissions. Seems like
+    this may be related to the default umask. Anyway, resulted in being unable to
+    start the emacs server as we would get a message about the socket directory being
+    unsafe.
+
+    Solved the problem by moving the server socket directory to be under
+    : ~/.emacs.d/server/socket
+    and ensuring the /server/ and /socket/ directories only had rwx permissions for
+    the user
+
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-server.el
+      (when (*is-a-mac*)
+        (setq server-socket-dir "~/.emacs.d/server/socket"))
+
+      (require 'server)
+
+      (server-start)
+
+      (provide 'init-server)
+    #+END_SRC
+
 ** Misc
    #+BEGIN_SRC emacs-lisp
    (require 'init-misc)
@@ -2853,8 +2882,6 @@
             delete-by-moving-to-trash t
             delete-old-versions t
             doc-view-resolution 140
-            flyspell-use-meta-tab nil
-            ispell-dictionary "british-ise"
             line-move-visual nil
             url-personal-mail-address "tcross@une.edu.au"
             eldoc-idle-delay 5.5)
