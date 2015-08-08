@@ -1,7 +1,7 @@
 * Header
   #+BEGIN_SRC emacs-lisp
   ;; Filename: init.el
-  ;; Last Modified: Saturday, 08 August 2015 05:47 PM AEST
+  ;; Last Modified: Saturday, 08 August 2015 06:14 PM AEST
   #+END_SRC
 
 * Introduction
@@ -429,6 +429,10 @@
    init as I also like to override some of the standard packages from the official
    GNU package archive with ones from other archives which tend to be more up-to-date.
   #+BEGIN_SRC emacs-lisp
+    (when *is-a-mac*
+      (let ((default-directory "/usr/local/share/emacs/site-lisp"))
+        (normal-top-level-add-subdirs-to-load-path)))
+
     (require 'init-elpa)
   #+END_SRC
 *** init-elpa.el
