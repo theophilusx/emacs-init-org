@@ -1,7 +1,7 @@
 * Header
   #+BEGIN_SRC emacs-lisp
   ;; Filename: init.el
-  ;; Last Modified: Saturday, 08 August 2015 06:14 PM AEST
+  ;; Last Modified: Thursday, 13 August 2015 01:45 PM AEST
   #+END_SRC
 
 * Introduction
@@ -1800,7 +1800,7 @@
     systems. Lets start by setting some basic stuff
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
       (setq org-catch-invisible-edits 'smart
-                        org-completion-use-ido t
+            org-completion-use-ido t
             org-ctrl-k-protect-subtree t
             org-default-notes-file "~/Dropbox/org/notes.org"
             org-directory "~/Dropbox/org"
@@ -1870,16 +1870,17 @@
       (after-load 'org
         (org-babel-do-load-languages
          'org-babel-load-languages
-         '((R . t)
+         '(
+           ;;(R . t)
            (ditaa . t)
            (dot . t)
            (emacs-lisp . t)
-           (gnuplot . t)
-           (haskell . nil)
+           ;;(gnuplot . t)
+           ;;(haskell . nil)
            (latex . t)
            (ledger . t)
-           (ocaml . nil)
-           (octave . t)
+           ;;(ocaml . nil)
+           ;;(octave . t)
            (python . t)
            (ruby . t)
            (screen . nil)
@@ -2100,13 +2101,13 @@
      Remove empty drawers on clock out
      #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
        ;; Remove empty LOGBOOK drawers on clock out
-       (defun tx-remove-empty-drawer-on-clock-out ()
-         (interactive)
-         (save-excursion
-           (beginning-of-line 0)
-           (org-remove-empty-drawer-at "LOGBOOK" (point))))
+       ;; (defun tx-remove-empty-drawer-on-clock-out ()
+       ;;   (interactive)
+       ;;   (save-excursion
+       ;;     (beginning-of-line 0)
+       ;;     (org-remove-empty-drawer-at "LOGBOOK" (point))))
 
-       (add-hook 'org-clock-out-hook 'tx-remove-empty-drawer-on-clock-out 'append)
+       ;; (add-hook 'org-clock-out-hook 'tx-remove-empty-drawer-on-clock-out 'append)
      #+END_SRC
 
 **** Org export
