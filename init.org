@@ -390,9 +390,9 @@
         (setq emacspeak-play-args nil)
         (if *is-a-mac*
             (progn
-              (setq emacspeak-soxplay-command "/usr/local/bin/play -v 2 %s earwax &")
+              (setq emacspeak-soxplay-command "/usr/local/bin/play -v 1.2 %s earwax &")
               (setq sox-play "/usr/local/bin/play"))
-          (setq emacspeak-soxplay-command "/usr/bin/play -v 2 %s earwax &")
+          (setq emacspeak-soxplay-command "/usr/bin/play -v 1.2 %s earwax &")
           (setq sox-play "/usr/bin/play"))
         (setq emacspeak-auditory-icon-function 
               'emacspeak-soxplay-auditory-icon)
@@ -400,7 +400,7 @@
                   (lambda ()
                     (dtk-set-rate tts-default-speech-rate 1)
                     (dtk-interp-sync)
-                    (emacspeak-sounds-select-theme "chimes-stereo/")
+                    (emacspeak-sounds-select-theme "3d/")
                     (emacspeak-toggle-auditory-icons t)))
         (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
     #+END_SRC
