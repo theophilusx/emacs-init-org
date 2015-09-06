@@ -1,7 +1,7 @@
 * Header
   #+BEGIN_SRC emacs-lisp
   ;; Filename: init.el
-  ;; Last Modified: Saturday, 29 August 2015 10:36 AM AEST
+  ;; Last Modified: Sunday, 06 September 2015 12:29 PM AEST
   #+END_SRC
 
 * Introduction
@@ -425,6 +425,103 @@
 
       (provide 'init-emacspeak)
     #+END_SRC
+** Utility Functions
+   #+BEGIN_SRC emacs-lisp
+   (require 'init-utils)
+   #+END_SRC
+*** init-utils.el
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-utils.el
+      (if (fboundp 'with-eval-after-load)
+          (defalias 'after-load 'with-eval-after-load)
+        (defmacro after-load (feature &rest body)
+          "After FEATURE is loaded, evaluate BODY."
+          (declare (indent defun))
+          `(eval-after-load ,feature
+             '(progn ,@body))))
+
+
+      ;;----------------------------------------------------------------------------
+      ;; Handier way to add modes to auto-mode-alist
+      ;;----------------------------------------------------------------------------
+      (defun add-auto-mode (mode &rest patterns)
+        "Add entries to `auto-mode-alist' to use `MODE' for all given file `PATTERNS'."
+        (dolist (pattern patterns)
+          (add-to-list 'auto-mode-alist (cons pattern mode))))
+
+
+      ;;----------------------------------------------------------------------------
+      ;; String utilities missing from core emacs
+      ;;----------------------------------------------------------------------------
+      (defun sanityinc/string-all-matches (regex str &optional group)
+        "Find all matches for `REGEX' within `STR', returning the full match string or group `GROUP'."
+        (let ((result nil)
+              (pos 0)
+              (group (or group 0)))
+          (while (string-match regex str pos)
+            (push (match-string group str) result)
+            (setq pos (match-end group)))
+          result))
+
+      (defun sanityinc/string-rtrim (str)
+        "Remove trailing whitespace from `STR'."
+        (replace-regexp-in-string "[ \t\n]+$" "" str))
+
+
+      ;;----------------------------------------------------------------------------
+      ;; Find the directory containing a given library
+      ;;----------------------------------------------------------------------------
+      (autoload 'find-library-name "find-func")
+      (defun sanityinc/directory-of-library (library-name)
+        "Return the directory in which the `LIBRARY-NAME' load file is found."
+        (file-name-as-directory (file-name-directory (find-library-name library-name))))
+
+
+      ;;----------------------------------------------------------------------------
+      ;; Delete the current file
+      ;;----------------------------------------------------------------------------
+      (defun delete-this-file ()
+        "Delete the current file, and kill the buffer."
+        (interactive)
+        (or (buffer-file-name) (error "No file is currently being edited"))
+        (when (yes-or-no-p (format "Really delete '%s'?"
+                                   (file-name-nondirectory buffer-file-name)))
+          (delete-file (buffer-file-name))
+          (kill-this-buffer)))
+
+
+      ;;----------------------------------------------------------------------------
+      ;; Rename the current file
+      ;;----------------------------------------------------------------------------
+      (defun rename-this-file-and-buffer (new-name)
+        "Renames both current buffer and file it's visiting to NEW-NAME."
+        (interactive "sNew name: ")
+        (let ((name (buffer-name))
+              (filename (buffer-file-name)))
+          (unless filename
+            (error "Buffer '%s' is not visiting a file!" name))
+          (if (get-buffer new-name)
+              (message "A buffer named '%s' already exists!" new-name)
+            (progn
+              (when (file-exists-p filename)
+               (rename-file filename new-name 1))
+              (rename-buffer new-name)
+              (set-visited-file-name new-name)))))
+
+      ;;----------------------------------------------------------------------------
+      ;; Browse current HTML file
+      ;;----------------------------------------------------------------------------
+      (defun browse-current-file ()
+        "Open the current file as a URL using `browse-url'."
+        (interactive)
+        (let ((file-name (buffer-file-name)))
+          (if (tramp-tramp-file-p file-name)
+              (error "Cannot open tramp file")
+            (browse-url (concat "file://" file-name)))))
+
+
+      (provide 'init-utils)
+    #+END_SRC
+
 ** Setup package repositories
    These days I make extensive use of =package.el= the Emacs lisp package manager. It
    is quite unbelievable how much easier this has made life. I do this early in my
@@ -444,7 +541,6 @@
     repositories. I hadd
     - The Org repository so that I can use most recent org-plus-contrib package
     - Add the melpa repository
-    - Add the melpa stable repository
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
       (require 'package)
 
@@ -454,9 +550,34 @@
 
     #+END_SRC
 
+    If gpg cannot be found, signature checking will fail, so we
+    conditionally enable it according to whether gpg is available. We
+    re-run this check once $PATH has been configured
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+      (defun sanityinc/package-maybe-enable-signatures ()
+        (setq package-check-signature (when (executable-find "gpg") 'allow-unsigned)))
+
+      (sanityinc/package-maybe-enable-signatures)
+      (after-load 'init-exec-path
+        (sanityinc/package-maybe-enable-signatures))
+
+    #+END_SRC
+
     Define a helper function to install packages. This one allow use to set minimum
     versions and to prevent the package list from being refreshed 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+      ;; (defun require-package (package &optional min-version no-refresh)
+      ;;   "Install given PACKAGE, optionally requiring MIN-VERSION.
+      ;; If NO-REFRESH is non-nil, the available package lists will not be
+      ;; re-downloaded in order to locate PACKAGE."
+      ;;   (if (package-installed-p package min-version)
+      ;;       t
+      ;;     (if (or (assoc package package-archive-contents) no-refresh)
+      ;;         (package-install package)
+      ;;       (progn
+      ;;         (package-refresh-contents)
+      ;;         (require-package package min-version t)))))
+
       (defun require-package (package &optional min-version no-refresh)
         "Install given PACKAGE, optionally requiring MIN-VERSION.
       If NO-REFRESH is non-nil, the available package lists will not be
@@ -474,6 +595,18 @@
     if it isn't available, we don't want to exit with an error. Instead we want to
     just warn the user and continue processing. 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+      ;; (defun maybe-require-package (package &optional min-version no-refresh)
+      ;;   "Try to install PACKAGE, and return non-nil if successful.
+      ;; In the event of failure, return nil and print a warning message.
+      ;; Optionally require MIN-VERSION.  If NO-REFRESH is non-nil, the
+      ;; available package lists will not be re-downloaded in order to
+      ;; locate PACKAGE."
+      ;;   (condition-case err
+      ;;       (require-package package min-version no-refresh)
+      ;;     (error
+      ;;      (message "Couldn't install package `%s': %S" package err)
+      ;;      nil)))
+
       (defun maybe-require-package (package &optional min-version no-refresh)
         "Try to install PACKAGE, and return non-nil if successful.
       In the event of failure, return nil and print a warning message.
@@ -487,91 +620,45 @@
            nil)))
 
       ;; kick it
-      (setq package-enable-at-startup nil)
-      (package-initialize)
+      ;; (setq package-enable-at-startup nil)
+      ;; (package-initialize)
 
-      (provide 'init-elpa)
+      ;; (provide 'init-elpa)
 
     #+END_SRC
 
-** Utility Functions
-   #+BEGIN_SRC emacs-lisp
-   (require 'init-utils)
-   #+END_SRC
+    Kick it off
 
-*** init-utils.el
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-utils.el
-      (if (fboundp 'with-eval-after-load)
-          (defalias 'after-load 'with-eval-after-load)
-        (defmacro after-load (feature &rest body)
-          "After FEATURE is loaded, evaluate BODY."
-          (declare (indent defun))
-          `(eval-after-load ,feature
-             '(progn ,@body))))
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+      (setq package-enable-at-startup nil)
+      (package-initialize)
 
-      ;; Handier way to add modes to auto-mode-alist
-      (defun add-auto-mode (mode &rest patterns)
-        "Add entries to `auto-mode-alist' to use `MODE' for all given file `PATTERNS'."
-        (dolist (pattern patterns)
-          (add-to-list 'auto-mode-alist (cons pattern mode))))
+      (require-package 'fullframe)
+      (fullframe list-packages quit-window)
 
-      ;; String utilities missing from core emacs
-      (defun sanityinc/string-all-matches (regex str &optional group)
-        "Find all matches for `REGEX' within `STR', returning the full match string or group `GROUP'."
-        (let ((result nil)
-              (pos 0)
-              (group (or group 0)))
-          (while (string-match regex str pos)
-            (push (match-string group str) result)
-            (setq pos (match-end group)))
-          result))
+      (require-package 'cl-lib)
+      (require 'cl-lib)
 
-      (defun sanityinc/string-rtrim (str)
-        "Remove trailing whitespace from `STR'."
-        (replace-regexp-in-string "[ \t\n]+$" "" str))
+      (defun sanityinc/set-tabulated-list-column-width (col-name width)
+        "Set any column with name COL-NAME to the given WIDTH."
+        (cl-loop for column across tabulated-list-format
+                 when (string= col-name (car column))
+                 do (setf (elt column 1) width)))
 
-      ;; Find the directory containing a given library
-      (autoload 'find-library-name "find-func")
-      (defun sanityinc/directory-of-library (library-name)
-        "Return the directory in which the `LIBRARY-NAME' load file is found."
-        (file-name-as-directory (file-name-directory (find-library-name library-name))))
+      (defun sanityinc/maybe-widen-package-menu-columns ()
+        "Widen some columns of the package menu table to avoid truncation."
+        (when (boundp 'tabulated-list-format)
+          (sanityinc/set-tabulated-list-column-width "Version" 13)
+          (let ((longest-archive-name
+                 (apply 'max
+                        (mapcar 'length
+                                (mapcar 'car package-archives)))))
+            (sanityinc/set-tabulated-list-column-width
+             "Archive" longest-archive-name))))
 
-      ;; Delete the current file
-      (defun delete-this-file ()
-        "Delete the current file, and kill the buffer."
-        (interactive)
-        (or (buffer-file-name) (error "No file is currently being edited"))
-        (when (yes-or-no-p (format "Really delete '%s'?"
-                                   (file-name-nondirectory buffer-file-name)))
-          (delete-file (buffer-file-name))
-          (kill-this-buffer)))
+      (add-hook 'package-menu-mode-hook 'sanityinc/maybe-widen-package-menu-columns)
 
-      ;; Rename the current file
-      (defun rename-this-file-and-buffer (new-name)
-        "Renames both current buffer and file it's visiting to NEW-NAME."
-        (interactive "sNew name: ")
-        (let ((name (buffer-name))
-              (filename (buffer-file-name)))
-          (unless filename
-            (error "Buffer '%s' is not visiting a file!" name))
-          (if (get-buffer new-name)
-              (message "A buffer named '%s' already exists!" new-name)
-            (progn
-              (when (file-exists-p filename)
-                (rename-file filename new-name 1))
-              (rename-buffer new-name)
-              (set-visited-file-name new-name)))))
-
-      ;; Browse current HTML file
-      (defun browse-current-file ()
-        "Open the current file as a URL using `browse-url'."
-        (interactive)
-        (let ((file-name (buffer-file-name)))
-          (if (tramp-tramp-file-p file-name)
-              (error "Cannot open tramp file")
-            (browse-url (concat "file://" file-name)))))
-
-      (provide 'init-utils)
+      (provide 'init-elpa)
 
     #+END_SRC
 
@@ -595,6 +682,253 @@
 
       (provide 'init-exec-path)
 
+    #+END_SRC
+** Frames
+   Various hooks used with frames. Note that this is not necessarily compatible with
+   some emacspeak functionality. Very experimental.
+  #+BEGIN_SRC emacs-lisp
+    (require 'init-frame-hooks)
+  #+END_SRC
+
+*** init-frame-hooks
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-frame-hooks.el
+      (defvar after-make-console-frame-hooks '()
+        "Hooks to run after creating a new TTY frame")
+      (defvar after-make-window-system-frame-hooks '()
+        "Hooks to run after creating a new window-system frame")
+
+      (defun run-after-make-frame-hooks (frame)
+        "Run configured hooks in response to the newly-created FRAME.
+      Selectively runs either `after-make-console-frame-hooks' or
+      `after-make-window-system-frame-hooks'"
+        (with-selected-frame frame
+          (run-hooks (if window-system
+                         'after-make-window-system-frame-hooks
+                       'after-make-console-frame-hooks))))
+
+      (add-hook 'after-make-frame-functions 'run-after-make-frame-hooks)
+
+      (defconst sanityinc/initial-frame (selected-frame)
+        "The frame (if any) active during Emacs initialization.")
+
+      (add-hook 'after-init-hook
+                (lambda () (when sanityinc/initial-frame
+                        (run-after-make-frame-hooks sanityinc/initial-frame))))
+
+
+      (provide 'init-frame-hooks)
+
+    #+END_SRC
+
+** Editing Utilitites 
+   Some basic utility functions which may be useful for editing text
+
+   #+BEGIN_SRC emacs-lisp 
+     (require 'init-editing)
+
+   #+END_SRC
+*** init-editing
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+      (require-package 'unfill)
+
+      (when (fboundp 'electric-pair-mode)
+        (electric-pair-mode))
+      (when (eval-when-compile (version< "24.4" emacs-version))
+        (electric-indent-mode 1))
+
+      (global-auto-revert-mode)
+      (setq global-auto-revert-non-file-buffers t
+            auto-revert-verbose nil)
+
+      (transient-mark-mode t)
+
+      ;;; Whitespace
+
+      (defun sanityinc/no-trailing-whitespace ()
+        "Turn off display of trailing whitespace in this buffer."
+        (setq show-trailing-whitespace nil))
+
+      ;; But don't show trailing whitespace in SQLi, inf-ruby etc.
+      (dolist (hook '(special-mode-hook
+                      Info-mode-hook
+                      eww-mode-hook
+                      term-mode-hook
+                      comint-mode-hook
+                      compilation-mode-hook
+                      twittering-mode-hook
+                      minibuffer-setup-hook))
+        (add-hook hook #'sanityinc/no-trailing-whitespace))
+
+
+      (require-package 'whitespace-cleanup-mode)
+      (global-whitespace-cleanup-mode t)
+
+      (global-set-key [remap just-one-space] 'cycle-spacing)
+
+      ;;; Newline behaviour
+
+      (global-set-key (kbd "RET") 'newline-and-indent)
+      (defun sanityinc/newline-at-end-of-line ()
+        "Move to end of line, enter a newline, and reindent."
+        (interactive)
+        (move-end-of-line 1)
+        (newline-and-indent))
+
+      (global-set-key (kbd "S-<return>") 'sanityinc/newline-at-end-of-line)
+
+      (when (eval-when-compile (string< "24.3.1" emacs-version))
+        ;; https://github.com/purcell/emacs.d/issues/138
+        (after-load 'subword
+          (diminish 'subword-mode)))
+
+      (when (fboundp 'global-prettify-symbols-mode)
+        (global-prettify-symbols-mode))
+
+      (require-package 'highlight-symbol)
+      (dolist (hook '(prog-mode-hook html-mode-hook css-mode-hook))
+        (add-hook hook 'highlight-symbol-mode)
+        (add-hook hook 'highlight-symbol-nav-mode))
+      (add-hook 'org-mode-hook 'highlight-symbol-nav-mode)
+      (after-load 'highlight-symbol
+        (diminish 'highlight-symbol-mode)
+        (defadvice highlight-symbol-temp-highlight (around sanityinc/maybe-suppress activate)
+          "Suppress symbol highlighting while isearching."
+          (unless (or isearch-mode
+                      (and (boundp 'multiple-cursors-mode) multiple-cursors-mode))
+            ad-do-it)))
+
+      ;;----------------------------------------------------------------------------
+      ;; Zap *up* to char is a handy pair for zap-to-char
+      ;;----------------------------------------------------------------------------
+      (autoload 'zap-up-to-char "misc" "Kill up to, but not including ARGth occurrence of CHAR.")
+      (global-set-key (kbd "M-Z") 'zap-up-to-char)
+
+      (require-package 'browse-kill-ring)
+      (setq browse-kill-ring-separator "\f")
+      (global-set-key (kbd "M-Y") 'browse-kill-ring)
+      (after-load 'browse-kill-ring
+        (define-key browse-kill-ring-mode-map (kbd "M-n") 'browse-kill-ring-forward)
+        (define-key browse-kill-ring-mode-map (kbd "M-p") 'browse-kill-ring-previous))
+      (after-load 'page-break-lines
+        (push 'browse-kill-ring-mode page-break-lines-modes))
+
+      ;;----------------------------------------------------------------------------
+      ;; Don't disable narrowing commands
+      ;;----------------------------------------------------------------------------
+      (put 'narrow-to-region 'disabled nil)
+      (put 'narrow-to-page 'disabled nil)
+      (put 'narrow-to-defun 'disabled nil)
+
+      ;;----------------------------------------------------------------------------
+      ;; Expand region
+      ;;----------------------------------------------------------------------------
+      (require-package 'expand-region)
+      (global-set-key (kbd "C-=") 'er/expand-region)
+
+      ;;----------------------------------------------------------------------------
+      ;; Don't disable case-change functions
+      ;;----------------------------------------------------------------------------
+      (put 'upcase-region 'disabled nil)
+      (put 'downcase-region 'disabled nil)
+
+      ;;----------------------------------------------------------------------------
+      ;; Rectangle selections, and overwrite text when the selection is active
+      ;;----------------------------------------------------------------------------
+      (cua-selection-mode t)                  ; for rectangles, CUA is nice
+
+      (when (maybe-require-package 'avy)
+        (autoload 'avy-goto-word-or-subword-1 "avy")
+        (global-set-key (kbd "C-;") 'avy-goto-word-or-subword-1))
+
+      (defun kill-back-to-indentation ()
+        "Kill from point back to the first non-whitespace character on the line."
+        (interactive)
+        (let ((prev-pos (point)))
+          (back-to-indentation)
+          (kill-region (point) prev-pos)))
+
+      (global-set-key (kbd "C-M-<backspace>") 'kill-back-to-indentation)
+
+      ;;----------------------------------------------------------------------------
+      ;; Page break lines
+      ;;----------------------------------------------------------------------------
+      (require-package 'page-break-lines)
+      (global-page-break-lines-mode)
+      (diminish 'page-break-lines-mode)
+
+      ;;----------------------------------------------------------------------------
+      ;; Fix backward-up-list to understand quotes, see http://bit.ly/h7mdIL
+      ;;----------------------------------------------------------------------------
+      (defun backward-up-sexp (arg)
+        "Jump up to the start of the ARG'th enclosing sexp."
+        (interactive "p")
+        (let ((ppss (syntax-ppss)))
+          (cond ((elt ppss 3)
+                 (goto-char (elt ppss 8))
+                 (backward-up-sexp (1- arg)))
+                ((backward-up-list arg)))))
+
+      (global-set-key [remap backward-up-list] 'backward-up-sexp) ; C-M-u, C-M-up
+
+      ;;----------------------------------------------------------------------------
+      ;; Cut/copy the current line if no region is active
+      ;;----------------------------------------------------------------------------
+      (require-package 'whole-line-or-region)
+      (whole-line-or-region-mode t)
+      (diminish 'whole-line-or-region-mode)
+      (make-variable-buffer-local 'whole-line-or-region-mode)
+
+      (defun suspend-mode-during-cua-rect-selection (mode-name)
+        "Add an advice to suspend `MODE-NAME' while selecting a CUA rectangle."
+        (let ((flagvar (intern (format "%s-was-active-before-cua-rectangle" mode-name)))
+              (advice-name (intern (format "suspend-%s" mode-name))))
+          (eval-after-load 'cua-rect
+            `(progn
+               (defvar ,flagvar nil)
+               (make-variable-buffer-local ',flagvar)
+               (defadvice cua--activate-rectangle (after ,advice-name activate)
+                 (setq ,flagvar (and (boundp ',mode-name) ,mode-name))
+                 (when ,flagvar
+                   (,mode-name 0)))
+               (defadvice cua--deactivate-rectangle (after ,advice-name activate)
+                 (when ,flagvar
+                   (,mode-name 1)))))))
+
+      (suspend-mode-during-cua-rect-selection 'whole-line-or-region-mode)
+
+      (defun sanityinc/open-line-with-reindent (n)
+        "A version of `open-line' which reindents the start and end positions.
+      If there is a fill prefix and/or a `left-margin', insert them
+      on the new line if the line would have been blank.
+      With arg N, insert N newlines."
+        (interactive "*p")
+        (let* ((do-fill-prefix (and fill-prefix (bolp)))
+               (do-left-margin (and (bolp) (> (current-left-margin) 0)))
+               (loc (point-marker))
+               ;; Don't expand an abbrev before point.
+               (abbrev-mode nil))
+          (delete-horizontal-space t)
+          (newline n)
+          (indent-according-to-mode)
+          (when (eolp)
+            (delete-horizontal-space t))
+          (goto-char loc)
+          (while (> n 0)
+            (cond ((bolp)
+                   (if do-left-margin (indent-to (current-left-margin)))
+                   (if do-fill-prefix (insert-and-inherit fill-prefix))))
+            (forward-line 1)
+            (setq n (1- n)))
+          (goto-char loc)
+          (end-of-line)
+          (indent-according-to-mode)))
+
+      (global-set-key (kbd "C-o") 'sanityinc/open-line-with-reindent)
+
+      (require-package 'highlight-escape-sequences)
+      (hes-mode)
+
+      (provide 'init-editing)
     #+END_SRC
 ** Custom
    We use different custom files on Linux and OS X. Originally, this was so that I
@@ -834,8 +1168,7 @@
       ;; Activate occur easily inside isearch
       (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
-      ;; DEL during isearch should edit the search string,
-      ;; not jump back to the previous result
+      ;; DEL during isearch should edit the search string, not jump back to the previous result
       (define-key isearch-mode-map [remap isearch-delete-char] 'isearch-del-char)
 
       ;; Search back/forth for the symbol at point
@@ -847,10 +1180,8 @@
           (if sym
               (progn
                 (setq isearch-regexp t
-                      isearch-string (concat "\\_<" (regexp-quote
-                                                     (symbol-name sym)) "\\_>")
-                      isearch-message (mapconcat 'isearch-text-char-description
-                                                 isearch-string "")
+                      isearch-string (concat "\\_<" (regexp-quote (symbol-name sym)) "\\_>")
+                      isearch-message (mapconcat 'isearch-text-char-description isearch-string "")
                       isearch-yank-flag t))
             (ding)))
         (isearch-search-and-update))
@@ -883,9 +1214,11 @@
             (if (> (mark) ismax)
                 (kill-region ismax (mark))
               (error "Internal error in isearch kill function.")))
-          (isearch-exit)))
+          (isearch-exit)
+          ))
 
       (define-key isearch-mode-map [(meta z)] 'zap-to-isearch)
+
 
       ;; http://www.emacswiki.org/emacs/ZapToISearch
       (defun isearch-exit-other-end (rbeg rend)
@@ -896,6 +1229,7 @@
         (goto-char isearch-other-end))
 
       (define-key isearch-mode-map [(control return)] 'isearch-exit-other-end)
+
 
       (provide 'init-isearch)
 
@@ -941,6 +1275,10 @@
    #+END_SRC
 *** init-ibuffer.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-ibuffer.el
+      (require-package 'fullframe)
+      (after-load 'ibuffer
+       (fullframe ibuffer ibuffer-quit))
+
       (require-package 'ibuffer-vc)
 
       (defun ibuffer-set-up-preferred-filters ()
@@ -950,6 +1288,9 @@
 
       (add-hook 'ibuffer-hook 'ibuffer-set-up-preferred-filters)
 
+      (setq-default ibuffer-show-empty-filter-groups nil)
+
+
       (after-load 'ibuffer
         ;; Use human readable Size column instead of original one
         (define-ibuffer-column size-h
@@ -958,6 +1299,7 @@
            ((> (buffer-size) 1000000) (format "%7.1fM" (/ (buffer-size) 1000000.0)))
            ((> (buffer-size) 1000) (format "%7.1fk" (/ (buffer-size) 1000.0)))
            (t (format "%8d" (buffer-size))))))
+
 
       ;; Explicitly require ibuffer-vc to get its column definitions, which
       ;; can't be autoloaded
@@ -1077,10 +1419,10 @@
       (require 'auto-complete-config)
 
       (global-auto-complete-mode t)
+
       (setq-default ac-expand-on-auto-complete nil)
       (setq-default ac-auto-start nil)
-      ;; To get pop-ups with docs even if a word is uniquely completed
-      (setq-default ac-dwim nil)
+      (setq-default ac-dwim nil); to get pop-ups even if word uniquely completed
 
       ;;----------------------------------------------------------------------------
       ;; Use Emacs' built-in TAB completion hooks to trigger AC (Emacs >= 23.2)
@@ -1109,7 +1451,8 @@
                     (remove 'sanityinc/auto-complete-at-point
                             completion-at-point-functions))))
 
-      (add-hook 'auto-complete-mode-hook 'set-auto-complete-as-completion-at-point-function)
+      (add-hook 'auto-complete-mode-hook
+                'set-auto-complete-as-completion-at-point-function)
 
       (set-default 'ac-sources
                    '(ac-source-imenu
@@ -1165,86 +1508,10 @@
 
 *** init-git.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-git.el
-      ;; (require-package 'magit)
-      ;; (require-package 'git-blame)
-      ;; (require-package 'gitignore-mode)
-      ;; (require-package 'gitconfig-mode)
-      ;; (require-package 'git-messenger) ;; Though see also vc-annotate's "n" & "p" bindings
-      ;; (require-package 'git-timemachine)
-
-      ;; (setq-default magit-save-some-buffers nil
-      ;;               magit-process-popup-time 10
-      ;;               magit-diff-refine-hunk t
-      ;;               magit-completing-read-function 'magit-ido-completing-read)
-
-      ;; ;; Hint: customize `magit-repo-dirs' so that you can use C-u M-F12 to
-      ;; ;; quickly open magit on any one of your projects.
-      ;; (global-set-key [(meta f12)] 'magit-status)
-
-      ;; (after-load 'magit
-      ;;   (define-key magit-status-mode-map (kbd "C-M-<up>") 'magit-goto-parent-section))
-
-      ;; ;;; When we start working on git-backed files, use git-wip if available
-
-      ;; (after-load 'magit
-      ;;   (when (executable-find magit-git-executable)
-      ;;     (global-magit-wip-save-mode)
-      ;;     (diminish 'magit-wip-save-mode)))
-
-      ;; (after-load 'magit
-      ;;   (diminish 'magit-auto-revert-mode))
-
-      ;; (when *is-a-mac*
-      ;;   (after-load 'magit
-      ;;     (add-hook 'magit-mode-hook (lambda () (local-unset-key [(meta h)])))))
-
-      ;; ;; Convenient binding for vc-git-grep
-      ;; (global-set-key (kbd "C-x v f") 'vc-git-grep)
-
-      ;; ;;; git-svn support
-
-      ;; (require-package 'magit-svn)
-      ;; (autoload 'magit-svn-enabled "magit-svn")
-
-      ;; (defun sanityinc/maybe-enable-magit-svn-mode ()
-      ;;   (when (magit-svn-enabled)
-      ;;     (magit-svn-mode)))
-
-      ;; (add-hook 'magit-status-mode-hook #'sanityinc/maybe-enable-magit-svn-mode)
-
-      ;; (after-load 'compile
-      ;;   (dolist (defn (list '(git-svn-updated "^\t[A-Z]\t\\(.*\\)$" 1 nil nil 0 1)
-      ;;                       '(git-svn-needs-update "^\\(.*\\): needs update$" 1 nil nil 2 1)))
-      ;;     (add-to-list 'compilation-error-regexp-alist-alist defn)
-      ;;     (add-to-list 'compilation-error-regexp-alist (car defn))))
-
-      ;; (defvar git-svn--available-commands nil "Cached list of git svn subcommands")
-
-      ;; (defun git-svn--available-commands ()
-      ;;   (or git-svn--available-commands
-      ;;       (setq git-svn--available-commands
-      ;;             (sanityinc/string-all-matches
-      ;;              "^  \\([a-z\\-]+\\) +"
-      ;;              (shell-command-to-string "git svn help") 1))))
-
-      ;; (defun git-svn (dir command)
-      ;;   "Run a git svn subcommand in DIR."
-      ;;   (interactive (list (read-directory-name "Directory: ")
-      ;;                      (completing-read "git-svn command: "
-      ;;                                       (git-svn--available-commands) nil t nil nil
-      ;;                                       (git-svn--available-commands))))
-      ;;   (let* ((default-directory (vc-git-root dir))
-      ;;          (compilation-buffer-name-function (lambda (major-mode-name) "*git-svn*")))
-      ;;     (compile (concat "git svn " command))))
-
-      ;; (require-package 'git-messenger)
-      ;; (global-set-key (kbd "C-x v p") #'git-messenger:popup-message)
-
       (require-package 'git-blame)
       (require-package 'gitignore-mode)
       (require-package 'gitconfig-mode)
-      (require-package 'git-messenger) ; Though see also vc-annotate's "n" & "p"
-                                              ; bindings
+      (require-package 'git-messenger) ;; Though see also vc-annotate's "n" & "p" bindings
       (require-package 'git-timemachine)
 
 
@@ -1275,13 +1542,13 @@
         (after-load 'magit
           (add-hook 'magit-mode-hook (lambda () (local-unset-key [(meta h)])))))
 
+
       ;; Convenient binding for vc-git-grep
       (global-set-key (kbd "C-x v f") 'vc-git-grep)
 
       (after-load 'compile
         (dolist (defn (list '(git-svn-updated "^\t[A-Z]\t\\(.*\\)$" 1 nil nil 0 1)
-                            '(git-svn-needs-update "^\\(.*\\): needs update$" 1
-                                                   nil nil 2 1)))
+                            '(git-svn-needs-update "^\\(.*\\): needs update$" 1 nil nil 2 1)))
           (add-to-list 'compilation-error-regexp-alist-alist defn)
           (add-to-list 'compilation-error-regexp-alist (car defn))))
 
@@ -1296,22 +1563,15 @@
       (defun git-svn (dir command)
         "Run a git svn subcommand in DIR."
         (interactive (list (read-directory-name "Directory: ")
-                           (completing-read "git-svn command: "
-                                            (git-svn--available-commands)
-                                            nil t nil nil
-                                            (git-svn--available-commands))))
+                           (completing-read "git-svn command: " (git-svn--available-commands) nil t nil nil (git-svn--available-commands))))
         (let* ((default-directory (vc-git-root dir))
-               (compilation-buffer-name-function (lambda (major-mode-name)
-                                                   "*git-svn*")))
+               (compilation-buffer-name-function (lambda (major-mode-name) "*git-svn*")))
           (compile (concat "git svn " command))))
-
 
       (require-package 'git-messenger)
       (global-set-key (kbd "C-x v p") #'git-messenger:popup-message)
 
-
       (provide 'init-git)
-
     #+END_SRC
 **** TODO link commits from vc-log to magit-show-commit
 **** TODO smerge-mode
@@ -1320,7 +1580,7 @@
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-github.el
       (require 'init-git)
 
-      (require-package 'yagist)
+      (maybe-require-package 'yagist)
       (require-package 'github-browse-file)
       (require-package 'bug-reference-github)
       (add-hook 'prog-mode-hook 'bug-reference-prog-mode)
@@ -1328,8 +1588,9 @@
       (maybe-require-package 'github-clone)
       (maybe-require-package 'magit-gh-pulls)
 
-      (provide 'init-github)
 
+
+      (provide 'init-github)
     #+END_SRC
 
 ** Compile
@@ -1345,20 +1606,68 @@
 
       ;; Customize `alert-default-style' to get messages after compilation
 
+      ;; (defun sanityinc/alert-after-compilation-finish (buf result)
+      ;;   "Use `alert' to report compilation RESULT if BUF is hidden."
+      ;;   (let ((buf-is-visible nil))
+      ;;     (walk-windows (lambda (w)
+      ;;                     (when (eq (window-buffer w) buf)
+      ;;                       (setq buf-is-visible t))))
+      ;;     (unless buf-is-visible
+      ;;       (alert (concat "Compilation " result)
+      ;;              :buffer buf
+      ;;              :category 'compilation))))
+
       (defun sanityinc/alert-after-compilation-finish (buf result)
         "Use `alert' to report compilation RESULT if BUF is hidden."
-        (let ((buf-is-visible nil))
-          (walk-windows (lambda (w)
-                          (when (eq (window-buffer w) buf)
-                            (setq buf-is-visible t))))
-          (unless buf-is-visible
-            (alert (concat "Compilation " result)
-                   :buffer buf
-                   :category 'compilation))))
+        (unless (catch 'is-visible
+                  (walk-windows (lambda (w)
+                                  (when (eq (window-buffer w) buf)
+                                    (throw 'is-visible t))))
+                  nil)
+          (alert (concat "Compilation " result)
+                 :buffer buf
+                 :category 'compilation)))
 
       (after-load 'compile
         (add-hook 'compilation-finish-functions
                   'sanityinc/alert-after-compilation-finish))
+
+      (defvar sanityinc/last-compilation-buffer nil
+        "The last buffer in which compilation took place.")
+
+      (after-load 'compile
+        (defadvice compilation-start (after sanityinc/save-compilation-buffer activate)
+          "Save the compilation buffer to find it later."
+          (setq sanityinc/last-compilation-buffer next-error-last-buffer))
+
+        (defadvice recompile (around sanityinc/find-prev-compilation (&optional edit-command) activate)
+          "Find the previous compilation buffer, if present, and recompile there."
+          (if (and (null edit-command)
+                   (not (derived-mode-p 'compilation-mode))
+                   sanityinc/last-compilation-buffer
+                   (buffer-live-p (get-buffer sanityinc/last-compilation-buffer)))
+              (with-current-buffer sanityinc/last-compilation-buffer
+                ad-do-it)
+            ad-do-it)))
+
+      (global-set-key [f6] 'recompile)
+
+      (defadvice shell-command-on-region
+          (after sanityinc/shell-command-in-view-mode
+                 (start end command &optional output-buffer replace error-buffer display-error-buffer)
+                 activate)
+        "Put \"*Shell Command Output*\" buffers into view-mode."
+        (unless output-buffer
+          (with-current-buffer "*Shell Command Output*"
+            (view-mode 1))))
+
+
+      (after-load 'compile
+        (require 'ansi-color)
+        (defun sanityinc/colourise-compilation-buffer ()
+          (when (eq major-mode 'compilation-mode)
+            (ansi-color-apply-on-region compilation-filter-start (point-max))))
+        (add-hook 'compilation-filter-hook 'sanityinc/colourise-compilation-buffer))
 
       (provide 'init-compile)
 
@@ -1587,8 +1896,9 @@
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-markdown.el
       (require-package 'markdown-mode)
 
-      (setq auto-mode-alist
-            (cons '("\\.\\(md\\|markdown\\)\\'" . markdown-mode) auto-mode-alist))
+      (after-load 'whitespace-cleanup-mode
+        (push 'markdown-mode whitespace-cleanup-mode-ignore-modes))
+
 
       (provide 'init-markdown)
 
@@ -1619,7 +1929,7 @@
 
 *** init-javascript.el
    #+BEGIN_SRC emacs-lisp :tangle lisp/init-javascript.el
-     (require-package 'json-mode)
+     (maybe-require-package 'json-mode)
      (maybe-require-package 'js2-mode)
      (maybe-require-package 'ac-js2)
      (maybe-require-package 'coffee-mode)
@@ -1632,38 +1942,54 @@
        :group 'programming
        :options '(js2-mode js-mode))
 
-     (defvar preferred-javascript-indent-level 2)
+     (defconst preferred-javascript-indent-level 2)
 
      ;; Need to first remove from list if present, since elpa adds entries too, which
      ;; may be in an arbitrary order
      (eval-when-compile (require 'cl))
-
-     (setq auto-mode-alist (cons `("\\.js\\(\\.erb\\)?\\'" . ,preferred-javascript-mode)
+     (setq auto-mode-alist (cons `("\\.\\(js\\|es6\\)\\(\\.erb\\)?\\'" . ,preferred-javascript-mode)
                                  (loop for entry in auto-mode-alist
                                        unless (eq preferred-javascript-mode (cdr entry))
                                        collect entry)))
 
 
      ;; js2-mode
+
+     ;; Change some defaults: customize them to override
+     (setq-default js2-basic-offset 2
+                   js2-bounce-indent-p nil)
      (after-load 'js2-mode
+       ;; Disable js2 mode's syntax error highlighting by default...
+       (setq-default js2-mode-show-parse-errors nil
+                     js2-mode-show-strict-warnings nil)
+       ;; ... but enable it if flycheck can't handle javascript
+       (autoload 'flycheck-get-checker-for-buffer "flycheck")
+       (defun sanityinc/disable-js2-checks-if-flycheck-active ()
+         (unless (flycheck-get-checker-for-buffer)
+           (set (make-local-variable 'js2-mode-show-parse-errors) t)
+           (set (make-local-variable 'js2-mode-show-strict-warnings) t)))
+       (add-hook 'js2-mode-hook 'sanityinc/disable-js2-checks-if-flycheck-active)
+
        (add-hook 'js2-mode-hook (lambda () (setq mode-name "JS2")))
-       (setq-default js2-basic-offset preferred-javascript-indent-level
-                     js2-bounce-indent-p nil)
+
        (after-load 'js2-mode
          (js2-imenu-extras-setup)))
 
      ;; js-mode
      (setq-default js-indent-level preferred-javascript-indent-level)
 
+
      (add-to-list 'interpreter-mode-alist (cons "node" preferred-javascript-mode))
 
      ;; Javascript nests {} and () a lot, so I find this helpful
+
      (require-package 'rainbow-delimiters)
      (dolist (hook '(js2-mode-hook js-mode-hook json-mode-hook))
        (add-hook hook 'rainbow-delimiters-mode))
 
 
      ;;; Coffeescript
+
      (after-load 'coffee-mode
        (setq coffee-js-mode preferred-javascript-mode
              coffee-tab-width preferred-javascript-indent-level))
@@ -1674,6 +2000,7 @@
      ;; ---------------------------------------------------------------------------
      ;; Run and interact with an inferior JS via js-comint.el
      ;; ---------------------------------------------------------------------------
+
      (setq inferior-js-program-command "js")
 
      (defvar inferior-js-minor-mode-map (make-sparse-keymap))
@@ -1693,13 +2020,14 @@
      ;; ---------------------------------------------------------------------------
      ;; Alternatively, use skewer-mode
      ;; ---------------------------------------------------------------------------
+
      (when (maybe-require-package 'skewer-mode)
        (after-load 'skewer-mode
          (add-hook 'skewer-mode-hook
                    (lambda () (inferior-js-keys-mode -1)))))
 
-     (provide 'init-javascript)
 
+     (provide 'init-javascript)
    #+END_SRC
 
 ** NXML
@@ -1710,27 +2038,38 @@
 
 *** init-nxml.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-nxml.el
-      (add-auto-mode 'nxml-mode
-                     (concat "\\." (regexp-opt '("xml" "xsd" "sch" "rng" "xslt" "svg" "rss"
-                                                 "gpx" "tcx" "plist"))
-                             "\\'"))
+      (add-auto-mode
+       'nxml-mode
+       (concat "\\."
+               (regexp-opt
+                '("xml" "xsd" "sch" "rng" "xslt" "svg" "rss"
+                  "gpx" "tcx" "plist"))
+               "\\'"))
       (setq magic-mode-alist (cons '("<\\?xml " . nxml-mode) magic-mode-alist))
       (fset 'xml-mode 'nxml-mode)
       (add-hook 'nxml-mode-hook (lambda ()
                                   (set (make-local-variable 'ido-use-filename-at-point) nil)))
       (setq nxml-slash-auto-complete-flag t)
 
-      (defun sanityinc/pp-xml-region (begin end)
+
+      ;; See: http://sinewalker.wordpress.com/2008/06/26/pretty-printing-xml-with-emacs-nxml-mode/
+      (defun sanityinc/pp-xml-region (beg end)
         "Pretty format XML markup in region. The function inserts
       linebreaks to separate tags that have nothing but whitespace
       between them.  It then indents the markup by using nxml's
       indentation rules."
         (interactive "r")
+        (unless (use-region-p)
+          (setq beg (point-min)
+                end (point-max)))
+        ;; Use markers because our changes will move END
+        (setq beg (set-marker (make-marker) begin)
+              end (set-marker (make-marker) end))
         (save-excursion
-          (nxml-mode)
-          (goto-char begin)
-          (while (search-forward-regexp "\>[ \\t]*\<" nil t)
+          (goto-char beg)
+          (while (search-forward-regexp "\>[ \\t]*\<" end t)
             (backward-char) (insert "\n"))
+          (nxml-mode)
           (indent-region begin end)))
 
       ;;----------------------------------------------------------------------------
@@ -1739,8 +2078,16 @@
       (require-package 'tidy)
       (add-hook 'nxml-mode-hook (lambda () (tidy-build-menu nxml-mode-map)))
 
-      (provide 'init-nxml)
+      (defun sanityinc/tidy-buffer-xml (beg end)
+        "Run \"tidy -xml\" on the region from BEG to END, or whole buffer."
+        (interactive "r")
+        (unless (use-region-p)
+          (setq beg (point-min)
+                end (point-max)))
+        (shell-command-on-region beg end "tidy -xml -q -i" (current-buffer) t "*tidy-errors*" t))
 
+
+      (provide 'init-nxml)
     #+END_SRC
 
 ** HTML
@@ -1779,6 +2126,53 @@
           (add-hook hook 'rainbow-mode)))
 
       ;;; Embedding in html
+      ;; (require-package 'mmm-mode)
+      ;; (after-load 'mmm-vars
+      ;;   (mmm-add-group
+      ;;    'html-css
+      ;;    '((css-cdata
+      ;;       :submode css-mode
+      ;;       :face mmm-code-submode-face
+      ;;       :front "<style[^>]*>[ \t\n]*\\(//\\)?<!\\[CDATA\\[[ \t]*\n?"
+      ;;       :back "[ \t]*\\(//\\)?]]>[ \t\n]*</style>"
+      ;;       :insert ((?j js-tag nil @ "<style type=\"text/css\">"
+      ;;                    @ "\n" _ "\n" @ "</style>" @)))
+      ;;      (css
+      ;;       :submode css-mode
+      ;;       :face mmm-code-submode-face
+      ;;       :front "<style[^>]*>[ \t]*\n?"
+      ;;       :back "[ \t]*</style>"
+      ;;       :insert ((?j js-tag nil @ "<style type=\"text/css\">"
+      ;;                    @ "\n" _ "\n" @ "</style>" @)))
+      ;;      (css-inline
+      ;;       :submode css-mode
+      ;;       :face mmm-code-submode-face
+      ;;       :front "style=\""
+      ;;       :back "\"")))
+      ;;   (dolist (mode (list 'html-mode 'nxml-mode))
+      ;;     (mmm-add-mode-ext-class mode "\\.r?html\\(\\.erb\\)?\\'" 'html-css)))
+
+      ;; ;;; SASS and SCSS
+      ;; (require-package 'sass-mode)
+      ;; (require-package 'scss-mode)
+      ;; (setq-default scss-compile-at-save nil)
+
+      ;; ;;; LESS
+      ;; (require-package 'less-css-mode)
+      ;; (when (featurep 'js2-mode)
+      ;;   (require-package 'skewer-less))
+
+      ;; ;;; Auto-complete CSS keywords
+      ;; (after-load 'auto-complete
+      ;;   (dolist (hook '(css-mode-hook sass-mode-hook scss-mode-hook))
+      ;;     (add-hook hook 'ac-css-mode-setup)))
+
+      ;; ;;; Use eldoc for syntax hints
+      ;; (require-package 'css-eldoc)
+      ;; (autoload 'turn-on-css-eldoc "css-eldoc")
+      ;; (add-hook 'css-mode-hook 'turn-on-css-eldoc)
+
+      ;;; Embedding in html
       (require-package 'mmm-mode)
       (after-load 'mmm-vars
         (mmm-add-group
@@ -1805,15 +2199,19 @@
         (dolist (mode (list 'html-mode 'nxml-mode))
           (mmm-add-mode-ext-class mode "\\.r?html\\(\\.erb\\)?\\'" 'html-css)))
 
+
+
       ;;; SASS and SCSS
       (require-package 'sass-mode)
       (require-package 'scss-mode)
       (setq-default scss-compile-at-save nil)
 
+
       ;;; LESS
       (require-package 'less-css-mode)
       (when (featurep 'js2-mode)
         (require-package 'skewer-less))
+
 
       ;;; Auto-complete CSS keywords
       (after-load 'auto-complete
@@ -1824,6 +2222,7 @@
       (require-package 'css-eldoc)
       (autoload 'turn-on-css-eldoc "css-eldoc")
       (add-hook 'css-mode-hook 'turn-on-css-eldoc)
+
 
       (provide 'init-css)
 
@@ -2229,6 +2628,7 @@
 
 *** init-ruby-mode.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-ruby-mode.el
+      ;;; Basic ruby setup
       (require-package 'ruby-mode)
       (require-package 'ruby-hash-syntax)
 
@@ -2251,30 +2651,39 @@
 
       (add-hook 'ruby-mode-hook 'subword-mode)
 
+      ;; TODO: hippie-expand ignoring : for names in ruby-mode
+      ;; TODO: hippie-expand adaptor for auto-complete sources
+
+      (after-load 'page-break-lines
+        (push 'ruby-mode page-break-lines-modes))
+
+  
       ;;; Inferior ruby
       (require-package 'inf-ruby)
       (require-package 'ac-inf-ruby)
-
       (after-load 'auto-complete
         (add-to-list 'ac-modes 'inf-ruby-mode))
-
       (add-hook 'inf-ruby-mode-hook 'ac-inf-ruby-enable)
-
       (after-load 'inf-ruby
         (define-key inf-ruby-mode-map (kbd "TAB") 'auto-complete))
 
+
+  
       ;;; Ruby compilation
       (require-package 'ruby-compilation)
 
       (after-load 'ruby-mode
         (let ((m ruby-mode-map))
           (define-key m [S-f7] 'ruby-compilation-this-buffer)
-          (define-key m [f7] 'ruby-compilation-this-test)
-          (define-key m [f6] 'recompile)))
+          (define-key m [f7] 'ruby-compilation-this-test)))
 
+      (after-load 'ruby-compilation
+        (defalias 'rake 'ruby-compilation-rake))
+
+
+  
       ;;; Robe
       (require-package 'robe)
-
       (after-load 'ruby-mode
         (add-hook 'ruby-mode-hook 'robe-mode))
 
@@ -2289,13 +2698,29 @@
       (after-load 'robe
         (add-hook 'robe-mode-hook 'sanityinc/maybe-enable-robe-ac))
 
+
+  
+      ;; Customise highlight-symbol to not highlight do/end/class/def etc.
+      (defun sanityinc/suppress-ruby-mode-keyword-highlights ()
+        "Suppress highlight-symbol for do/end etc."
+        (set (make-local-variable 'highlight-symbol-ignore-list)
+             (list (concat "\\_<" (regexp-opt '("do" "end")) "\\_>"))))
+      (add-hook 'ruby-mode-hook 'sanityinc/suppress-ruby-mode-keyword-highlights)
+
+
+  
       ;;; ri support
       (require-package 'yari)
       (defalias 'ri 'yari)
 
+
+  
       ;;; YAML
+
       (require-package 'yaml-mode)
 
+
+  
       ;;; ERB
       (require-package 'mmm-mode)
       (defun sanityinc/ensure-mmm-erb-loaded ()
@@ -2325,8 +2750,31 @@
       (dolist (mode (list 'js-mode 'js2-mode 'js3-mode))
         (mmm-add-mode-ext-class mode "\\.js\\.erb\\'" 'erb))
 
-      (provide 'init-ruby-mode)
 
+      ;;----------------------------------------------------------------------------
+      ;; Ruby - my convention for heredocs containing SQL
+      ;;----------------------------------------------------------------------------
+
+      ;; Needs to run after rinari to avoid clobbering font-lock-keywords?
+
+      ;; (require-package 'mmm-mode)
+      ;; (eval-after-load 'mmm-mode
+      ;;   '(progn
+      ;;      (mmm-add-classes
+      ;;       '((ruby-heredoc-sql
+      ;;          :submode sql-mode
+      ;;          :front "<<-?[\'\"]?\\(end_sql\\)[\'\"]?"
+      ;;          :save-matches 1
+      ;;          :front-offset (end-of-line 1)
+      ;;          :back "^[ \t]*~1$"
+      ;;          :delimiter-mode nil)))
+      ;;      (mmm-add-mode-ext-class 'ruby-mode "\\.rb\\'" 'ruby-heredoc-sql)))
+
+      ;(add-to-list 'mmm-set-file-name-for-modes 'ruby-mode)
+
+
+
+      (provide 'init-ruby-mode)
     #+END_SRC
 **** TODO hippie-expand ignoring : for names in ruby-mode
 **** TODO hippie-expand adaptor for auto-complete sources
@@ -2364,10 +2812,56 @@
 
 *** init-sql.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-sql.el
-      ;;;(require-package 'sql-indent)
+      ;; ;;;(require-package 'sql-indent)
+
+      ;; ;; (after-load 'sql
+      ;; ;;   (require 'sql-indent))
+
+      ;; (defun sanityinc/pop-to-sqli-buffer ()
+      ;;   "Switch to the corresponding sqli buffer."
+      ;;   (interactive)
+      ;;   (if sql-buffer
+      ;;       (progn
+      ;;         (pop-to-buffer sql-buffer)
+      ;;         (goto-char (point-max)))
+      ;;     (sql-set-sqli-buffer)
+      ;;     (when sql-buffer
+      ;;       (sanityinc/pop-to-sqli-buffer))))
 
       ;; (after-load 'sql
-      ;;   (require 'sql-indent))
+      ;;   (define-key sql-mode-map (kbd "C-c C-z") 'sanityinc/pop-to-sqli-buffer))
+
+      ;; ;; (after-load 'sql
+      ;; ;;   (define-key sql-mode-map (kbd "C-c C-z") 'sanityinc/pop-to-sqli-buffer)
+      ;; ;;   (add-hook 'sql-interactive-mode-hook 'sanityinc/never-indent)
+      ;; ;;   (when (package-installed-p 'dash-at-point)
+      ;; ;;     (defun sanityinc/maybe-set-dash-db-docset ()
+      ;; ;;       (when (eq sql-product 'postgres)
+      ;; ;;         (setq dash-at-point-docset "psql")))
+
+      ;; ;;     (add-hook 'sql-mode-hook 'sanityinc/maybe-set-dash-db-docset)
+      ;; ;;     (add-hook 'sql-interactive-mode-hook 'sanityinc/maybe-set-dash-db-docset)
+      ;; ;;     (defadvice sql-set-product (after set-dash-docset activate)
+      ;; ;;       (sanityinc/maybe-set-dash-db-docset))))
+
+      ;; (setq-default sql-input-ring-file-name
+      ;;               (expand-file-name ".sqli_history" user-emacs-directory))
+
+      ;; (defun sanityinc/font-lock-everything-in-sql-interactive-mode ()
+      ;;   (unless (eq 'oracle sql-product)
+      ;;     (sql-product-font-lock nil nil)))
+
+      ;; (add-hook 'sql-interactive-mode-hook
+      ;;           'sanityinc/font-lock-everything-in-sql-interactive-mode)
+
+      ;; ;; (after-load 'page-break-lines
+      ;; ;;   (push 'sql-mode page-break-lines-modes))
+
+      ;; (provide 'init-sql)
+
+      (require-package 'sql-indent)
+      (after-load 'sql
+        (require 'sql-indent))
 
       (defun sanityinc/pop-to-sqli-buffer ()
         "Switch to the corresponding sqli buffer."
@@ -2381,33 +2875,30 @@
             (sanityinc/pop-to-sqli-buffer))))
 
       (after-load 'sql
-        (define-key sql-mode-map (kbd "C-c C-z") 'sanityinc/pop-to-sqli-buffer))
+        (define-key sql-mode-map (kbd "C-c C-z") 'sanityinc/pop-to-sqli-buffer)
+        (add-hook 'sql-interactive-mode-hook 'sanityinc/never-indent)
+        (when (package-installed-p 'dash-at-point)
+          (defun sanityinc/maybe-set-dash-db-docset ()
+            (when (eq sql-product 'postgres)
+              (set (make-local-variable 'dash-at-point-docset) "psql")))
 
-      ;; (after-load 'sql
-      ;;   (define-key sql-mode-map (kbd "C-c C-z") 'sanityinc/pop-to-sqli-buffer)
-      ;;   (add-hook 'sql-interactive-mode-hook 'sanityinc/never-indent)
-      ;;   (when (package-installed-p 'dash-at-point)
-      ;;     (defun sanityinc/maybe-set-dash-db-docset ()
-      ;;       (when (eq sql-product 'postgres)
-      ;;         (setq dash-at-point-docset "psql")))
-
-      ;;     (add-hook 'sql-mode-hook 'sanityinc/maybe-set-dash-db-docset)
-      ;;     (add-hook 'sql-interactive-mode-hook 'sanityinc/maybe-set-dash-db-docset)
-      ;;     (defadvice sql-set-product (after set-dash-docset activate)
-      ;;       (sanityinc/maybe-set-dash-db-docset))))
+          (add-hook 'sql-mode-hook 'sanityinc/maybe-set-dash-db-docset)
+          (add-hook 'sql-interactive-mode-hook 'sanityinc/maybe-set-dash-db-docset)
+          (defadvice sql-set-product (after set-dash-docset activate)
+            (sanityinc/maybe-set-dash-db-docset))))
 
       (setq-default sql-input-ring-file-name
                     (expand-file-name ".sqli_history" user-emacs-directory))
 
+      ;; See my answer to https://emacs.stackexchange.com/questions/657/why-do-sql-mode-and-sql-interactive-mode-not-highlight-strings-the-same-way/673
       (defun sanityinc/font-lock-everything-in-sql-interactive-mode ()
         (unless (eq 'oracle sql-product)
           (sql-product-font-lock nil nil)))
+      (add-hook 'sql-interactive-mode-hook 'sanityinc/font-lock-everything-in-sql-interactive-mode)
 
-      (add-hook 'sql-interactive-mode-hook
-                'sanityinc/font-lock-everything-in-sql-interactive-mode)
 
-      ;; (after-load 'page-break-lines
-      ;;   (push 'sql-mode page-break-lines-modes))
+      (after-load 'page-break-lines
+        (push 'sql-mode page-break-lines-modes))
 
       (provide 'init-sql)
 
@@ -2421,6 +2912,52 @@
 
 *** init-paredit.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-paredit.el
+      ;; (require-package 'paredit)
+      ;; (autoload 'enable-paredit-mode "paredit")
+
+      ;; (defun maybe-map-paredit-newline ()
+      ;;   (unless (or (memq major-mode '(inferior-emacs-lisp-mode cider-repl-mode))
+      ;;               (minibufferp))
+      ;;     (local-set-key (kbd "RET") 'paredit-newline)))
+
+      ;; (add-hook 'paredit-mode-hook 'maybe-map-paredit-newline)
+
+      ;; (after-load 'paredit
+      ;;   (diminish 'paredit-mode " PE")
+      ;;   ;; (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
+      ;;   ;;                        (kbd "C-M-<left>") (kbd "C-M-<right>")))
+      ;;   ;;   (define-key paredit-mode-map binding nil))
+
+      ;;   ;; Disable kill-sentence, which is easily confused with the kill-sexp
+      ;;   ;; binding, but doesn't preserve sexp structure
+      ;;   (define-key paredit-mode-map [remap kill-sentence] nil)
+      ;;   (define-key paredit-mode-map [remap backward-kill-sentence] nil)
+
+      ;;   ;; Allow my global binding of M-? to work when paredit is active
+      ;;   (define-key paredit-mode-map (kbd "M-?") nil))
+
+      ;; ;; Use paredit in the minibuffer
+      ;; (add-hook 'minibuffer-setup-hook 'conditionally-enable-paredit-mode)
+
+      ;; (defvar paredit-minibuffer-commands '(eval-expression
+      ;;                                       pp-eval-expression
+      ;;                                       eval-expression-with-eldoc
+      ;;                                       ibuffer-do-eval
+      ;;                                       ibuffer-do-view-and-eval)
+      ;;   "Interactive commands for which paredit should be enabled in the minibuffer.")
+
+      ;; (defun conditionally-enable-paredit-mode ()
+      ;;   "Enable paredit during lisp-related minibuffer commands."
+      ;;   (if (memq this-command paredit-minibuffer-commands)
+      ;;       (enable-paredit-mode)))
+
+      ;; ;; Enable some handy paredit functions in all prog modes
+      ;; (require-package 'paredit-everywhere)
+      ;; (add-hook 'prog-mode-hook 'paredit-everywhere-mode)
+      ;; (add-hook 'css-mode-hook 'paredit-everywhere-mode)
+
+      ;; (provide 'init-paredit)
+
       (require-package 'paredit)
       (autoload 'enable-paredit-mode "paredit")
 
@@ -2432,20 +2969,28 @@
       (add-hook 'paredit-mode-hook 'maybe-map-paredit-newline)
 
       (after-load 'paredit
-        (diminish 'paredit-mode " PE")
-        ;; (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
-        ;;                        (kbd "C-M-<left>") (kbd "C-M-<right>")))
-        ;;   (define-key paredit-mode-map binding nil))
+        (diminish 'paredit-mode " Par")
+        (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
+                               (kbd "C-M-<left>") (kbd "C-M-<right>")))
+          (define-key paredit-mode-map binding nil))
 
-        ;; Disable kill-sentence, which is easily confused with the kill-sexp
+        ;; Modify kill-sentence, which is easily confused with the kill-sexp
         ;; binding, but doesn't preserve sexp structure
-        (define-key paredit-mode-map [remap kill-sentence] nil)
+        (define-key paredit-mode-map [remap kill-sentence] 'paredit-kill)
         (define-key paredit-mode-map [remap backward-kill-sentence] nil)
 
         ;; Allow my global binding of M-? to work when paredit is active
         (define-key paredit-mode-map (kbd "M-?") nil))
 
+
+      ;; Compatibility with other modes
+
+      (suspend-mode-during-cua-rect-selection 'paredit-mode)
+
+
       ;; Use paredit in the minibuffer
+      ;; TODO: break out into separate package
+      ;; http://emacsredux.com/blog/2013/04/18/evaluate-emacs-lisp-in-the-minibuffer/
       (add-hook 'minibuffer-setup-hook 'conditionally-enable-paredit-mode)
 
       (defvar paredit-minibuffer-commands '(eval-expression
@@ -2460,10 +3005,15 @@
         (if (memq this-command paredit-minibuffer-commands)
             (enable-paredit-mode)))
 
+      ;; ----------------------------------------------------------------------------
       ;; Enable some handy paredit functions in all prog modes
+      ;; ----------------------------------------------------------------------------
+
       (require-package 'paredit-everywhere)
       (add-hook 'prog-mode-hook 'paredit-everywhere-mode)
       (add-hook 'css-mode-hook 'paredit-everywhere-mode)
+      (after-load 'paredit-everywhere
+        (define-key paredit-everywhere-mode-map [remap kill-sentence] 'paredit-kill))
 
       (provide 'init-paredit)
 
@@ -2484,16 +3034,17 @@
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-lisp.el
       (require-package 'elisp-slime-nav)
-
       (dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
-        (add-hook hook 'elisp-slime-nav-mode))
+        (add-hook hook 'turn-on-elisp-slime-nav-mode))
 
       (require-package 'lively)
 
       (setq-default initial-scratch-message
-                    (concat ";; Happy hacking " (or user-login-name "") "!\n\n"))
+                    (concat ";; Happy hacking " (or user-login-name "") " - Emacs ♥ you!\n\n"))
+
 
       ;; Make C-x C-e run 'eval-region if the region is active
+
       (defun sanityinc/eval-last-sexp-or-region (prefix)
         "Eval region from BEG to END if active, otherwise the last sexp."
         (interactive "P")
@@ -2509,15 +3060,25 @@
       (require-package 'ipretty)
       (ipretty-mode 1)
 
-      (defadvice pp-display-expression (after make-read-only
-                                              (expression out-buffer-name) activate)
+
+      (defadvice pp-display-expression (after sanityinc/make-read-only (expression out-buffer-name) activate)
         "Enable `view-mode' in the output buffer - if any - so it can be closed with `\"q\"."
         (when (get-buffer out-buffer-name)
           (with-current-buffer out-buffer-name
             (view-mode 1))))
 
+      (defun sanityinc/maybe-set-bundled-elisp-readonly ()
+        "If this elisp appears to be part of Emacs, then disallow editing."
+        (when (and (buffer-file-name)
+                   (string-match-p "\\.el\\.gz\\'" (buffer-file-name)))
+          (setq buffer-read-only t)
+          (view-mode 1)))
+
+      (add-hook 'emacs-lisp-mode-hook 'sanityinc/maybe-set-bundled-elisp-readonly)
+
       ;; Use C-c C-z to toggle between elisp files and an ielm session
       ;; I might generalise this to ruby etc., or even just adopt the repl-toggle package.
+
       (defvar sanityinc/repl-original-buffer nil
         "Buffer from which we jumped to this REPL.")
       (make-variable-buffer-local 'sanityinc/repl-original-buffer)
@@ -2541,11 +3102,13 @@
 
       (after-load 'lisp-mode
         (define-key emacs-lisp-mode-map (kbd "C-c C-z") 'sanityinc/switch-to-ielm))
-
       (after-load 'ielm
         (define-key ielm-map (kbd "C-c C-z") 'sanityinc/repl-switch-back))
 
+      ;; ----------------------------------------------------------------------------
       ;; Hippie-expand
+      ;; ----------------------------------------------------------------------------
+
       (defun my/emacs-lisp-module-name ()
         "Search the buffer for `provide' declaration."
         (save-excursion
@@ -2572,29 +3135,37 @@
         (make-local-variable 'hippie-expand-try-functions-list)
         (add-to-list 'hippie-expand-try-functions-list 'try-complete-lisp-symbol t)
         (add-to-list 'hippie-expand-try-functions-list 'try-complete-lisp-symbol-partially t)
-        (add-to-list 'hippie-expand-try-functions-list
-                     'my/try-complete-lisp-symbol-without-namespace t))
+        (add-to-list 'hippie-expand-try-functions-list 'my/try-complete-lisp-symbol-without-namespace t))
 
 
+      ;; ----------------------------------------------------------------------------
       ;; Automatic byte compilation
-      (require-package 'auto-compile)
-      (auto-compile-on-save-mode 1)
-      (auto-compile-on-load-mode 1)
+      ;; ----------------------------------------------------------------------------
+      (when (maybe-require-package 'auto-compile)
+        (auto-compile-on-save-mode 1)
+        (auto-compile-on-load-mode 1))
 
+      ;; ----------------------------------------------------------------------------
       ;; Load .el if newer than corresponding .elc
+      ;; ----------------------------------------------------------------------------
       (setq load-prefer-newer t)
 
+      ;; ----------------------------------------------------------------------------
       ;; Highlight current sexp
+      ;; ----------------------------------------------------------------------------
+
       (require-package 'hl-sexp)
- 
+
       ;; Prevent flickery behaviour due to hl-sexp-mode unhighlighting before each command
       (after-load 'hl-sexp
         (defadvice hl-sexp-mode (after unflicker (&optional turn-on) activate)
           (when turn-on
             (remove-hook 'pre-command-hook #'hl-sexp-unhighlight))))
 
+
       ;;; Support byte-compilation in a sub-process, as
       ;;; required by highlight-cl
+
       (defun sanityinc/byte-compile-file-batch (filename)
         "Byte-compile FILENAME in batch mode, ie. a clean sub-process."
         (interactive "fFile to byte-compile in batch mode: ")
@@ -2607,7 +3178,10 @@
              (list "-Q" "-batch" "-f" "batch-byte-compile" filename)
              " ")))))
 
+
+      ;; ----------------------------------------------------------------------------
       ;; Enable desired features for all lisp modes
+      ;; ----------------------------------------------------------------------------
       (require-package 'rainbow-delimiters)
       (require-package 'redshank)
       (after-load 'redshank
@@ -2623,7 +3197,6 @@
 
       (defun sanityinc/emacs-lisp-setup ()
         "Enable features useful when working with elisp."
-        (elisp-slime-nav-mode t)
         (set-up-hippie-expand-for-elisp)
         (ac-emacs-lisp-mode-setup))
 
@@ -2657,6 +3230,18 @@
       (after-load 'lisp-mode
         (cl-lib-highlight-initialize))
 
+      ;; ----------------------------------------------------------------------------
+      ;; Delete .elc files when reverting the .el from VC or magit
+      ;; ----------------------------------------------------------------------------
+
+      ;; When .el files are open, we can intercept when they are modified
+      ;; by VC or magit in order to remove .elc files that are likely to
+      ;; be out of sync.
+
+      ;; This is handy while actively working on elisp files, though
+      ;; obviously it doesn't ensure that unopened files will also have
+      ;; their .elc counterparts removed - VC hooks would be necessary for
+      ;; that.
 
       (defvar sanityinc/vc-reverting nil
         "Whether or not VC or Magit is currently reverting buffers.")
@@ -2675,10 +3260,10 @@
       (defadvice magit-revert-buffers (around sanityinc/reverting activate)
         (let ((sanityinc/vc-reverting t))
           ad-do-it))
-
       (defadvice vc-revert-buffer-internal (around sanityinc/reverting activate)
         (let ((sanityinc/vc-reverting t))
           ad-do-it))
+
 
       (require-package 'macrostep)
 
@@ -2697,6 +3282,12 @@
 
       (when (maybe-require-package 'highlight-quoted)
         (add-hook 'emacs-lisp-mode-hook 'highlight-quoted-mode))
+
+      (when (maybe-require-package 'flycheck)
+        (require-package 'flycheck-package)
+        (after-load 'flycheck
+          (flycheck-package-setup)))
+
 
       ;; ERT
       (after-load 'ert
@@ -2728,7 +3319,6 @@
             (aggressive-indent-indent-defun))))
 
       (provide 'init-lisp)
-
     #+END_SRC
 
 ** Clojure
@@ -2775,7 +3365,8 @@
         (after-load 'auto-complete
           (add-to-list 'ac-modes 'cider-repl-mode))
 
-        (add-hook 'cider-repl-mode-hook 'set-auto-complete-as-completion-at-point-function)
+        (add-hook 'cider-repl-mode-hook
+                  'set-auto-complete-as-completion-at-point-function)
         (add-hook 'cider-mode-hook 'set-auto-complete-as-completion-at-point-function)
         (add-hook 'cider-mode-hook 'cider-turn-on-eldoc-mode)
         (add-hook 'cider-repl-mode-hook 'subword-mode)
@@ -2862,6 +3453,11 @@
       (require-package 'ledger-mode)
 
       (add-to-list 'auto-mode-alist '("\\.ledger$" . ledger-mode))
+
+      (when (maybe-require-package 'flycheck-ledger)
+        (after-load 'flycheck
+          (after-load 'ledger-mode
+            (require 'flycheck-ledger))))
 
       (after-load 'ledger-mode
         (define-key ledger-mode-map (kbd "RET") 'newline)
