@@ -1,7 +1,7 @@
 * Header
   #+BEGIN_SRC emacs-lisp
   ;; Filename: init.el
-  ;; Last Modified: Sunday, 06 September 2015 12:29 PM AEST
+  ;; Last Modified: Monday, 14 September 2015 01:19 PM AEST
   #+END_SRC
 
 * Introduction
@@ -349,7 +349,8 @@
   facility, it is important that it is loaded as early as possible in the Emacs boot
   process.
   #+BEGIN_SRC emacs-lisp
-  (require 'init-emacspeak)
+    (when (getenv "RUN_EMACSPEAK")
+      (require 'init-emacspeak))
   #+END_SRC
 *** init-emacspeak.el
     We use different speech server setting on Linux and OS X
@@ -662,6 +663,21 @@
 
     #+END_SRC
 
+** Basic feature packages
+  The =init-elpa.el= package contains some utility functions to assist with loading
+  packages. In particular =require-package=, which is used to load a number of useful
+  packages.
+  #+BEGIN_SRC emacs-lisp
+    (require-package 'diminish)
+    (require-package 'sx)
+    ;;(require-package 'swiper)
+    ;;(require-package 'discover)
+    ;;(require-package 'discover-my-major)
+    ;;(require-package 'smartscan)
+    ;;(require-package 'goto-chg)
+    (require-package 'auctex)
+  #+END_SRC
+
 ** Emacs exec path
    Configure the exec path used by emacs
   #+BEGIN_SRC emacs-lisp
@@ -944,20 +960,6 @@
      (when (file-exists-p custom-file)
        (load custom-file))
    #+END_SRC
-* Basic feature packages
-  The =init-elpa.el= package contains some utility functions to assist with loading
-  packages. In particular =require-package=, which is used to load a number of useful
-  packages.
-  #+BEGIN_SRC emacs-lisp
-    (require-package 'diminish)
-    (require-package 'sx)
-    (require-package 'swiper)
-    (require-package 'discover)
-    (require-package 'discover-my-major)
-    (require-package 'smartscan)
-    (require-package 'goto-chg)
-    (require-package 'auctex)
-  #+END_SRC
 * Topic specific configurations
   Set the topic specific configurations by =requiring= the init files from the
   =/lisp= directory.
