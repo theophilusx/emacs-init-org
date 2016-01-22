@@ -9,6 +9,8 @@
    Add the directories which my init files live
 
    #+BEGIN_SRC emacs-lisp
+     (message "Loading local init")
+
      (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
    #+END_SRC
@@ -78,6 +80,8 @@
     distro
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-emacspeak.el
+      (message "Loading local init-emacspeak")
+
       (defconst *emacspeak-src-dir* "~/git/emacspeak/trunk"
         "Where emacs will find the emacspeak distro")
     #+END_SRC
@@ -130,8 +134,7 @@
                   (lambda ()
                     (dtk-set-rate tts-default-speech-rate 1)
                     (dtk-interp-sync)
-                    (emacspeak-sounds-select-theme "3d/")
-                    (emacspeak-toggle-auditory-icons t)))
+                    (emacspeak-sounds-select-theme "3d/")))
         (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
     #+END_SRC
 
@@ -140,19 +143,24 @@
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-emacspeak.el
       (with-eval-after-load 'emacspeak-keymap
-        (global-unset-key [(shift left)])
-        (global-unset-key [(shift right)])
-        (global-unset-key [(control left)])
-        (global-unset-key [(control right)])
-        (global-unset-key [(control down)])
-        (global-unset-key [(control up)])
-        (global-unset-key [(shift up)])
-        (global-unset-key [(shift down)])
-        (global-unset-key [27 up])
-        (global-unset-key  [27 down])
-        (global-unset-key  [27 prior])
-        (global-unset-key  [27 next])
-        (global-unset-key  [27 select]))
+        ;; Due to changes in my init file, I don't think I need to do this
+        ;; anymore, but leaving it here for now just in case
+        ;; (global-unset-key [(shift left)])
+        ;; (global-unset-key [(shift right)])
+        ;; (global-unset-key [(control left)])
+        ;; (global-unset-key [(control right)])
+        ;; (global-unset-key [(control down)])
+        ;; (global-unset-key [(control up)])
+        ;; (global-unset-key [(shift up)])
+        ;; (global-unset-key [(shift down)])
+        ;; (global-unset-key [27 up])
+        ;; (global-unset-key  [27 down])
+        ;; (global-unset-key  [27 prior])
+        ;; (global-unset-key  [27 next])
+        ;; (global-unset-key  [27 select])
+        )
+
+      (message "Completed loading local init-emacspeak")
 
       (provide 'init-emacspeak)
     #+END_SRC
@@ -168,6 +176,10 @@
 
 *** init-defaults.el
 
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-defaults.el
+    (message "Loading local init-defaults")
+
+    #+END_SRC
 **** Disabled features
 
     Lets turn off some stuff we don't want
@@ -321,6 +333,8 @@
 
 **** provide
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-defaults.el
+      (message "Done loading local init-defaults")
+
       (provide 'init-defaults)
     #+END_SRC
 
@@ -347,6 +361,10 @@
    #+END_SRC
 
 *** init-elpa.el
+
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+      (message "Loading local init-elpa")
+    #+END_SRC
 
     First, we need to load package.el and then we need to add some additional package
     repositories. I hadd
@@ -436,6 +454,8 @@
         (dolist (pattern patterns)
           (add-to-list 'auto-mode-alist (cons pattern mode))))
 
+      (message "Done loading local init-elpa")
+
       (provide 'init-elpa)
 
     #+END_SRC
@@ -450,6 +470,8 @@
 *** init-basic-packages.el
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-basic-packages.el
+      (message "Loading local init-basic-packages")
+
       (require-package 'wgrep)
       (require-package 'diminish)
       (require-package 'scratch)
@@ -460,6 +482,13 @@
       (require-package 'regex-tool)
       (require-package 'sx)
       (require-package 'auctex)
+
+      (when *is-a-mac*
+        (require-package 'osx-lib)
+        (require-package 'osx-plist)
+        (require-package 'osx-trash))
+
+      (message "Done loading local init-basic-packages")
 
       (provide 'init-basic-packages)
     #+END_SRC
@@ -474,7 +503,11 @@
 *** init-local.el
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-local.el
+      (message "Loading local init-local")
+
       (require 'ipcalc)
+
+      (message "Done loading local init-local")
 
       (provide 'init-local)
     #+END_SRC
@@ -488,6 +521,8 @@
 *** init-themes.el
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-themes.el
+      (message "Loading local init-themes")
+
       (require-package 'color-theme-sanityinc-solarized)
       (require-package 'color-theme-sanityinc-tomorrow)
 
@@ -503,6 +538,8 @@
         (custom-set-variables `(custom-enabled-themes (quote ,custom-enabled-themes))))
 
       (add-hook 'after-init-hook 'reapply-themes)
+
+      (message "Done loading local init-themes")
 
       (provide 'init-themes)
     #+END_SRC
@@ -528,6 +565,8 @@
 *** init-exec-path.el
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-exec-path.el
+      (message "Load local init-exec-path")
+
       (require-package 'exec-path-from-shell)
 
       (after-load 'exec-path-from-shell
@@ -537,6 +576,8 @@
 
       (when (memq window-system '(mac ns x))
         (exec-path-from-shell-initialize))
+
+      (message "Done loading local init-exec-path")
 
       (provide 'init-exec-path)
     #+END_SRC
@@ -548,7 +589,10 @@
    #+END_SRC
 
 *** init-osx.el
+
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-osx.el
+      (message "Loading local init-osx")
+
       (when *is-a-mac*
         (require-package 'osx-location)
         (setq mac-command-modifier 'meta)
@@ -571,6 +615,8 @@
 
         (global-set-key (kbd "M-ˍ") 'ns-do-hide-others))
 
+      (message "Done loading local init-osx")
+
       (provide 'init-osx)
     #+END_SRC
 
@@ -585,6 +631,8 @@
 
     Set default font
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
+      (message "Loading local init-fonts")
+
       (if *is-a-mac*
           (set-face-attribute 'default nil
                               :foundry "apple"
@@ -633,6 +681,8 @@
     Provide init-fonts
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
+      (message "Done loading local init-fonts")
+
       (provide 'init-fonts)
     #+END_SRC
 ** Editing
@@ -650,6 +700,8 @@
     it easy to jump to a new indented line when within the above line
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+      (message "Loading local init-editing")
+
       (defun sanityinc/newline-at-end-of-line ()
         "Move to end of line, enter a newline, and reindent."
         (interactive)
@@ -738,7 +790,7 @@
 
     Highlight symbols and escape sequences
 
-    #+BEGIN_SRC emacs-lisp lisp/init-editing.el
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
       (require-package 'highlight-symbol)
 
       (dolist (hook '(prog-mode-hook html-mode-hook css-mode-hook))
@@ -807,6 +859,8 @@
     Provide init-editing
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+      (message "Done loading local init-editing")
+
       (provide 'init-editing)
     #+END_SRC
 
@@ -819,6 +873,8 @@
    #+END_SRC
 *** init-ibuffer
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-ibuffer.el
+      (message "Loading local init-ibuffer")
+
       ;; TODO: enhance ibuffer-fontification-alist
       ;;   See http://www.reddit.com/r/emacs/comments/21fjpn/fontifying_buffer_list_for_emacs_243/
 
@@ -874,6 +930,8 @@
 
       (global-set-key (kbd "C-x C-b") 'ibuffer)
 
+      (message "Done loading local init-ibuffer")
+
       (provide 'init-ibuffer)
     #+END_SRC
 
@@ -888,6 +946,8 @@
 *** init-ido.el
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-ido.el
+      (message "Loading local init-ido")
+
       (ido-mode t)
       (ido-everywhere t)
 
@@ -907,6 +967,9 @@
                 (lambda ()
                   (define-key ido-completion-map [up] 'previous-history-element)))
 
+
+      (message "Done loading local init-ido")
+
       (provide 'init-ido)
 
     #+END_SRC
@@ -920,6 +983,10 @@
 
 *** init-completions.el
 
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-completions.el
+      (message "Loading local init-completions")
+
+    #+END_SRC
     Start with ysnippet
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-completions.el
@@ -1018,8 +1085,12 @@
 
     #+END_SRC
 
+    Provide
+
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-completions.el
-    (provide 'init-completions)
+      (message "Done loading local init-completions")
+
+      (provide 'init-completions)
     #+END_SRC
 ** Whitespace
 
@@ -1032,6 +1103,8 @@
 *** init-whitespace.el
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-whitespace.el
+      (message "Loading local init-whitespace")
+
       (defun sanityinc/no-trailing-whitespace ()
         "Turn off display of trailing whitespace in this buffer."
         (setq show-trailing-whitespace nil))
@@ -1054,7 +1127,9 @@
     #+END_SRC
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-whitespace.el
-    (provide 'init-whitespace)
+      (message "Done loading local init-whitespace")
+
+      (provide 'init-whitespace)
 
     #+END_SRC
 ** Multiple cursors
@@ -1066,6 +1141,8 @@
 *** init-multiple-cursors.el
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-multiple-cursors.el
+      (message "Loading local init-multiple-cursors")
+
       (require-package 'multiple-cursors)
       ;; multiple-cursors
       (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
@@ -1078,6 +1155,9 @@
       (global-set-key (kbd "C-c c e") 'mc/edit-ends-of-lines)
       (global-set-key (kbd "C-c c a") 'mc/edit-beginnings-of-lines)
 
+
+      (message "Done loading local init-multiple-cursors")
+
       (provide 'init-multiple-cursors)
     #+END_SRC
 * Basic feature modes
@@ -1087,6 +1167,8 @@
    #+END_SRC
 *** init-dired
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-dired.el
+      (message "Loading local init-dired")
+
       (require 'ls-lisp)
       (setq dired-listing-switches "-la"
             ls-lisp-dirs-first t
@@ -1099,6 +1181,8 @@
         (after-load 'dired
           (add-hook 'dired-mode-hook 'diff-hl-dired-mode)))
 
+      (message "Done loading local init-dired")
+
       (provide 'init-dired)
     #+END_SRC
 ** Grep
@@ -1107,11 +1191,15 @@
    #+END_SRC
 *** init-grep
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-grep.el
+      (message "Loading local init-grep")
+
       (setq-default grep-highlight-matches t
                     grep-scroll-output t)
 
       (when *is-a-mac*
         (setq-default locate-command "mdfind"))
+
+      (message "Done loading local init-grep")
 
       (provide 'init-grep)
     #+END_SRC
@@ -1123,6 +1211,8 @@
 
 *** init-browse-url.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-browse-url.el
+      (message "Loading local init-browse-url")
+
       (if *is-a-mac*
           (setq browse-url-browser-function 'browse-url-default-macosx-browser)
         (setq browse-url-browser-function 'browse-url-default-browser))
@@ -1132,6 +1222,8 @@
       (global-set-key "\C-c\C-zr" 'browse-url-of-region)
       (global-set-key "\C-c\C-zu" 'browse-url)
       (global-set-key "\C-c\C-zv" 'browse-url-of-file)
+
+      (message "Done loading local init-browse-url")
 
       (provide 'init-browse-url)
     #+END_SRC
@@ -1143,6 +1235,8 @@
 
 *** init-timestamp.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-timestamp.el
+      (message "Loading local init-timestamp")
+
       (add-hook 'write-file-hooks 'time-stamp)
 
       (setq time-stamp-active t)
@@ -1151,6 +1245,8 @@
               ]\\)")
       (setq time-stamp-end "\\\\?[\">]\\|$")
       (setq time-stamp-line-limit 10)
+
+      (message "Done loading local init-timestamp")
 
       (provide 'init-timestamp)
 
@@ -1162,6 +1258,8 @@
 
 *** init-timestamp.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-tempo.el
+      (message "Loading local init-tempo")
+
       (require 'tempo)
 
       (tempo-define-template "generic-header"
@@ -1184,6 +1282,8 @@
 
       (global-set-key [(f5)] 'tempo-template-generic-header)
 
+      (message "Done loading local init-tempo")
+
       (provide 'init-tempo)
 
     #+END_SRC
@@ -1194,6 +1294,8 @@
 
 *** init-compile.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-compile.el
+      (message "Loading local init-compile")
+
       (setq-default compilation-scroll-output t)
 
       (require-package 'alert)
@@ -1252,6 +1354,9 @@
             (ansi-color-apply-on-region compilation-filter-start (point-max))))
         (add-hook 'compilation-filter-hook 'sanityinc/colourise-compilation-buffer))
 
+
+      (message "Done loading local init-compile")
+
       (provide 'init-compile)
     #+END_SRC
 
@@ -1262,6 +1367,8 @@
 
 *** init-calendar.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-calendar.el
+      (message "Loading local init-calendar")
+
       (require 'calendar)
       (setq calendar-date-style 'iso
             calendar-location-name "Armidale"
@@ -1275,6 +1382,9 @@
             icalendar-import-format-location " (%s)"
             icalendar-recurring-start-year 2013)
 
+
+      (message "Done loading local init-calendar")
+
       (provide 'init-calendar)
 
     #+END_SRC
@@ -1285,8 +1395,12 @@
 
 *** init-crontab.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-crontab.el
+      (message "Loading local init-crontab")
+
       (require-package 'crontab-mode)
       (add-auto-mode 'crontab-mode "\\.?cron\\(tab\\)?\\'")
+
+      (message "Done loading local init-crontab")
 
       (provide 'init-crontab)
 
@@ -1299,12 +1413,17 @@
 
 *** init-csv.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-csv.el
+      (message "Loading local init-csv")
+
       (require-package 'csv-mode)
       (require-package 'csv-nav)
 
       (add-auto-mode 'csv-mode "\\.[Cc][Ss][Vv]\\'")
 
       (setq csv-separators '("," ";" "|" " "))
+
+
+      (message "Done loading local init-csv")
 
       (provide 'init-csv)
 
@@ -1329,6 +1448,8 @@
 
 *** init-flyspell.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-flyspell.el
+      (message "Loading local init-flyspell")
+
       ;; Add spell-checking in comments for all programming language modes
       (if (fboundp 'prog-mode)
           (add-hook 'prog-mode-hook 'flyspell-prog-mode)
@@ -1354,12 +1475,16 @@
       (after-load 'flyspell
         (add-to-list 'flyspell-prog-text-faces 'nxml-text-face))
 
+      (message "Done loading local init-flyspell")
+
       (provide 'init-flyspell)
 
     #+END_SRC
 
 *** init-spelling.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-spelling.el
+      (message "Loading local init-spelling")
+
       (if *is-a-mac*
           (setq ispell-dictionary "british")
         (setq ispell-dictionary "british-ise"))
@@ -1369,16 +1494,24 @@
       (when (executable-find ispell-program-name)
         (require 'init-flyspell))
 
+      (message "Done loading local init-spelling")
+
       (provide 'init-spelling)
 
     #+END_SRC
 
-** Org Modea
+** Org Mode
    #+BEGIN_SRC emacs-lisp
    (require 'init-org)
    #+END_SRC
 
 *** init-org.el
+
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+      (message "Loading local init-org")
+
+    #+END_SRC
+
 **** Add package and archives
     Start by getting required package. I'm using the org-plus-contrib package from
     the org repository
@@ -1732,11 +1865,16 @@
       (global-set-key "\C-cb" 'org-iswitchb)
       (global-set-key "\C-cr" 'org-capture)
 
+    #+END_SRC
+
+**** Provide
+
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+      (message "Done loading local init-org")
 
       (provide 'init-org)
 
     #+END_SRC
-
 ** Markdown
    #+BEGIN_SRC emacs-lisp
    (require 'init-markdown)
@@ -1744,11 +1882,15 @@
 
 *** init-markdown.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-markdown.el
+      (message "Load local init-markdown")
+
       (require-package 'markdown-mode)
 
       (after-load 'whitespace-cleanup-mode
         (push 'markdown-mode whitespace-cleanup-mode-ignore-modes))
 
+
+      (message "Done loading local init-markdown")
 
       (provide 'init-markdown)
     #+END_SRC
@@ -1756,12 +1898,15 @@
 
 ** NXML
    - Reference [[http://sinewalker.wordpress.com/2008/06/26/pretty-printing-xml-with-emacs-nxml-mode/][NXML mode pretty printing]]
+
    #+BEGIN_SRC emacs-lisp
-   (require 'init-nxml)
+     (require 'init-nxml)
    #+END_SRC
 
 *** init-nxml.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-nxml.el
+      (message "Loading local init-nxml")
+
       (add-auto-mode
        'nxml-mode
        (concat "\\."
@@ -1810,6 +1955,7 @@
                 end (point-max)))
         (shell-command-on-region beg end "tidy -xml -q -i" (current-buffer) t "*tidy-errors*" t))
 
+      (message "Done loading local init-nxml")
 
       (provide 'init-nxml)
     #+END_SRC
@@ -1821,6 +1967,8 @@
 
 *** init-html.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-html.el
+      (message "Loading local init-html")
+
       (require-package 'tidy)
       (add-hook 'html-mode-hook (lambda ()
                                   (tidy-build-menu html-mode-map)))
@@ -1833,6 +1981,8 @@
 
       (add-auto-mode 'html-mode "\\.(jsp|tmpl)\\'")
 
+      (message "Done loading local init-html")
+
       (provide 'init-html)
 
     #+END_SRC
@@ -1844,6 +1994,8 @@
 
 *** init-css.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-css.el
+      (message "Loading local init-css")
+
       ;;; Colourise CSS colour literals
       (when (maybe-require-package 'rainbow-mode)
         (dolist (hook '(css-mode-hook html-mode-hook sass-mode-hook))
@@ -1937,6 +2089,9 @@
         (dolist (hook '(css-mode-hook sass-mode-hook scss-mode-hook))
           (add-hook hook 'ac-css-mode-setup)))
 
+
+      (message "Done loading local init-css")
+
       (provide 'init-css)
 
     #+END_SRC
@@ -1950,6 +2105,8 @@
 
 *** init-paredit.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-paredit.el
+      (message "Loading local init-paredit")
+
       (require-package 'paredit)
       (autoload 'enable-paredit-mode "paredit")
 
@@ -2003,6 +2160,8 @@
       (after-load 'paredit-everywhere
         (define-key paredit-everywhere-mode-map [remap kill-sentence] 'paredit-kill))
 
+      (message "Done loading local init-paredit")
+
       (provide 'init-paredit)
     #+END_SRC
 
@@ -2020,6 +2179,8 @@
       for that.
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-lisp.el
+      (message "Loading local init-lisp")
+
       (require-package 'elisp-slime-nav)
 
       (dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
@@ -2126,8 +2287,8 @@
             (remove-hook 'pre-command-hook #'hl-sexp-unhighlight))))
 
   
-      ;;; Support byte-compilation in a sub-process, as
-      ;;; required by highlight-cl
+          ;;; Support byte-compilation in a sub-process, as
+          ;;; required by highlight-cl
 
       (defun sanityinc/byte-compile-file-batch (filename)
         "Byte-compile FILENAME in batch mode, ie. a clean sub-process."
@@ -2195,7 +2356,7 @@
       (require 'derived)
 
       (dolist (hook (mapcar #'derived-mode-hook-name sanityinc/lispy-modes))
-                    (add-hook hook 'sanityinc/lisp-setup))
+        (add-hook hook 'sanityinc/lisp-setup))
 
       (dolist (hook (mapcar #'derived-mode-hook-name sanityinc/elispy-modes))
         (add-hook hook 'sanityinc/emacs-lisp-setup))
@@ -2288,6 +2449,7 @@
           ;;   (aggressive-indent-indent-defun))
           ))
 
+      (message "Done loading local init-lisp")
 
       (provide 'init-lisp)
     #+END_SRC
@@ -2301,6 +2463,8 @@
 
 *** init-clojure
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-clojure.el
+      (message "Loading local init-clojure")
+
       (require-package 'clojure-mode)
       (require-package 'cljsbuild-mode)
       (require-package 'elein)
@@ -2319,12 +2483,15 @@
       (setq cljr-auto-sort-ns nil
             cljr-favor-prefix-notation nil)
 
-      (provide 'init-clojure)
+      (message "Done loading local init-clojure")
+
       (provide 'init-clojure)
     #+END_SRC
 
 *** init-cider
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-cider.el
+      (message "Loading local init-cider")
+
       (require 'init-clojure)
 
       (require-package 'cider)
@@ -2356,6 +2523,8 @@
             cider-repl-wrap-history t
             cider-repl-history-size 3000)
 
+      (message "Done loading local init-cider")
+
       (provide 'init-cider)
     #+END_SRC
 
@@ -2368,6 +2537,8 @@
 
 *** init-sql.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-sql.el
+      (message "Loading local init-sql")
+
       (require-package 'sql-indent)
       (after-load 'sql
         (require 'sql-indent))
@@ -2409,6 +2580,8 @@
       (after-load 'page-break-lines
         (push 'sql-mode page-break-lines-modes))
 
+      (message "Done loading local init-sql")
+
       (provide 'init-sql)
     #+END_SRC
 
@@ -2432,46 +2605,51 @@
     Global key bindings
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-keybindings.el
-      (global-set-key (kbd "M-/") 'hippie-expand)
-      (global-set-key (kbd "M-:") 'pp-eval-expression)
-      (global-set-key (kbd "C-M-<backspace>") 'kill-back-to-indentation)
-      (global-set-key [M-S-up] 'md/move-lines-up)
-      (global-set-key [M-S-down] 'md/move-lines-down)
+      (message "Loading local init-keybindings")
 
-      (global-set-key (kbd "C-<right>") 'other-window)
-      (global-set-key (kbd "C-<left>") 'other-window-backward)
+      (with-eval-after-load 'emacspeak-keymap
+        (global-set-key (kbd "M-/") 'hippie-expand)
+        (global-set-key (kbd "M-:") 'pp-eval-expression)
+        (global-set-key (kbd "C-M-<backspace>") 'kill-back-to-indentation)
+        (global-set-key [M-S-up] 'md/move-lines-up)
+        (global-set-key [M-S-down] 'md/move-lines-down)
 
-      (global-set-key (kbd "RET") 'newline-and-indent)
-      (global-set-key (kbd "S-<return>") 'sanityinc/newline-at-end-of-line)
+        (global-set-key (kbd "C-<right>") 'other-window)
+        (global-set-key (kbd "C-<left>") 'other-window-backward)
 
-      (global-set-key (kbd "C-M-=") 'default-text-scale-increase)
-      (global-set-key (kbd "C-M--") 'default-text-scale-decrease)
+        (global-set-key (kbd "RET") 'newline-and-indent)
+        (global-set-key (kbd "S-<return>") 'sanityinc/newline-at-end-of-line)
 
-      (global-set-key (kbd "C-.") 'set-mark-command)
-      (global-set-key (kbd "C-x C-.") 'pop-global-mark)
+        (global-set-key (kbd "C-M-=") 'default-text-scale-increase)
+        (global-set-key (kbd "C-M--") 'default-text-scale-decrease)
 
-      (global-set-key (kbd "C-x C-b") 'ibuffer)
-      (global-set-key (kbd "C-x C-c") 'save-buffers-kill-emacs)
-      ;; To be able to M-x without meta
-      (global-set-key (kbd "C-x C-m") 'execute-extended-command)
+        (global-set-key (kbd "C-.") 'set-mark-command)
+        (global-set-key (kbd "C-x C-.") 'pop-global-mark)
 
-      (global-set-key (kbd "M-z") 'zap-up-to-char)
+        (global-set-key (kbd "C-x C-b") 'ibuffer)
+        (global-set-key (kbd "C-x C-c") 'save-buffers-kill-emacs)
+        ;; To be able to M-x without meta
+        (global-set-key (kbd "C-x C-m") 'execute-extended-command)
 
-      (global-set-key (kbd "C-s") 'isearch-forward-regexp)
-      (global-set-key (kbd "C-r") 'isearch-backward-regexp)
-      (global-set-key (kbd "C-M-s") 'isearch-forward)
-      (global-set-key (kbd "C-M-r") 'isearch-backward)
+        (global-set-key (kbd "M-z") 'zap-up-to-char)
 
-      (global-set-key (kbd "C-o") 'sanityinc/open-line-with-reindent)
-      (global-set-key (kbd "M-Y") 'browse-kill-ring)
-      (global-set-key (kbd "C-=") 'er/expand-region)
+        (global-set-key (kbd "C-s") 'isearch-forward-regexp)
+        (global-set-key (kbd "C-r") 'isearch-backward-regexp)
+        (global-set-key (kbd "C-M-s") 'isearch-forward)
+        (global-set-key (kbd "C-M-r") 'isearch-backward)
 
-      (global-set-key (kbd "C-c p") 'md/duplicate-down)
-      (global-set-key (kbd "C-c P") 'md/duplicate-up)
+        (global-set-key (kbd "C-o") 'sanityinc/open-line-with-reindent)
+        (global-set-key (kbd "M-Y") 'browse-kill-ring)
+        (global-set-key (kbd "C-=") 'er/expand-region)
 
-      (global-set-key (kbd "C-h K") 'find-function-on-key)
+        (global-set-key (kbd "C-c p") 'md/duplicate-down)
+        (global-set-key (kbd "C-c P") 'md/duplicate-up)
 
-      (global-set-key [remap just-one-space] 'cycle-spacing)
+        (global-set-key (kbd "C-h K") 'find-function-on-key)
+
+        (global-set-key [remap just-one-space] 'cycle-spacing))
+
+      (message "Done loading local init-keybindings")
 
       (provide 'init-keybindings)
     #+END_SRC
@@ -2492,12 +2670,16 @@
     the user
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-server.el
-      (when *is-a-mac*
-        (setq server-socket-dir "~/.emacs.d/server/socket"))
+      (message "Loading local init-server")
+
+      ;; (when *is-a-mac*
+      ;;   (setq server-socket-dir (expand-file-name (format "server/emacs%d" (user-uid)) user-emacs-directory)))
 
       (require 'server)
 
       (server-start)
+
+      (message "Done loading local init-server")
 
       (provide 'init-server)
     #+END_SRC
@@ -2509,10 +2691,14 @@
    #+END_SRC
 **** init-edit-server.el
      #+BEGIN_SRC emacs-lisp :tangle lisp/init-edit-server.el
+       (message "Loading local init-edit-server")
+
        (require-package 'edit-server)
 
        (after-load 'edit-server
          (edit-server-start))
+
+       (message "Done loading local init-edit-server")
 
        (provide 'init-edit-server)
      #+END_SRC
@@ -2681,6 +2867,8 @@
 
 * Init End
    #+BEGIN_SRC emacs-lisp
+     (message "Done loading local init")
+
      (provide 'init)
 
      ;; Local Variables:
