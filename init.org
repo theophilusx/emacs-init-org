@@ -2605,6 +2605,32 @@
       (provide 'init-sql)
     #+END_SRC
 
+* Version Control
+  Setup version control stuff
+
+  #+BEGIN_SRC emacs-lisp
+    (require 'init-vc)
+
+  #+END_SRC
+** init-vc.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-vc.el
+     (message "Loading local init-vc")
+
+     (require-package 'gh)
+     (require-package 'git-commit)
+     (require-package 'git-lens)
+     (require-package 'git-timemachine)
+     (require-package 'github-browse-file)
+     (require-package 'github-clone)
+     (require-package 'gitignore-mode)
+     (require-package 'magit)
+     (require-package 'magit-popup)
+     (require-package 'magit-rockstar)
+
+     (message "Done loading local init-vc")
+
+     (provide 'init-vc)
+   #+END_SRC
 * Key bindings
    I'm never sure where to put my custom key bindings. Sometimes, I put them
    close to the other initialisation code relating to similar functionality and
