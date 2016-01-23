@@ -1449,6 +1449,30 @@
 
     #+END_SRC
 
+* Mode line
+  #+BEGIN_SRC emacs-lisp
+    (require 'init-modeline)
+  #+END_SRC
+
+*** init-modeline.el
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-modeline.el
+      (message "Loading local init-modeline")
+
+      (require-package 'smart-mode-line)
+
+      (setq sml/theme 'dark)
+
+      (sml/setup)
+
+
+      (setq-default header-line-format mode-line-format)
+      (setq-default mode-line-format nil)
+
+      (message "Done loading local init-modeline")
+
+      (provide 'init-modeline)
+
+    #+END_SRC
 * Content Authoring
 ** Spelling
    When running on OSX it is necessary to
