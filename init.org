@@ -2,6 +2,26 @@
   This section contains the core configuration settings which are needed in
   order to have my init.el file work.
 
+  Before running for the first time, you should
+
+  1. Create the directory ~/.emacs.d if it doesn't already exist
+  2. Put the files ~init.org~, ~setup.el~ and ~setup.sh~.
+  3. Make sure that ~setup.sh~ is executable by running ~chmod u+x setup.sh~
+
+  Then, from inside the ~.emacs.d~ directory, run
+
+  ~./setup.sh~
+
+  This should create the init.el and other files used in the configuration as
+  well as setup any necessary directories. Once this has been done, you can run
+  emacs and all should work.
+
+  Note that on the first run, emacs will need to download a number of packages
+  from MELPA. Depending on how fast your internet connection is, this could take
+  a while. Once it has completed, you may want to exit emacs and re-start to
+  ensure everything is loaded correctly. Check the ~*Messages*~ buffer for any
+  errors or warnings.
+
 ** load path
    The following adds additional directories to the emacs load-path so that
    emacs can find various additional libraries etc
