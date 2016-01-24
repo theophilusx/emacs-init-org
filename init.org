@@ -126,36 +126,38 @@
     then load it
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-emacspeak.el
-      (when (and (not noninteractive)
-                 (not (featurep 'emacspeak)))
-        (add-to-list 'load-path *emacspeak-src-dir*)
-        (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
-        (setenv "DTK_PROGRAM" *emacspeak-server*)
-        (setq dtk-program *emacspeak-server*)
-        (setq dtk-use-tones nil)
-        (setq emacspeak-mail-alert nil)
-        (setq tts-default-speech-rate 90)
-        (setq outloud-default-speech-rate 90)
-        (setq emacspeak-vm-use-raman-settings nil)
-        (setq mac-default-speech-rate 400)
-        (setq emacspeak-erc-my-nick "theophilusx")
-        (setq emacspeak-erc-speak-all-participants t)
-        (setq emacspeak-play-program "/home/tcross/bin/play")
-        (setq emacspeak-play-args nil)
-        (if *is-a-mac*
-            (progn
-              (setq emacspeak-soxplay-command "/usr/local/bin/play -v 1.2 %s earwax &")
-              (setq sox-play "/usr/local/bin/play"))
-          (setq emacspeak-soxplay-command "/usr/bin/play -v 1.2 %s earwax &")
-          (setq sox-play "/usr/bin/play"))
-        (setq emacspeak-auditory-icon-function
-              'emacspeak-soxplay-auditory-icon)
-        (add-hook 'emacspeak-startup-hook
-                  (lambda ()
-                    (dtk-set-rate tts-default-speech-rate 1)
-                    (dtk-interp-sync)
-                    (emacspeak-sounds-select-theme "3d/")))
-        (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
+            (when (and (not noninteractive)
+                       (not (featurep 'emacspeak)))
+              (add-to-list 'load-path *emacspeak-src-dir*)
+              (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
+              (setenv "DTK_PROGRAM" *emacspeak-server*)
+              (setq emacspeak-wizards-available-browsers
+                    '(eww-browse-url browse-url-default-browser))
+              (setq dtk-program *emacspeak-server*)
+              (setq dtk-use-tones nil)
+              (setq emacspeak-mail-alert nil)
+              (setq tts-default-speech-rate 90)
+              (setq outloud-default-speech-rate 90)
+              (setq emacspeak-vm-use-raman-settings nil)
+              (setq mac-default-speech-rate 400)
+              (setq emacspeak-erc-my-nick "theophilusx")
+              (setq emacspeak-erc-speak-all-participants t)
+              (setq emacspeak-play-program "/home/tcross/bin/play")
+              (setq emacspeak-play-args nil)
+              (if *is-a-mac*
+                  (progn
+                    (setq emacspeak-soxplay-command "/usr/local/bin/play -v 1.2 %s earwax &")
+                    (setq sox-play "/usr/local/bin/play"))
+                (setq emacspeak-soxplay-command "/usr/bin/play -v 1.2 %s earwax &")
+                (setq sox-play "/usr/bin/play"))
+              (setq emacspeak-auditory-icon-function
+                    'emacspeak-soxplay-auditory-icon)
+              (add-hook 'emacspeak-startup-hook
+                        (lambda ()
+                          (dtk-set-rate tts-default-speech-rate 1)
+                          (dtk-interp-sync)
+                          (emacspeak-sounds-select-theme "3d/")))
+              (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
     #+END_SRC
 
     I don't want some of the global key bindings defined by emacspeak, so
@@ -1562,6 +1564,7 @@
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
       (require-package 'org-plus-contrib)
       (require-package 'org-fstree)
+      (require-package 'org-bullets)
     #+END_SRC
 
 **** Some OS X packages
