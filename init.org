@@ -382,102 +382,127 @@
      (require 'init-elpa)
    #+END_SRC
 
-*** init-elpa.el
+*** ELPA Initialisation Code
+
+    I just found John Wiegley's use-package macro, which I think is a really
+    convenient way to manage the installation and configuration of ELPA
+    packages. Therefore, I plan to migrate my configuration to use that
+    package.
+
+    First, we need to load package.el and then we need to add some additional package
+    repositories. I add
+
+    - The Org repository so that I can use most recent org-plus-contrib package
+    - The melpa repository
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
       (message "Loading local init-elpa")
-    #+END_SRC
 
-    First, we need to load package.el and then we need to add some additional package
-    repositories. I hadd
-    - The Org repository so that I can use most recent org-plus-contrib package
-    - Add the melpa repository
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
       (require 'package)
 
+      (setq package-enable-at-startup nil)
       (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
       (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
-
-    #+END_SRC
-
-    Helper functions for loading packages
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
-      (defun require-package (package &optional min-version no-refresh)
-        "Install given PACKAGE, optionally requiring MIN-VERSION.
-      If NO-REFRESH is non-nil, the available package lists will not be
-      re-downloaded in order to locate PACKAGE."
-        (if (package-installed-p package min-version)
-            t
-          (if (or (assoc package package-archive-contents) no-refresh)
-              (if (boundp 'package-selected-packages)
-                  ;; Record this as a package the user installed explicitly
-                  (package-install package nil)
-                (package-install package))
-            (progn
-              (package-refresh-contents)
-              (require-package package min-version t)))))
-
-
-      (defun maybe-require-package (package &optional min-version no-refresh)
-        "Try to install PACKAGE, and return non-nil if successful.
-      In the event of failure, return nil and print a warning message.
-      Optionally require MIN-VERSION.  If NO-REFRESH is non-nil, the
-      available package lists will not be re-downloaded in order to
-      locate PACKAGE."
-        (condition-case err
-            (require-package package min-version no-refresh)
-          (error
-           (message "Couldn't install package `%s': %S" package err)
-           nil)))
-
-    #+END_SRC
-
-    Fire up the package manager
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
-      (setq package-enable-at-startup nil)
       (package-initialize)
 
     #+END_SRC
 
-    use the fullframe package to ensure that the package listing uses one window
+**** Legacy Stuff
+
+     Leave my old package helper functions in place until I have updated all my
+     package installation with ~use-package~.
+
+     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+       (defun require-package (package &optional min-version no-refresh)
+         "Install given PACKAGE, optionally requiring MIN-VERSION.
+       If NO-REFRESH is non-nil, the available package lists will not be
+       re-downloaded in order to locate PACKAGE."
+         (if (package-installed-p package min-version)
+             t
+           (if (or (assoc package package-archive-contents) no-refresh)
+               (if (boundp 'package-selected-packages)
+                   ;; Record this as a package the user installed explicitly
+                   (package-install package nil)
+                 (package-install package))
+             (progn
+               (package-refresh-contents)
+               (require-package package min-version t)))))
+
+
+       (defun maybe-require-package (package &optional min-version no-refresh)
+         "Try to install PACKAGE, and return non-nil if successful.
+       In the event of failure, return nil and print a warning message.
+       Optionally require MIN-VERSION.  If NO-REFRESH is non-nil, the
+       available package lists will not be re-downloaded in order to
+       locate PACKAGE."
+         (condition-case err
+             (require-package package min-version no-refresh)
+           (error
+            (message "Couldn't install package `%s': %S" package err)
+            nil)))
+
+   #+END_SRC
+
+     Some functions which can simplify package configuration etc
+     The /after-load/ macro makes it easy to run initialisation code after the
+     package has been loaded
+
+     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+       (if (fboundp 'with-eval-after-load)
+           (defalias 'after-load 'with-eval-after-load)
+         (defmacro after-load (feature &rest body)
+           "After FEATURE is loaded, evaluate BODY."
+           (declare (indent defun))
+           `(eval-after-load ,feature
+              '(progn ,@body))))
+
+     #+END_SRC
+
+     The /add-auto-mode/ function makes it easier to add new associations between
+     filename patterns and emacs modes
+
+     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+       (defun add-auto-mode (mode &rest patterns)
+         "Add entries to `auto-mode-alist' to use `MODE' for all given file `PATTERNS'."
+         (dolist (pattern patterns)
+           (add-to-list 'auto-mode-alist (cons pattern mode))))
+
+     #+END_SRC
+
+*** use-package
+
+    We have a slight bootstrap or /chicken and egg/ problem, we need the
+    use-package package from ELPA before we can use it, but it is what we want
+    to use to install the package. Therefore, need a simple light weight way to
+    get that package. Lets do the simple way
+
+    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
+      (unless (package-installed-p 'use-package)
+        (package-refresh-contents)
+        (package-install 'use-package))
+
+      (eval-when-compile
+        (require 'use-package))
+      (require 'diminish)
+      (require 'bind-key)
+    #+END_SRC
+
+    use the ~fullframe~ package to ensure that the package listing uses one window
     which fills the current frame
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
-      (require-package 'fullframe)
-      (fullframe list-packages quit-window)
+      (use-package fullframe
+                   :ensure t
+                   :config (fullframe list-packages quit-window))
+
 
     #+END_SRC
 
-    Some functions which can simplify package configuration etc
-    The /after-load/ macro makes it easy to run initialisation code after the
-    package has been loaded
+*** Footer
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
-      (if (fboundp 'with-eval-after-load)
-          (defalias 'after-load 'with-eval-after-load)
-        (defmacro after-load (feature &rest body)
-          "After FEATURE is loaded, evaluate BODY."
-          (declare (indent defun))
-          `(eval-after-load ,feature
-             '(progn ,@body))))
-
-    #+END_SRC
-
-    The /add-auto-mode/ function makes it easier to add new associations between
-    filename patterns and emacs modes
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
-      (defun add-auto-mode (mode &rest patterns)
-        "Add entries to `auto-mode-alist' to use `MODE' for all given file `PATTERNS'."
-        (dolist (pattern patterns)
-          (add-to-list 'auto-mode-alist (cons pattern mode))))
-
-      (message "Done loading local init-elpa")
-
-      (provide 'init-elpa)
+    (message "Done loading local init-elpa")
+    (provide 'init-elpa)
 
     #+END_SRC
 
@@ -488,30 +513,33 @@
    (require 'init-basic-packages)
    #+END_SRC
 
-*** init-basic-packages.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-basic-packages.el
+               (message "Loading local init-basic-packages")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-basic-packages.el
-      (message "Loading local init-basic-packages")
+               (use-package wgrep)
+               (use-package diminish
+                 :ensure t
+                 :config
+                 (diminish 'voice-lock-mode))
+               (use-package scratch)
+               (use-package unfill)
+               (use-package expand-region)
+               (use-package lua-mode)
+               (use-package htmlize)
+               (use-package regex-tool)
+               (use-package sx)
+               (use-package tex
+                 :ensure auctex)
 
-      (require-package 'wgrep)
-      (require-package 'diminish)
-      (require-package 'scratch)
-      (require-package 'unfill)
-      (require-package 'expand-region)
-      (require-package 'lua-mode)
-      (require-package 'htmlize)
-      (require-package 'regex-tool)
-      (require-package 'sx)
-      (require-package 'auctex)
 
-      (when *is-a-mac*
-        (require-package 'osx-lib)
-        (require-package 'osx-plist)
-        (require-package 'osx-trash))
+               (when *is-a-mac*
+                 (use-package osx-lib)
+                 (use-package osx-plist)
+                 (use-package osx-trash))
 
-      (message "Done loading local init-basic-packages")
+                 (message "Done loading local init-basic-packages")
 
-      (provide 'init-basic-packages)
+               (provide 'init-basic-packages)
     #+END_SRC
 ** Local packages
    I put locally managed packages i.e. those not installed via elpa into the lib
@@ -521,9 +549,7 @@
      (require 'init-local)
    #+END_SRC
 
-*** init-local.el
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-local.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-local.el
       (message "Loading local init-local")
 
       (require 'ipcalc)
@@ -532,6 +558,7 @@
 
       (provide 'init-local)
     #+END_SRC
+
 ** Themes
    I like to use the solarized dark theme
 
@@ -539,30 +566,27 @@
    (require 'init-themes)
    #+END_SRC
 
-*** init-themes.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-themes.el
+     (message "Loading local init-themes")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-themes.el
-      (message "Loading local init-themes")
+     (use-package color-theme-sanityinc-solarized
+       :ensure t
+       :init (setq-default custom-enabled-themes '(sanityinc-solarized-dark))
+       :config
+       (defun reapply-themes ()
+         "Forcibly load the themes listed in `custom-enabled-themes'."
+         (dolist (theme custom-enabled-themes)
+           (unless (custom-theme-p theme)
+             (load-theme theme)))
+         (custom-set-variables `(custom-enabled-themes
+                                 (quote ,custom-enabled-themes))))
+       (add-hook 'after-init-hook 'reapply-themes))
 
-      (require-package 'color-theme-sanityinc-solarized)
-      (require-package 'color-theme-sanityinc-tomorrow)
+     (use-package color-theme-sanityinc-tomorrow)
 
-      ;; If you don't customize it, this is the theme you get.
-      (setq-default custom-enabled-themes '(sanityinc-solarized-dark))
+     (message "Done loading local init-themes")
 
-      ;; Ensure that themes will be applied even if they have not been customized
-      (defun reapply-themes ()
-        "Forcibly load the themes listed in `custom-enabled-themes'."
-        (dolist (theme custom-enabled-themes)
-          (unless (custom-theme-p theme)
-            (load-theme theme)))
-        (custom-set-variables `(custom-enabled-themes (quote ,custom-enabled-themes))))
-
-      (add-hook 'after-init-hook 'reapply-themes)
-
-      (message "Done loading local init-themes")
-
-      (provide 'init-themes)
+     (provide 'init-themes)
     #+END_SRC
 ** Custom
    I use different emacs custom files depending on the platform. Need to load
@@ -583,24 +607,21 @@
     (require 'init-exec-path)
   #+END_SRC
 
-*** init-exec-path.el
+  #+BEGIN_SRC emacs-lisp :tangle lisp/init-exec-path.el
+    (message "Load local init-exec-path")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-exec-path.el
-      (message "Load local init-exec-path")
-
-      (require-package 'exec-path-from-shell)
-
-      (after-load 'exec-path-from-shell
-        (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO" "LANG" "LC_CTYPE"))
-          (add-to-list 'exec-path-from-shell-variables var)))
-
-
+    (use-package exec-path-from-shell
+      :ensure t
+      :config
+      (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID"
+                     "GPG_AGENT_INFO" "LANG" "LC_CTYPE"))
+        (add-to-list 'exec-path-from-shell-variables var))
       (when (memq window-system '(mac ns x))
-        (exec-path-from-shell-initialize))
+        (exec-path-from-shell-initialize)))
 
-      (message "Done loading local init-exec-path")
+    (message "Done loading local init-exec-path")
 
-      (provide 'init-exec-path)
+    (provide 'init-exec-path)
     #+END_SRC
 ** OSX
    OSX specific configuration and packages
@@ -609,36 +630,33 @@
    (require 'init-osx)
    #+END_SRC
 
-*** init-osx.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-osx.el
+     (message "Loading local init-osx")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-osx.el
-      (message "Loading local init-osx")
+     (when *is-a-mac*
+       (use-package osx-location)
+       (setq mac-command-modifier 'meta)
+       (setq mac-option-modifier 'none)
+       (setq default-input-method "MacOSX")
+       ;; Make mouse wheel / trackpad scrolling less jerky
+       (setq mouse-wheel-scroll-amount '(1
+                                         ((shift) . 5)
+                                         ((control))))
+       (dolist (multiple '("" "double-" "triple-"))
+         (dolist (direction '("right" "left"))
+           (global-set-key (read-kbd-macro
+                            (concat "<" multiple "wheel-" direction ">")) 'ignore)))
+       (global-set-key (kbd "M-`") 'ns-next-frame)
+       (global-set-key (kbd "M-h") 'ns-do-hide-emacs)
+       (global-set-key (kbd "M-˙") 'ns-do-hide-others)
+       (after-load 'nxml-mode
+         (define-key nxml-mode-map (kbd "M-h") nil))
+       ;; what describe-key reports for cmd-option-h
+       (global-set-key (kbd "M-ˍ") 'ns-do-hide-others))
 
-      (when *is-a-mac*
-        (require-package 'osx-location)
-        (setq mac-command-modifier 'meta)
-        (setq mac-option-modifier 'none)
-        (setq default-input-method "MacOSX")
-        ;; Make mouse wheel / trackpad scrolling less jerky
-        (setq mouse-wheel-scroll-amount '(1
-                                          ((shift) . 5)
-                                          ((control))))
-        (dolist (multiple '("" "double-" "triple-"))
-          (dolist (direction '("right" "left"))
-            (global-set-key (read-kbd-macro
-                             (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-        (global-set-key (kbd "M-`") 'ns-next-frame)
-        (global-set-key (kbd "M-h") 'ns-do-hide-emacs)
-        (global-set-key (kbd "M-˙") 'ns-do-hide-others)
-        (after-load 'nxml-mode
-          (define-key nxml-mode-map (kbd "M-h") nil))
-        ;; what describe-key reports for cmd-option-h
+     (message "Done loading local init-osx")
 
-        (global-set-key (kbd "M-ˍ") 'ns-do-hide-others))
-
-      (message "Done loading local init-osx")
-
-      (provide 'init-osx)
+     (provide 'init-osx)
     #+END_SRC
 
 ** Fonts
@@ -648,64 +666,63 @@
    (require 'init-fonts)
    #+END_SRC
 
-*** init-fonts.el
+   Set default font
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
+     (message "Loading local init-fonts")
 
-    Set default font
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
-      (message "Loading local init-fonts")
-
-      (if *is-a-mac*
-          (set-face-attribute 'default nil
-                              :foundry "apple"
-                              :family "Menlo"
-                              :height 260)
-        (set-face-attribute 'default nil
-                            :foundry "adobe"
-                            :family "Source Code Pro"
-                            :height 138))
+     (if *is-a-mac*
+         (set-face-attribute 'default nil
+                             :foundry "apple"
+                             :family "Menlo"
+                             :height 260)
+       (set-face-attribute 'default nil
+                           :foundry "adobe"
+                           :family "Source Code Pro"
+                           :height 138))
 
     #+END_SRC
 
-    Use default font for symbols if possible
+   Use default font for symbols if possible
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
-      (defcustom sanityinc/force-default-font-for-symbols nil
-        "When non-nil, force Emacs to use your default font for symbols."
-        :type 'boolean)
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
+     (defcustom sanityinc/force-default-font-for-symbols nil
+       "When non-nil, force Emacs to use your default font for symbols."
+       :type 'boolean)
 
-      (defun sanityinc/maybe-use-default-font-for-symbols ()
-        "Force Emacs to render symbols using the default font, if so configured."
-        (when sanityinc/force-default-font-for-symbols
-          (set-fontset-font "fontset-default" 'symbol (face-attribute 'default :family))))
+     (defun sanityinc/maybe-use-default-font-for-symbols ()
+       "Force Emacs to render symbols using the default font, if so configured."
+       (when sanityinc/force-default-font-for-symbols
+         (set-fontset-font "fontset-default" 'symbol (face-attribute 'default :family))))
 
-      (add-hook 'after-init-hook 'sanityinc/maybe-use-default-font-for-symbols)
+     (add-hook 'after-init-hook 'sanityinc/maybe-use-default-font-for-symbols)
 
+   #+END_SRC
+
+   Change font scaling dynamically
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
+     (require-package 'default-text-scale)
+
+     (defun sanityinc/maybe-adjust-visual-fill-column ()
+       "Readjust visual fill column when the global font size is modified.
+        This is helpful for writeroom-mode, in particular."
+       (if visual-fill-column-mode
+           (add-hook 'after-setting-font-hook 'visual-fill-column--adjust-window nil t)
+         (remove-hook 'after-setting-font-hook 'visual-fill-column--adjust-window t)))
+
+     (add-hook 'visual-fill-column-mode-hook
+               'sanityinc/maybe-adjust-visual-fill-column)
+
+   #+END_SRC
+
+   Provide init-fonts
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
+     (message "Done loading local init-fonts")
+
+     (provide 'init-fonts)
     #+END_SRC
 
-    Change font scaling dynamically
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
-      (require-package 'default-text-scale)
-
-      (defun sanityinc/maybe-adjust-visual-fill-column ()
-        "Readjust visual fill column when the global font size is modified.
-         This is helpful for writeroom-mode, in particular."
-        (if visual-fill-column-mode
-            (add-hook 'after-setting-font-hook 'visual-fill-column--adjust-window nil t)
-          (remove-hook 'after-setting-font-hook 'visual-fill-column--adjust-window t)))
-
-      (add-hook 'visual-fill-column-mode-hook
-                'sanityinc/maybe-adjust-visual-fill-column)
-
-    #+END_SRC
-
-    Provide init-fonts
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-fonts.el
-      (message "Done loading local init-fonts")
-
-      (provide 'init-fonts)
-    #+END_SRC
 ** Editing
    Some useful editing functions. See the key bindings section to see how these
    functions are bound to keys
@@ -714,176 +731,146 @@
    (require 'init-editing)
    #+END_SRC
 
-*** init-editing.el
+*** newline-at-end-of-line
+   A simple function stolen from [[http://github.com/purcell/emacs.d]] which makes
+   it easy to jump to a new indented line when within the above line
 
-**** newline-at-end-of-line
-    A simple function stolen from [[http://github.com/purcell/emacs.d]] which makes
-    it easy to jump to a new indented line when within the above line
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+     (message "Loading local init-editing")
+
+     (defun sanityinc/newline-at-end-of-line ()
+       "Move to end of line, enter a newline, and reindent."
+       (interactive)
+       (move-end-of-line 1)
+       (newline-and-indent))
+
+   #+END_SRC
+
+*** open-line-with-reindent
+
+   Improved function to open a new line, also stolen from
+   [[http://github.com/purcell/emacs.d]]].
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+     (defun sanityinc/open-line-with-reindent (n)
+       "A version of `open-line' which reindents the start and end positions.
+      If there is a fill prefix and/or a `left-margin', insert them
+      on the new line if the line would have been blank.
+      With arg N, insert N newlines."
+       (interactive "*p")
+       (let* ((do-fill-prefix (and fill-prefix (bolp)))
+              (do-left-margin (and (bolp) (> (current-left-margin) 0)))
+              (loc (point-marker))
+              ;; Don't expand an abbrev before point.
+              (abbrev-mode nil))
+         (delete-horizontal-space t)
+         (newline n)
+         (indent-according-to-mode)
+         (when (eolp)
+           (delete-horizontal-space t))
+         (goto-char loc)
+         (while (> n 0)
+           (cond ((bolp)
+                  (if do-left-margin (indent-to (current-left-margin)))
+                  (if do-fill-prefix (insert-and-inherit fill-prefix))))
+           (forward-line 1)
+           (setq n (1- n)))
+         (goto-char loc)
+         (end-of-line)
+         (indent-according-to-mode)))
+
+   #+END_SRC
+
+*** page-break-lines, browse-kill-ring and undo-tree
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+     (use-package undo-tree
+       :ensure t
+       :diminish undo-tree-mode
+       :config (global-undo-tree-mode))
+
+     (use-package browse-kill-ring
+       :ensure t
+       :config
+       (define-key browse-kill-ring-mode-map (kbd "C-g")
+         'browse-kill-ring-quit)
+       (define-key browse-kill-ring-mode-map (kbd "M-n")
+         'browse-kill-ring-forward)
+       (define-key browse-kill-ring-mode-map (kbd "M-p")
+         'browse-kill-ring-previous))
+
+     (use-package page-break-lines
+       :diminish page-break-lines-mode
+       :config
+       (global-page-break-lines-mode)
+       (push 'browse-kill-ring-mode page-break-lines-modes))
+
+     (defun kill-back-to-indentation ()
+       "Kill from point back to the first non-whitespace character on the line."
+       (interactive)
+       (let ((prev-pos (point)))
+         (back-to-indentation)
+         (kill-region (point) prev-pos)))
+   #+END_SRC
+
+*** highlight-symbol and highlight-escape-sequences
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+     (use-package highlight-symbol
+       :ensure t
+       :diminish highlight-symbol-mode
+       :config
+       (dolist (hook '(prog-mode-hook html-mode-hook css-mode-hook))
+         (add-hook hook 'highlight-symbol-mode)
+         (add-hook hook 'highlight-symbol-nav-mode))
+       (add-hook 'org-mode-hook 'highlight-symbol-nav-mode)
+       (defadvice highlight-symbol-temp-highlight (around sanityinc/maybe-suppress
+                                                          activate)
+         "Suppress symbol highlighting while isearching."
+         (unless (or isearch-mode
+                     (and (boundp 'multiple-cursors-mode)
+                          multiple-cursors-mode))
+           ad-do-it)))
+
+     (use-package highlight-escape-sequences
+       :config (hes-mode))
+   #+END_SRC
+
+*** move-dup and whole-line-or-region
+
+   Line moving and duplicating
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+     (use-package move-dup)
+
+     (use-package whole-line-or-region
+       :ensure t
+       :diminish whole-line-or-region-mode
+       :config
+       (whole-line-or-region-mode t)
+       (make-variable-buffer-local 'whole-line-or-region-mode))
+
+   #+END_SRC
+
+*** Window navigation
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (message "Loading local init-editing")
-
-      (defun sanityinc/newline-at-end-of-line ()
-        "Move to end of line, enter a newline, and reindent."
-        (interactive)
-        (move-end-of-line 1)
-        (newline-and-indent))
+      (defun other-window-backward (&optional n)
+        "Select Nth previous window."
+        (interactive "P")
+        (other-window (- (prefix-numeric-value n))))
 
     #+END_SRC
 
-**** open-line-with-reindent
+*** provide
 
-    Improved function to open a new line, also stolen from
-    [[http://github.com/purcell/emacs.d]]].
+   Provide init-editing
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (defun sanityinc/open-line-with-reindent (n)
-        "A version of `open-line' which reindents the start and end positions.
-       If there is a fill prefix and/or a `left-margin', insert them
-       on the new line if the line would have been blank.
-       With arg N, insert N newlines."
-        (interactive "*p")
-        (let* ((do-fill-prefix (and fill-prefix (bolp)))
-               (do-left-margin (and (bolp) (> (current-left-margin) 0)))
-               (loc (point-marker))
-               ;; Don't expand an abbrev before point.
-               (abbrev-mode nil))
-          (delete-horizontal-space t)
-          (newline n)
-          (indent-according-to-mode)
-          (when (eolp)
-            (delete-horizontal-space t))
-          (goto-char loc)
-          (while (> n 0)
-            (cond ((bolp)
-                   (if do-left-margin (indent-to (current-left-margin)))
-                   (if do-fill-prefix (insert-and-inherit fill-prefix))))
-            (forward-line 1)
-            (setq n (1- n)))
-          (goto-char loc)
-          (end-of-line)
-          (indent-according-to-mode)))
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
+     (message "Done loading local init-editing")
 
-    #+END_SRC
-
-**** page-break-line
-
-    the /page-break-lines/ package puts a break line across the page when there
-    is a control-l character - nice for splitting up code.
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (require-package 'page-break-lines)
-      (global-page-break-lines-mode)
-      (diminish 'page-break-lines-mode)
-
-    #+END_SRC
-
-**** browse-kill-ring and undo-tree
-
-    Kill ring and undo-tree setup
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (require-package 'undo-tree)
-
-      (global-undo-tree-mode)
-      (diminish 'undo-tree-mode "UT")
-
-      (require-package 'browse-kill-ring)
-
-      (after-load 'browse-kill-ring
-        (define-key browse-kill-ring-mode-map (kbd "C-g") 'browse-kill-ring-quit)
-        (define-key browse-kill-ring-mode-map (kbd "M-n") 'browse-kill-ring-forward)
-        (define-key browse-kill-ring-mode-map (kbd "M-p") 'browse-kill-ring-previous))
-
-      (after-load 'page-break-lines
-        (push 'browse-kill-ring-mode page-break-lines-modes))
-
-      (defun kill-back-to-indentation ()
-        "Kill from point back to the first non-whitespace character on the line."
-        (interactive)
-        (let ((prev-pos (point)))
-          (back-to-indentation)
-          (kill-region (point) prev-pos)))
-
-    #+END_SRC
-
-**** highlight-symbol and highlight-escape-sequences
-
-    Highlight symbols and escape sequences
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (require-package 'highlight-symbol)
-
-      (dolist (hook '(prog-mode-hook html-mode-hook css-mode-hook))
-        (add-hook hook 'highlight-symbol-mode)
-        (add-hook hook 'highlight-symbol-nav-mode))
-
-      (add-hook 'org-mode-hook 'highlight-symbol-nav-mode)
-
-      (after-load 'highlight-symbol
-        (diminish 'highlight-symbol-mode)
-        (defadvice highlight-symbol-temp-highlight (around sanityinc/maybe-suppress activate)
-          "Suppress symbol highlighting while isearching."
-          (unless (or isearch-mode
-                      (and (boundp 'multiple-cursors-mode) multiple-cursors-mode))
-            ad-do-it)))
-
-      (require-package 'highlight-escape-sequences)
-      (hes-mode)
-
-    #+END_SRC
-
-**** move-dup
-
-    Line moving and duplicating
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (require-package 'move-dup)
-
-      (defun sort-lines-random (beg end)
-        "Sort lines in region randomly."
-        (interactive "r")
-        (save-excursion
-          (save-restriction
-            (narrow-to-region beg end)
-            (goto-char (point-min))
-            (let ;; To make `end-of-line' and etc. to ignore fields.
-                ((inhibit-field-text-motion t))
-              (sort-subr nil 'forward-line 'end-of-line nil nil
-                         (lambda (s1 s2) (eq (random 2) 0)))))))
-
-    #+END_SRC
-
-**** whole-line-or-region
-
-    Cut or copy the current line, depending on status of region
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (require-package 'whole-line-or-region)
-
-      (whole-line-or-region-mode t)
-      (diminish 'whole-line-or-region-mode)
-      (make-variable-buffer-local 'whole-line-or-region-mode)
-
-    #+END_SRC
-
-**** Window navigation
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-       (defun other-window-backward (&optional n)
-         "Select Nth previous window."
-         (interactive "P")
-         (other-window (- (prefix-numeric-value n))))
-
-     #+END_SRC
-**** provide
-
-    Provide init-editing
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-editing.el
-      (message "Done loading local init-editing")
-
-      (provide 'init-editing)
-    #+END_SRC
+     (provide 'init-editing)
+   #+END_SRC
 
 ** ibuffer
 
@@ -892,68 +879,61 @@
    #+BEGIN_SRC emacs-lisp
      (require 'init-ibuffer)
    #+END_SRC
-*** init-ibuffer
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-ibuffer.el
-      (message "Loading local init-ibuffer")
 
-      ;; TODO: enhance ibuffer-fontification-alist
-      ;;   See http://www.reddit.com/r/emacs/comments/21fjpn/fontifying_buffer_list_for_emacs_243/
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-ibuffer.el
+     (message "Loading local init-ibuffer")
 
-      (require-package 'ibuffer-vc)
+     (use-package ibuffer-vc
+       :ensure t
+       :init (setq-default ibuffer-show-empty-filter-groups nil)
+       :config
+       (defun ibuffer-set-up-preferred-filters ()
+         (ibuffer-vc-set-filter-groups-by-vc-root)
+         (unless (eq ibuffer-sorting-mode 'filename/process)
+           (ibuffer-do-sort-by-filename/process)))
+       (add-hook 'ibuffer-hook 'ibuffer-set-up-preferred-filters)
+       (define-ibuffer-column size-h
+         (:name "Size" :inline t)
+         (cond
+          ((> (buffer-size) 1000000)
+           (format "%7.1fM" (/ (buffer-size) 1000000.0)))
+          ((> (buffer-size) 1000)
+           (format "%7.1fk" (/ (buffer-size) 1000.0)))
+          (t (format "%8d" (buffer-size))))))
 
-      (defun ibuffer-set-up-preferred-filters ()
-        (ibuffer-vc-set-filter-groups-by-vc-root)
-        (unless (eq ibuffer-sorting-mode 'filename/process)
-          (ibuffer-do-sort-by-filename/process)))
+     (use-package ibuffer
+       :bind ("C-x C-b" . ibuffer)
+       :ensure t
+       :init
+       (setq ibuffer-filter-group-name-face 'font-lock-doc-face)
+       (setq ibuffer-formats
+           '((mark modified read-only vc-status-mini " "
+                   (name 18 18 :left :elide)
+                   " "
+                   (size-h 9 -1 :right)
+                   " "
+                   (mode 16 16 :left :elide)
+                   " "
+                   filename-and-process)
+             (mark modified read-only vc-status-mini " "
+                   (name 18 18 :left :elide)
+                   " "
+                   (size-h 9 -1 :right)
+                   " "
+                   (mode 16 16 :left :elide)
+                   " "
+                   (vc-status 16 16 :left)
+                   " "
+                   filename-and-process)))
+       (add-hook 'ibuffer-mode-hook
+                 #'(lambda ()
+                     (ibuffer-switch-to-saved-filter-groups "default")))
+       :config
+       (require 'ibuffer-vc))
 
-      (add-hook 'ibuffer-hook 'ibuffer-set-up-preferred-filters)
+     (message "Done loading local init-ibuffer")
 
-      (setq-default ibuffer-show-empty-filter-groups nil)
-
-
-      (after-load 'ibuffer
-        ;; Use human readable Size column instead of original one
-        (define-ibuffer-column size-h
-          (:name "Size" :inline t)
-          (cond
-           ((> (buffer-size) 1000000) (format "%7.1fM" (/ (buffer-size) 1000000.0)))
-           ((> (buffer-size) 1000) (format "%7.1fk" (/ (buffer-size) 1000.0)))
-           (t (format "%8d" (buffer-size))))))
-
-
-      ;; Explicitly require ibuffer-vc to get its column definitions, which
-      ;; can't be autoloaded
-      (after-load 'ibuffer
-        (require 'ibuffer-vc))
-
-      ;; Modify the default ibuffer-formats (toggle with `)
-      (setq ibuffer-formats
-            '((mark modified read-only vc-status-mini " "
-                    (name 18 18 :left :elide)
-                    " "
-                    (size-h 9 -1 :right)
-                    " "
-                    (mode 16 16 :left :elide)
-                    " "
-                    filename-and-process)
-              (mark modified read-only vc-status-mini " "
-                    (name 18 18 :left :elide)
-                    " "
-                    (size-h 9 -1 :right)
-                    " "
-                    (mode 16 16 :left :elide)
-                    " "
-                    (vc-status 16 16 :left)
-                    " "
-                    filename-and-process)))
-
-      (setq ibuffer-filter-group-name-face 'font-lock-doc-face)
-
-      (global-set-key (kbd "C-x C-b") 'ibuffer)
-
-      (message "Done loading local init-ibuffer")
-
-      (provide 'init-ibuffer)
+     (provide 'init-ibuffer)
     #+END_SRC
 
 ** Ido
@@ -964,34 +944,36 @@
    (require 'init-ido)
    #+END_SRC
 
-*** init-ido.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-ido.el
+     (message "Loading local init-ido")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-ido.el
-      (message "Loading local init-ido")
+     (use-package ido
+       :demand t
+       :config
+       (add-hook 'ido-setup-hook
+               (lambda ()
+                 (define-key ido-completion-map [up] 'previous-history-element)))
+       (ido-mode t)
+       (ido-everywhere t))
 
-      (ido-mode t)
-      (ido-everywhere t)
+     (use-package ido-ubiquitous
+       :ensure t
+       :config
+       (ido-ubiquitous-mode t))
 
-      (when (maybe-require-package 'ido-ubiquitous)
-        (ido-ubiquitous-mode t))
-
-      ;; Use smex to handle M-x
-      (when (maybe-require-package 'smex)
-        ;; Change path for ~/.smex-items
-        (setq smex-save-file (expand-file-name ".smex-items" user-emacs-directory))
-        (global-set-key [remap execute-extended-command] 'smex))
-
-      (require-package 'idomenu)
-
-      ;; http://www.reddit.com/r/emacs/comments/21a4p9/use_recentf_and_ido_together/cgbprem
-      (add-hook 'ido-setup-hook
-                (lambda ()
-                  (define-key ido-completion-map [up] 'previous-history-element)))
+     (use-package smex
+       :ensure t
+       :init
+       (setq smex-save-file (expand-file-name ".smex-items" user-emacs-directory))
+       :config
+       (global-set-key [remap execute-extended-command] 'smex))
 
 
-      (message "Done loading local init-ido")
+     (use-package idomenu)
 
-      (provide 'init-ido)
+     (message "Done loading local init-ido")
+
+     (provide 'init-ido)
 
     #+END_SRC
 ** Completions, expansions and templates
@@ -1002,19 +984,19 @@
    (require 'init-completions)
    #+END_SRC
 
-*** init-completions.el
-
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-completions.el
       (message "Loading local init-completions")
 
     #+END_SRC
+
     Start with ysnippet
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-completions.el
-      (require-package 'yasnippet)
-
-      (after-load 'yasnippet
+      (use-package yasnippet
+        :ensure t
+        :init
         (setq yas-prompt-functions '(yas-dropdown-prompt))
+        :config
         (define-key yas-minor-mode-map (kbd "<tab>") nil)
         (define-key yas-minor-mode-map (kbd "TAB") nil)
         (define-key yas-minor-mode-map (kbd "C-M-/") 'yas-expand)
@@ -1038,56 +1020,43 @@
     Now setup auto-complete
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-completions.el
-      (require-package 'auto-complete)
-      (require 'auto-complete-config)
-
-      (global-auto-complete-mode t)
-
-      (setq-default ac-expand-on-auto-complete nil
-                    ac-auto-start nil
-                    ac-dwim nil)
-
-      ;;----------------------------------------------------------------------------
-      ;; Use Emacs' built-in TAB completion hooks to trigger AC (Emacs >= 23.2)
-      ;;----------------------------------------------------------------------------
-      (setq tab-always-indent 'complete)  ;; use 't when auto-complete is disabled
-      (add-to-list 'completion-styles 'initials t)
-
-      ;; Stop completion-at-point from popping up completion buffers so eagerly
-      (setq completion-cycle-threshold 5)
-
-      (setq c-tab-always-indent nil
-            c-insert-tab-function 'indent-for-tab-command)
-
-      ;; hook AC into completion-at-point
-      (defun sanityinc/auto-complete-at-point ()
+      (use-package auto-complete
+        :ensure t
+        :init
+        (setq-default ac-expand-on-auto-complete nil
+                      ac-auto-start nil
+                      ac-dwim nil)
+        (set-default 'ac-sources
+                     '(ac-source-imenu
+                       ac-source-dictionary
+                       ac-source-words-in-buffer
+                       ac-source-words-in-same-mode-buffers
+                       ac-source-words-in-all-buffer))
+        (setq tab-always-indent 'complete) ;; use 't when auto-complete is disabled
+        (setq completion-cycle-threshold 5)
+        (setq c-tab-always-indent nil
+              c-insert-tab-function 'indent-for-tab-command)
+        (setq dabbrev-friend-buffer-function 'sanityinc/dabbrev-friend-buffer)
+        :config
+        (require 'auto-complete-config)
+        (global-auto-complete-mode t)
+        (add-to-list 'completion-styles 'initials t)
+        (defun sanityinc/auto-complete-at-point ()
         (when (and (not (minibufferp))
                    (fboundp 'auto-complete-mode)
                    auto-complete-mode)
           #'auto-complete))
-
-      (defun sanityinc/never-indent ()
+        (defun sanityinc/never-indent ()
         (set (make-local-variable 'indent-line-function)
              (lambda () 'noindent)))
-
-      (defun set-auto-complete-as-completion-at-point-function ()
+        (defun set-auto-complete-as-completion-at-point-function ()
         (setq completion-at-point-functions
               (cons 'sanityinc/auto-complete-at-point
                     (remove 'sanityinc/auto-complete-at-point
                             completion-at-point-functions))))
-
-      (add-hook 'auto-complete-mode-hook
-                'set-auto-complete-as-completion-at-point-function)
-
-
-      (set-default 'ac-sources
-                   '(ac-source-imenu
-                     ac-source-dictionary
-                     ac-source-words-in-buffer
-                     ac-source-words-in-same-mode-buffers
-                     ac-source-words-in-all-buffer))
-
-      (dolist (mode '(log-edit-mode org-mode text-mode haml-mode
+        (add-hook 'auto-complete-mode-hook
+                  'set-auto-complete-as-completion-at-point-function)
+        (dolist (mode '(log-edit-mode org-mode text-mode haml-mode
                       git-commit-mode
                       sass-mode yaml-mode csv-mode espresso-mode haskell-mode
                       html-mode nxml-mode sh-mode smarty-mode clojure-mode
@@ -1095,15 +1064,9 @@
                       js3-mode css-mode less-css-mode sql-mode
                       sql-interactive-mode
                       inferior-emacs-lisp-mode))
-        (add-to-list 'ac-modes mode))
-
-
-      ;; Exclude very large buffers from dabbrev
-      (defun sanityinc/dabbrev-friend-buffer (other-buffer)
-        (< (buffer-size other-buffer) (* 1 1024 1024)))
-
-      (setq dabbrev-friend-buffer-function 'sanityinc/dabbrev-friend-buffer)
-
+          (add-to-list 'ac-modes mode))
+        (defun sanityinc/dabbrev-friend-buffer (other-buffer)
+        (< (buffer-size other-buffer) (* 1 1024 1024))))
     #+END_SRC
 
     Provide
@@ -1113,74 +1076,64 @@
 
       (provide 'init-completions)
     #+END_SRC
-** Whitespace
-
-   Cleanup whitespace etc
+** Whitespace cleanup
 
    #+BEGIN_SRC emacs-lisp
    (require 'init-whitespace)
    #+END_SRC
 
-*** init-whitespace.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-whitespace.el
+     (message "Loading local init-whitespace")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-whitespace.el
-      (message "Loading local init-whitespace")
+     (use-package whitespace-cleanup-mode
+       :ensure t
+       :config
+       (defun sanityinc/no-trailing-whitespace ()
+         "Turn off display of trailing whitespace in this buffer."
+         (setq show-trailing-whitespace nil))
+       (dolist (hook '(special-mode-hook
+                       Info-mode-hook
+                       eww-mode-hook
+                       term-mode-hook
+                       comint-mode-hook
+                       compilation-mode-hook
+                       twittering-mode-hook
+                       minibuffer-setup-hook))
+         (add-hook hook #'sanityinc/no-trailing-whitespace))
+       (global-whitespace-cleanup-mode t))
 
-      (defun sanityinc/no-trailing-whitespace ()
-        "Turn off display of trailing whitespace in this buffer."
-        (setq show-trailing-whitespace nil))
+     (message "Done loading local init-whitespace")
 
-      ;; But don't show trailing whitespace in SQLi, inf-ruby etc.
-      (dolist (hook '(special-mode-hook
-                      Info-mode-hook
-                      eww-mode-hook
-                      term-mode-hook
-                      comint-mode-hook
-                      compilation-mode-hook
-                      twittering-mode-hook
-                      minibuffer-setup-hook))
-        (add-hook hook #'sanityinc/no-trailing-whitespace))
-
-      (require-package 'whitespace-cleanup-mode)
-
-      (global-whitespace-cleanup-mode t)
-
-    #+END_SRC
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-whitespace.el
-      (message "Done loading local init-whitespace")
-
-      (provide 'init-whitespace)
+     (provide 'init-whitespace)
 
     #+END_SRC
+
 ** Multiple cursors
 
    #+BEGIN_SRC emacs-lisp
    (require 'init-multiple-cursors)
    #+END_SRC
 
-*** init-multiple-cursors.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-multiple-cursors.el
+     (message "Loading local init-multiple-cursors")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-multiple-cursors.el
-      (message "Loading local init-multiple-cursors")
+     (use-package multiple-cursors
+       :ensure t
+       :config
+       (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+       (global-set-key (kbd "C->") 'mc/mark-next-like-this)
+       (global-set-key (kbd "C-+") 'mc/mark-next-like-this)
+       (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
+       (global-set-key (kbd "C-c c r") 'set-rectangular-region-anchor)
+       (global-set-key (kbd "C-c c c") 'mc/edit-lines)
+       (global-set-key (kbd "C-c c e") 'mc/edit-ends-of-lines)
+       (global-set-key (kbd "C-c c a") 'mc/edit-beginnings-of-lines))
 
-      (require-package 'multiple-cursors)
-      ;; multiple-cursors
-      (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
-      (global-set-key (kbd "C->") 'mc/mark-next-like-this)
-      (global-set-key (kbd "C-+") 'mc/mark-next-like-this)
-      (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
-      ;; From active region to multiple cursors:
-      (global-set-key (kbd "C-c c r") 'set-rectangular-region-anchor)
-      (global-set-key (kbd "C-c c c") 'mc/edit-lines)
-      (global-set-key (kbd "C-c c e") 'mc/edit-ends-of-lines)
-      (global-set-key (kbd "C-c c a") 'mc/edit-beginnings-of-lines)
+     (message "Done loading local init-multiple-cursors")
 
+     (provide 'init-multiple-cursors)
+   #+END_SRC
 
-      (message "Done loading local init-multiple-cursors")
-
-      (provide 'init-multiple-cursors)
-    #+END_SRC
 * Basic feature modes
 ** Dired
    #+BEGIN_SRC emacs-lisp
@@ -1455,25 +1408,27 @@
     (require 'init-modeline)
   #+END_SRC
 
-*** init-modeline.el
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-modeline.el
-      (message "Loading local init-modeline")
+  #+BEGIN_SRC emacs-lisp :tangle lisp/init-modeline.el
+    (message "Loading local init-modeline")
 
-      (require-package 'smart-mode-line)
+    ;;(require-package 'smart-mode-line)
 
-      (setq sml/theme 'dark)
+    ;; (setq sml/theme 'dark)
 
-      (sml/setup)
+    ;; (sml/setup)
 
+    (use-package powerline
+      :ensure t
+      :config (powerline-default-theme))
 
-      (setq-default header-line-format mode-line-format)
-      (setq-default mode-line-format nil)
+    ;; (setq-default header-line-format mode-line-format)
+    ;; (setq-default mode-line-format nil)
 
-      (message "Done loading local init-modeline")
+    (message "Done loading local init-modeline")
 
-      (provide 'init-modeline)
+    (provide 'init-modeline)
 
-    #+END_SRC
+   #+END_SRC
 * Content Authoring
 ** Spelling
    When running on OSX it is necessary to
