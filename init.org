@@ -394,11 +394,10 @@
     - Add the melpa repository
 
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-elpa.el
-          (require 'package)
+      (require 'package)
 
-          (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-
-          (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
+      (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+      (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
 
     #+END_SRC
 
@@ -661,9 +660,9 @@
                               :family "Menlo"
                               :height 260)
         (set-face-attribute 'default nil
-                            :foundry "unknown"
-                            :family "Anonymous Pro"
-                            :height 160))
+                            :foundry "adobe"
+                            :family "Source Code Pro"
+                            :height 138))
 
     #+END_SRC
 
@@ -1561,14 +1560,17 @@
 **** Add package and archives
     Start by getting required package. I'm using the org-plus-contrib package from
     the org repository
+
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
       (require-package 'org-plus-contrib)
       (require-package 'org-fstree)
       (require-package 'org-bullets)
+
     #+END_SRC
 
 **** Some OS X packages
      If running under OS X, there are a couple of additional packages we need
+
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
       (when *is-a-mac*
         (require 'org-mac-link)
@@ -1576,9 +1578,21 @@
         (require 'org-mac-iCal))
     #+END_SRC
 
+**** Look and feel
+     Set some eye candy
+
+     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+       (add-hook 'org-mode-hook 'org-bullets-mode)
+
+       (font-lock-add-keywords 'org-mode
+                               '(("^ +\\([-*]\\) "
+                                  (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+     #+END_SRC
 **** Basic setup
     I like to keep all my org files in Dropbox so that they are available on all my
     systems. Lets start by setting some basic stuff
+
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
       (setq org-catch-invisible-edits 'smart
             org-completion-use-ido t
