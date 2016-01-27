@@ -1965,61 +1965,48 @@
    (require 'init-paredit)
    #+END_SRC
 
-*** init-paredit.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-paredit.el
       (message "Loading local init-paredit")
 
-      (require-package 'paredit)
-      (autoload 'enable-paredit-mode "paredit")
-
-      (defun maybe-map-paredit-newline ()
-        (unless (or (memq major-mode '(inferior-emacs-lisp-mode cider-repl-mode))
-                    (minibufferp))
-          (local-set-key (kbd "RET") 'paredit-newline)))
-
-      (add-hook 'paredit-mode-hook 'maybe-map-paredit-newline)
-
-      (after-load 'paredit
-        (diminish 'paredit-mode " PE")
+      (use-package paredit
+        :ensure t
+        :commands (enable-paredit-mode)
+        :diminish paredit-mode
+        :config
+        (defun maybe-map-paredit-newline ()
+          (unless (or (memq major-mode '(inferior-emacs-lisp-mode cider-repl-mode))
+                      (minibufferp))
+            (local-set-key (kbd "RET") 'paredit-newline)))
+        (add-hook 'paredit-mode-hook 'maybe-map-paredit-newline)
         (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
                                (kbd "C-M-<left>") (kbd "C-M-<right>")))
           (define-key paredit-mode-map binding nil))
-
         ;; Modify kill-sentence, which is easily confused with the kill-sexp
         ;; binding, but doesn't preserve sexp structure
         (define-key paredit-mode-map [remap kill-sentence] 'paredit-kill)
         (define-key paredit-mode-map [remap backward-kill-sentence] nil)
-
         ;; Allow my global binding of M-? to work when paredit is active
-        (define-key paredit-mode-map (kbd "M-?") nil))
+        (define-key paredit-mode-map (kbd "M-?") nil)
+        ;; Use paredit in the minibuffer
+        ;; http://emacsredux.com/blog/2013/04/18/evaluate-emacs-lisp-in-the-minibuffer/
+        (defun conditionally-enable-paredit-mode ()
+          "Enable paredit during lisp-related minibuffer commands."
+          (if (memq this-command paredit-minibuffer-commands)
+              (enable-paredit-mode)))
 
+        (defvar paredit-minibuffer-commands '(eval-expression
+                                              pp-eval-expression
+                                              ibuffer-do-eval
+                                              ibuffer-do-view-and-eval)
+          "Interactive commands where paredit should be enabled in the minibuffer.")
+        (add-hook 'minibuffer-setup-hook 'conditionally-enable-paredit-mode))
 
-      ;; Compatibility with other modes
-
-      ;; Use paredit in the minibuffer
-      ;; TODO: break out into separate package
-      ;; http://emacsredux.com/blog/2013/04/18/evaluate-emacs-lisp-in-the-minibuffer/
-      (add-hook 'minibuffer-setup-hook 'conditionally-enable-paredit-mode)
-
-      (defvar paredit-minibuffer-commands '(eval-expression
-                                            pp-eval-expression
-                                            ibuffer-do-eval
-                                            ibuffer-do-view-and-eval)
-        "Interactive commands for which paredit should be enabled in the minibuffer.")
-
-      (defun conditionally-enable-paredit-mode ()
-        "Enable paredit during lisp-related minibuffer commands."
-        (if (memq this-command paredit-minibuffer-commands)
-            (enable-paredit-mode)))
-
-      ;; ----------------------------------------------------------------------------
-      ;; Enable some handy paredit functions in all prog modes
-      ;; ----------------------------------------------------------------------------
-
-      (require-package 'paredit-everywhere)
-      (add-hook 'prog-mode-hook 'paredit-everywhere-mode)
-      (add-hook 'css-mode-hook 'paredit-everywhere-mode)
-      (after-load 'paredit-everywhere
+      (use-package paredit-everywhere
+        :ensure t
+        :commands (paredit-everywhere-mode paredit-kill)
+        :config
+        (add-hook 'prog-mode-hook 'paredit-everywhere-mode)
+        (add-hook 'css-mode-hook 'paredit-everywhere-mode)
         (define-key paredit-everywhere-mode-map [remap kill-sentence] 'paredit-kill))
 
       (message "Done loading local init-paredit")
@@ -2032,28 +2019,23 @@
    (require 'init-lisp)
    #+END_SRC
 
-*** init-lisp.el
-    - Delete .elc files when reverting the .el from VC or magit When .el files are
-      open, we can intercept when they are modified by VC or magit in order to remove
-      .elc files that are likely to be out of sync. This is handy while actively
-      working on elisp files, though obviously it doesn't ensure that unopened files
-      will also have their .elc counterparts removed - VC hooks would be necessary
-      for that.
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-lisp.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-lisp.el
       (message "Loading local init-lisp")
 
-      (require-package 'elisp-slime-nav)
+      (use-package elisp-slime-nav
+        :ensure t
+        :commands (turn-on-elisp-slime-nav-mode)
+        :diminish elisp-slime-nave-mode
+        :config
+        (dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
+          (add-hook hook 'turn-on-elisp-slime-nav-mode))
+        (add-hook 'emacs-lisp-mode-hook (lambda ()
+                                          (setq mode-name "ELisp"))))
 
-      (dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
-        (add-hook hook 'turn-on-elisp-slime-nav-mode))
-
-      (add-hook 'emacs-lisp-mode-hook (lambda ()
-                                        (setq mode-name "ELisp")))
-
-      (require-package 'lively)
-
-      (setq-default initial-scratch-message ";;; A lisp scratch buffer\n")
+      (use-package lively
+        :ensure t
+        :init
+        (setq-default initial-scratch-message ";;; A lisp scratch buffer\n"))
 
   
       ;; Make C-x C-e run 'eval-region if the region is active
@@ -2065,20 +2047,6 @@
             (eval-region (min (point) (mark)) (max (point) (mark)))
           (pp-eval-last-sexp prefix)))
 
-      (after-load 'lisp-mode
-        (define-key emacs-lisp-mode-map (kbd "C-x C-e")
-          'sanityinc/eval-last-sexp-or-region))
-
-      (require-package 'ipretty)
-      (ipretty-mode 1)
-
-      (defadvice pp-display-expression (after sanityinc/make-read-only (expression out-buffer-name) activate)
-        "Enable `view-mode' in the output buffer - if any - so it can be closed with `\"q\"."
-        (when (get-buffer out-buffer-name)
-          (with-current-buffer out-buffer-name
-            (view-mode 1))))
-
-  
       (defun sanityinc/maybe-set-bundled-elisp-readonly ()
         "If this elisp appears to be part of Emacs, then disallow editing."
         (when (and (buffer-file-name)
@@ -2086,8 +2054,6 @@
           (setq buffer-read-only t)
           (view-mode 1)))
 
-      (add-hook 'emacs-lisp-mode-hook 'sanityinc/maybe-set-bundled-elisp-readonly)
-  
       ;; Use C-c C-z to toggle between elisp files and an ielm session
       ;; I might generalise this to ruby etc., or even just adopt the repl-toggle
       ;; package.
@@ -2113,10 +2079,42 @@
             (funcall sanityinc/repl-switch-function sanityinc/repl-original-buffer)
           (error "No original buffer.")))
 
-      (after-load 'lisp-mode
-        (define-key emacs-lisp-mode-map (kbd "C-c C-z") 'sanityinc/switch-to-ielm))
-      (after-load 'ielm
-        (define-key ielm-map (kbd "C-c C-z") 'sanityinc/repl-switch-back))
+      (use-package lisp-mode
+        :commands (sanityinc/eval-last-sexp-or-region sanityinc/switch-to-ielm)
+        :bind (:map emacs-lisp-mode-map
+                    ("C-x C-e" . sanityinc/eval-last-sexp-or-region)
+                    ("C-c C-z" . sanityinc/switch-to-ielm))
+        :config
+        (add-hook 'emacs-lisp-mode-hook 'sanityinc/maybe-set-bundled-elisp-readonly)
+        (use-package cl-lib-highlight
+          :ensure t
+          :config
+          (cl-lib-highlight-initialize))
+        (use-package macrostep
+          :ensure t
+          :config
+          (define-key emacs-lisp-mode-map (kbd "C-c e") 'macrostep-expand)))
+
+      (use-package ipretty
+        :ensure t
+        :config
+        (ipretty-mode 1))
+
+      (defadvice pp-display-expression (after sanityinc/make-read-only (expression out-buffer-name) activate)
+        "Enable `view-mode' in the output buffer - if any - so it can be closed with `\"q\"."
+        (when (get-buffer out-buffer-name)
+          (with-current-buffer out-buffer-name
+            (view-mode 1))))
+
+
+  
+
+      (use-package ielm
+        :commands (sanityinc/repl-switch-back)
+        :config
+        (bind-key "C-c C-z" sanityinc/repl-switch-back ielm-map))
+
+
 
       ;; ----------------------------------------------------------------------------
       ;; Hippie-expand
@@ -2133,24 +2131,22 @@
       ;; ----------------------------------------------------------------------------
       ;; Automatic byte compilation
       ;; ----------------------------------------------------------------------------
-      (when (maybe-require-package 'auto-compile)
+      (use-package auto-compile
+        :ensure t
+        :config
         (auto-compile-on-save-mode 1)
         (auto-compile-on-load-mode 1))
 
-      ;; ----------------------------------------------------------------------------
-      ;; Highlight current sexp
-      ;; ----------------------------------------------------------------------------
-      (require-package 'hl-sexp)
-
-      ;; Prevent flickery behaviour due to hl-sexp-mode unhighlighting before each command
-      (after-load 'hl-sexp
+      (use-package hl-sexp
+        :ensure t
+        :init
         (defadvice hl-sexp-mode (after unflicker (&optional turn-on) activate)
           (when turn-on
             (remove-hook 'pre-command-hook #'hl-sexp-unhighlight))))
 
   
-          ;;; Support byte-compilation in a sub-process, as
-          ;;; required by highlight-cl
+      ;; Support byte-compilation in a sub-process, as
+      ;; required by highlight-cl
 
       (defun sanityinc/byte-compile-file-batch (filename)
         "Byte-compile FILENAME in batch mode, ie. a clean sub-process."
@@ -2167,11 +2163,13 @@
       ;; ----------------------------------------------------------------------------
       ;; Enable desired features for all lisp modes
       ;; ----------------------------------------------------------------------------
-      (require-package 'rainbow-delimiters)
-      (require-package 'redshank)
+      (use-package rainbow-delimiters
+        :ensure t)
 
-      (after-load 'redshank
-        (diminish 'redshank-mode))
+      (use-package redshank
+        :ensure t
+        :diminish redshank-mode)
+
 
       (defun sanityinc/enable-check-parens-on-save ()
         "Run `check-parens' when the current buffer is saved."
@@ -2183,19 +2181,6 @@
           redshank-mode
           sanityinc/enable-check-parens-on-save)
         "Hook run in all Lisp modes.")
-
-
-      (when (maybe-require-package 'adjust-parens)
-        (defun sanityinc/adjust-parens-setup ()
-          (when (fboundp 'lisp-indent-adjust-parens)
-            (set (make-local-variable 'adjust-parens-fallback-dedent-function)
-                 'ignore)
-            (set (make-local-variable 'adjust-parens-fallback-indent-function)
-                 'ignore)
-            (local-set-key (kbd "<M-left>") 'lisp-dedent-adjust-parens)
-            (local-set-key (kbd "<M-right>") 'lisp-indent-adjust-parens)))
-
-        (add-to-list 'sanityinc/lispy-modes-hook 'sanityinc/adjust-parens-setup))
 
       (defun sanityinc/lisp-setup ()
         "Enable features useful in any Lisp mode."
@@ -2226,90 +2211,18 @@
       (add-to-list 'auto-mode-alist '("\\.emacs-project\\'" . emacs-lisp-mode))
       (add-to-list 'auto-mode-alist '("archive-contents\\'" . emacs-lisp-mode))
 
-      (require-package 'cl-lib-highlight)
-      (after-load 'lisp-mode
-        (cl-lib-highlight-initialize))
-
-      ;; ----------------------------------------------------------------------------
-      ;; Delete .elc files when reverting the .el from VC or magit
-      ;; ----------------------------------------------------------------------------
-
-      ;; When .el files are open, we can intercept when they are modified
-      ;; by VC or magit in order to remove .elc files that are likely to
-      ;; be out of sync.
-
-      ;; This is handy while actively working on elisp files, though
-      ;; obviously it doesn't ensure that unopened files will also have
-      ;; their .elc counterparts removed - VC hooks would be necessary for
-      ;; that.
-
-      (defvar sanityinc/vc-reverting nil
-        "Whether or not VC or Magit is currently reverting buffers.")
-
-      (defadvice revert-buffer (after sanityinc/maybe-remove-elc activate)
-        "If reverting from VC, delete any .elc file that will now be out of sync."
-        (when sanityinc/vc-reverting
-          (when (and (eq 'emacs-lisp-mode major-mode)
-                     buffer-file-name
-                     (string= "el" (file-name-extension buffer-file-name)))
-            (let ((elc (concat buffer-file-name "c")))
-              (when (file-exists-p elc)
-                (message "Removing out-of-sync elc file %s" (file-name-nondirectory elc))
-                (delete-file elc))))))
-
-      (defadvice magit-revert-buffers (around sanityinc/reverting activate)
-        (let ((sanityinc/vc-reverting t))
-          ad-do-it))
-      (defadvice vc-revert-buffer-internal (around sanityinc/reverting activate)
-        (let ((sanityinc/vc-reverting t))
-          ad-do-it))
   
-      (require-package 'macrostep)
+      (use-package rainbow-mode
+        :ensure t
+        :commands (rainbow-mode)
+        :init
+        (add-hook 'emacs-lisp-mode-hook (lambda () (rainbow-mode 1))))
 
-      (after-load 'lisp-mode
-        (define-key emacs-lisp-mode-map (kbd "C-c e") 'macrostep-expand))
-
-  
-      (when (maybe-require-package 'rainbow-mode)
-        (defun sanityinc/enable-rainbow-mode-if-theme ()
-          (when (string-match "\\(color-theme-\\|-theme\\.el\\)" (buffer-name))
-            (rainbow-mode 1)))
-        (add-hook 'emacs-lisp-mode-hook 'sanityinc/enable-rainbow-mode-if-theme))
-
-      (when (maybe-require-package 'highlight-quoted)
+      (use-package highlight-quoted
+        :ensure t
+        :commands (highlight-quoted-mode)
+        :init
         (add-hook 'emacs-lisp-mode-hook 'highlight-quoted-mode))
-
-  
-      ;; ERT
-      (after-load 'ert
-        (define-key ert-results-mode-map (kbd "g") 'ert-results-rerun-all-tests))
-
-  
-      (defun sanityinc/cl-libify-next ()
-        "Find next symbol from 'cl and replace it with the 'cl-lib equivalent."
-        (interactive)
-        (let ((case-fold-search nil))
-          (re-search-forward
-           (concat
-            "("
-            (regexp-opt
-             ;; Not an exhaustive list
-             '("loop" "incf" "plusp" "first" "decf" "minusp" "assert"
-               "case" "destructuring-bind" "second" "third" "defun*"
-               "defmacro*" "return-from" "labels" "cadar" "fourth"
-               "cadadr") t)
-            "\\_>")))
-        (let ((form (match-string 1)))
-          (backward-sexp)
-          (cond
-           ((string-match "^\\(defun\\|defmacro\\)\\*$")
-            (kill-sexp)
-            (insert (concat "cl-" (match-string 1))))
-           (t
-            (insert "cl-")))
-          ;; (when (fboundp 'aggressive-indent-indent-defun)
-          ;;   (aggressive-indent-indent-defun))
-          ))
 
       (message "Done loading local init-lisp")
 
@@ -2323,17 +2236,24 @@
        (require 'init-cider))
    #+END_SRC
 
-*** init-clojure
+*** Clojure Mode
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-clojure.el
       (message "Loading local init-clojure")
 
-      (require-package 'clojure-mode)
-      (require-package 'cljsbuild-mode)
-      (require-package 'elein)
-      (require-package 'align-cljlet)
-      (require-package 'clj-refactor)
-
-      (after-load 'clojure-mode
+      (use-package clojure-mode
+        :ensure t
+        :config
+        (use-package cljsbuild-mode
+          :ensure t)
+        (use-package elein
+          :ensure t)
+        (use-package align-cljlet
+          :ensure t)
+        (use-package clj-refactor
+          :ensure t
+          :init
+          (setq cljr-auto-sort-ns nil
+                cljr-favor-prefix-notation nil))
         (add-hook 'clojure-mode-hook #'sanityinc/lisp-setup)
         (add-hook 'clojure-mode-hook #'subword-mode)
         (add-hook 'clojure-mode-hook
@@ -2342,26 +2262,29 @@
                     (yas-minor-mode)
                     (cljr-add-keybindings-with-prefix "C-c C-m"))))
 
-      (setq cljr-auto-sort-ns nil
-            cljr-favor-prefix-notation nil)
-
       (message "Done loading local init-clojure")
 
       (provide 'init-clojure)
     #+END_SRC
 
-*** init-cider
+*** Cider
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-cider.el
       (message "Loading local init-cider")
 
-      (require 'init-clojure)
-
-      (require-package 'cider)
-      (require-package 'ac-cider)
-
-      (setq nrepl-popup-stacktraces nil)
-
-      (after-load 'cider
+      (use-package cider
+        :ensure t
+        :init
+        (setq cider-repl-history-file "~/.emacs.d/cider-history"
+            cider-repl-use-pretty-printing t
+            cider-repl-use-clojure-font-lock t
+            cider-repl-result-prefix ";; => "
+            cider-repl-wrap-history t
+            cider-repl-history-size 3000
+            nrepl-popup-stacktraces nil)
+        :config
+        (require 'init-clojure)
+        (use-package ac-cider
+          :ensure t)
         (add-hook 'cider-repl-mode-hook 'ac-cider-setup)
         (add-hook 'cider-mode-hook 'ac-cider-setup)
         (after-load 'auto-complete
@@ -2372,18 +2295,10 @@
                   'set-auto-complete-as-completion-at-point-function)
         (add-hook 'cider-repl-mode-hook 'subword-mode)
         (add-hook 'cider-repl-mode-hook 'paredit-mode)
-        (define-key cider-mode-map (kbd "C-c C-d") 'ac-cider-popup-doc)
-
-        ;; nrepl isn't based on comint
         (add-hook 'cider-repl-mode-hook
-                  (lambda () (setq show-trailing-whitespace nil))))
-
-      (setq cider-repl-history-file "~/.emacs.d/cider-history"
-            cider-repl-use-pretty-printing t
-            cider-repl-use-clojure-font-lock t
-            cider-repl-result-prefix ";; => "
-            cider-repl-wrap-history t
-            cider-repl-history-size 3000)
+                  (lambda () (setq show-trailing-whitespace nil)))
+        :bind (:map cider-mode-map
+                    ("C-c C-d" . ac-cider-popup-doc)))
 
       (message "Done loading local init-cider")
 
@@ -2397,55 +2312,38 @@
    (require 'init-sql)
    #+END_SRC
 
-*** init-sql.el
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-sql.el
-      (message "Loading local init-sql")
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-sql.el
+     (message "Loading local init-sql")
 
-      (require-package 'sql-indent)
-      (after-load 'sql
-        (require 'sql-indent))
+     (defun sanityinc/pop-to-sqli-buffer ()
+       "Switch to the corresponding sqli buffer."
+       (interactive)
+       (if sql-buffer
+           (progn
+             (pop-to-buffer sql-buffer)
+             (goto-char (point-max)))
+         (sql-set-sqli-buffer)
+         (when sql-buffer
+           (sanityinc/pop-to-sqli-buffer))))
 
-      (defun sanityinc/pop-to-sqli-buffer ()
-        "Switch to the corresponding sqli buffer."
-        (interactive)
-        (if sql-buffer
-            (progn
-              (pop-to-buffer sql-buffer)
-              (goto-char (point-max)))
-          (sql-set-sqli-buffer)
-          (when sql-buffer
-            (sanityinc/pop-to-sqli-buffer))))
+     (use-package sql
+       :commands (sql-mode sql-connect)
+       :init
+       (setq-default sql-input-ring-file-name
+                   (expand-file-name ".sqli_history" user-emacs-directory))
+       :config
+       (use-package sql-indent
+         :ensure t)
+       (:require 'sql-indent)
+       (add-hook 'sql-interactive-mode-hook 'sanityinc/never-indent)
+       (after-load 'page-break-lines
+         (push 'sql-mode page-break-lines-modes))
+       (bind-key "C-c C-z" sanityinc/pop-to-sqli-buffer sql-mode-map))
 
-      (after-load 'sql
-        (define-key sql-mode-map (kbd "C-c C-z") 'sanityinc/pop-to-sqli-buffer)
-        (add-hook 'sql-interactive-mode-hook 'sanityinc/never-indent)
-        (when (package-installed-p 'dash-at-point)
-          (defun sanityinc/maybe-set-dash-db-docset ()
-            (when (eq sql-product 'postgres)
-              (set (make-local-variable 'dash-at-point-docset) "psql")))
+     (message "Done loading local init-sql")
 
-          (add-hook 'sql-mode-hook 'sanityinc/maybe-set-dash-db-docset)
-          (add-hook 'sql-interactive-mode-hook 'sanityinc/maybe-set-dash-db-docset)
-          (defadvice sql-set-product (after set-dash-docset activate)
-            (sanityinc/maybe-set-dash-db-docset))))
-
-      (setq-default sql-input-ring-file-name
-                    (expand-file-name ".sqli_history" user-emacs-directory))
-
-      ;; See my answer to https://emacs.stackexchange.com/questions/657/why-do-sql-mode-and-sql-interactive-mode-not-highlight-strings-the-same-way/673
-      (defun sanityinc/font-lock-everything-in-sql-interactive-mode ()
-        (unless (eq 'oracle sql-product)
-          (sql-product-font-lock nil nil)))
-      (add-hook 'sql-interactive-mode-hook 'sanityinc/font-lock-everything-in-sql-interactive-mode)
-
-
-      (after-load 'page-break-lines
-        (push 'sql-mode page-break-lines-modes))
-
-      (message "Done loading local init-sql")
-
-      (provide 'init-sql)
-    #+END_SRC
+     (provide 'init-sql)
+   #+END_SRC
 
 * Version Control
   Setup version control stuff
@@ -2454,24 +2352,44 @@
     (require 'init-vc)
 
   #+END_SRC
-** init-vc.el
-   #+BEGIN_SRC emacs-lisp :tangle lisp/init-vc.el
-     (message "Loading local init-vc")
 
-     (require-package 'gh)
-     (require-package 'git-commit)
-     (require-package 'git-lens)
-     (require-package 'git-timemachine)
-     (require-package 'github-browse-file)
-     (require-package 'github-clone)
-     (require-package 'gitignore-mode)
-     (require-package 'magit)
-     (require-package 'magit-popup)
-     (require-package 'magit-rockstar)
+  #+BEGIN_SRC emacs-lisp :tangle lisp/init-vc.el
+    (message "Loading local init-vc")
 
-     (message "Done loading local init-vc")
+    (use-package gh
+      :ensure t)
 
-     (provide 'init-vc)
+    (use-package git-commit
+      :ensure t)
+
+    (use-package git-lens
+      :ensure t)
+
+    (use-package git-timemachine
+      :ensure t)
+
+    (use-package github-browse-file
+      :ensure t)
+
+    (use-package github-clone
+      :ensure t)
+
+    (use-package gitignore-mode
+      :ensure t)
+
+    (use-package magit
+      :ensure t
+      :commands (magit-status))
+
+    (use-package magit-popup
+      :ensure t)
+
+    (use-package magit-rockstar
+      :ensure t)
+
+    (message "Done loading local init-vc")
+
+    (provide 'init-vc)
    #+END_SRC
 * Key bindings
    I'm never sure where to put my custom key bindings. Sometimes, I put them
@@ -2546,30 +2464,16 @@
      (require 'init-server)
    #+END_SRC
 
-*** init-server
-    Seem to run into some problems on my OSX due to directory permissions. Seems like
-    this may be related to the default umask. Anyway, resulted in being unable to
-    start the emacs server as we would get a message about the socket directory being
-    unsafe.
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-server.el
+     (message "Loading local init-server")
 
-    Solved the problem by moving the server socket directory to be under
-    : ~/.emacs.d/server/socket
-    and ensuring the /server/ and /socket/ directories only had rwx permissions for
-    the user
+     (use-package server
+       :config
+       (server-start))
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-server.el
-      (message "Loading local init-server")
+     (message "Done loading local init-server")
 
-      ;; (when *is-a-mac*
-      ;;   (setq server-socket-dir (expand-file-name (format "server/emacs%d" (user-uid)) user-emacs-directory)))
-
-      (require 'server)
-
-      (server-start)
-
-      (message "Done loading local init-server")
-
-      (provide 'init-server)
+     (provide 'init-server)
     #+END_SRC
 
 * Edit Server
@@ -2577,19 +2481,19 @@
    #+BEGIN_SRC emacs-lisp
    (require 'init-edit-server)
    #+END_SRC
-**** init-edit-server.el
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-edit-server.el
-       (message "Loading local init-edit-server")
 
-       (require-package 'edit-server)
+  #+BEGIN_SRC emacs-lisp :tangle lisp/init-edit-server.el
+    (message "Loading local init-edit-server")
 
-       (after-load 'edit-server
-         (edit-server-start))
+    (use-package edit-server
+      :ensure t
+      :config
+      (edit-server-start))
 
-       (message "Done loading local init-edit-server")
+    (message "Done loading local init-edit-server")
 
-       (provide 'init-edit-server)
-     #+END_SRC
+    (provide 'init-edit-server)
+   #+END_SRC
 
 * Convert to Text
    This is a utility to convert some document formats to plain text. I wrote this
