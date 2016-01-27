@@ -672,9 +672,9 @@
 
      (if *is-a-mac*
          (set-face-attribute 'default nil
-                             :foundry "apple"
-                             :family "Menlo"
-                             :height 260)
+                             :foundry nil
+                             :family "Source Code Pro"
+                             :height 280)
        (set-face-attribute 'default nil
                            :foundry "adobe"
                            :family "Source Code Pro"
@@ -1419,6 +1419,9 @@
 
     (use-package powerline
       :ensure t
+      :init
+      (setq powerline-display-mule-info nil
+            powerline-display-buffer-size nil)
       :config (powerline-default-theme))
 
     ;; (setq-default header-line-format mode-line-format)
@@ -1446,9 +1449,12 @@
       (require 'init-spelling))
    #+END_SRC
 
-*** init-flyspell.el
+*** Flyspell
+
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-flyspell.el
       (message "Loading local init-flyspell")
+
+      (require 'flyspell)
 
       ;; Add spell-checking in comments for all programming language modes
       (if (fboundp 'prog-mode)
@@ -1481,7 +1487,7 @@
 
     #+END_SRC
 
-*** init-spelling.el
+*** ISpell
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-spelling.el
       (message "Loading local init-spelling")
 
@@ -1512,237 +1518,122 @@
 
     #+END_SRC
 
-**** Add package and archives
-    Start by getting required package. I'm using the org-plus-contrib package from
-    the org repository
+*** Add package and archives
+   Start by getting required package. I'm using the org-plus-contrib package from
+   the org repository
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (require-package 'org-plus-contrib)
-      (require-package 'org-fstree)
-      (require-package 'org-bullets)
-
-    #+END_SRC
-
-**** Some OS X packages
-     If running under OS X, there are a couple of additional packages we need
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (when *is-a-mac*
-        (require 'org-mac-link)
-        (autoload 'org-mac-grab-link "org-mac-link" nil t)
-        (require 'org-mac-iCal))
-    #+END_SRC
-
-**** Look and feel
-     Set some eye candy
-
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-       (add-hook 'org-mode-hook 'org-bullets-mode)
-
-       (font-lock-add-keywords 'org-mode
-                               '(("^ +\\([-*]\\) "
-                                  (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-
-     #+END_SRC
-**** Basic setup
-    I like to keep all my org files in Dropbox so that they are available on all my
-    systems. Lets start by setting some basic stuff
-
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-catch-invisible-edits 'smart
-            org-completion-use-ido t
-            org-ctrl-k-protect-subtree t
-            org-default-notes-file "~/Dropbox/org/notes.org"
-            org-directory "~/Dropbox/org"
-            org-hide-block-startup t
-            org-html-validation-link nil
-            org-list-allow-alphabetical t
-            org-list-description-max-indent 5
-            org-list-indent-offset 2
-            org-log-done 'time
-            org-log-into-drawer t
-            org-log-refile 'time
-            org-pretty-entities t
-            org-startup-align-all-tables t
-            org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
-    #+END_SRC
-
-**** Org refile
-    Next, we setup org refile behaviour. I log all new todos, notes, journal enteries
-    etc into a file called refile.org. Later, I refile these entries to the proper
-    location. This allows me to take quick notes and get back to what I was working
-    on with minimal disturbance.
-
-    Refile targets include this file and any file contributing to the agenda up to 5
-    levels deep
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-refile-targets (quote ((nil :maxlevel . 5)
-                                       (org-agenda-files :maxlevel . 5))))
-    #+END_SRC
-
-    Targets start with the file name - allows creating level 1 tasks
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-refile-use-outline-path (quote file))
-    #+END_SRC
-
-    Targets complete in steps so we start with filename, TAB shows the next level of
-    targets etc
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-outline-path-complete-in-steps t
-            org-refile-allow-creating-parent-nodes 'confirm)
-    #+END_SRC
-
-**** Org pomadoro
-    I like to use the pomadoro technique for getting work done.
-    See [[https://en.wikipedia.org/wiki/Pomodoro_Technique][Pomadoro Technique]] for details. There is an org package to help with applying
-    this technique using org-mode
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (require-package 'org-pomodoro)
-      (after-load 'org-agenda
-        (define-key org-agenda-mode-map (kbd "P") 'org-pomodoro))
-    #+END_SRC
-
-**** Org elements
-    Some key bindings to help with handling org elements
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (after-load 'org
-        (define-key org-mode-map (kbd "C-M-<up>") 'org-up-element)
-        (when *is-a-mac*
-          (define-key org-mode-map (kbd "M-h") nil))
-        (define-key org-mode-map (kbd "C-M-<up>") 'org-up-element)
-        (when *is-a-mac*
-          (define-key org-mode-map (kbd "C-c g") 'org-mac-grab-link)))
-    #+END_SRC
-
-**** Org-babel
-    Select the source languages we will use with org-babel
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (after-load 'org
-        (org-babel-do-load-languages
-         'org-babel-load-languages
-         '(
-           ;;(R . t)
-           (ditaa . t)
-           (dot . t)
-           (emacs-lisp . t)
-           ;;(gnuplot . t)
-           ;;(haskell . nil)
-           (latex . t)
-           (ledger . t)
-           ;;(ocaml . nil)
-           ;;(octave . t)
-           (python . t)
-           (ruby . t)
-           (screen . nil)
-           (sh . t)
-           (sql . nil)
-           (sqlite . t))))
-    #+END_SRC
-
-    Some useful babel templates to make it easier to insert source blocks
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (after-load 'org
-        ;; add <p for python expansion
-        (add-to-list 'org-structure-template-alist
-                     '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-                       "<src lang=\"python\">\n?\n</src>"))
-        ;; add <el for emacs-lisp expansion
-        (add-to-list 'org-structure-template-alist
-                     '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-                       "<src lang=\"emacs-lisp\">\n?\n</src>")))
-    #+END_SRC
-
-**** Org capture
-    Setup my capture templates
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-capture-templates
-            (quote
-             (("t" "todo" entry
-               (file "~/Dropbox/org/refile.org")
-               "* TODO %?
-                        %U
-                        %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("r" "respond" entry
-               (file "~/Dropbox/org/refile.org")
-               "* NEXT Respond to %:from on %:subject
-                        SCHEDULED: %t
-                        %U
-                        %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("n" "note" entry
-               (file "~/Dropbox/org/refile.org")
-               "* %? :NOTE:
-                        %U
-                        %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("j" "journal" entry
-               (file+datetree "~/Dropbox/org/journal.org")
-               "* %?
-                        %U" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("p" "phone" entry
-               (file "~/Dropbox/org/refile.org")
-               "* PHONE %? :PHONE:
-                        %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
-    #+END_SRC
-
-**** Org TODO
-    Setup TODO keywords and order
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-todo-keywords
-            (quote
-             ((sequence "TODO(t)"
-                        "NEXT(n)"
-                        "STARTED(s!)"
-                        "DELEGATED(w@/!)"
-                        "HOLD(h@/!)"
-                        "|"
-                        "CANCELLED(c@)"
-                        "DONE(d!)"))))
-    #+END_SRC
-
-    Basic todo config
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-enforce-todo-checkbox-dependencies t
-            org-enforce-todo-dependencies t)
-    #+END_SRC
-
-**** Org Agenda
-    Setup custom agenda reports
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-agenda-custom-commands
-            (quote
-             (("n" "Agenda and all TODO's"
-               ((agenda "" nil)
-                (alltodo "" nil))
-               nil)
-              ("wr" "Weekly Report"
-               ((todo "DONE|CANCELLED"
-                      ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-                (todo "STARTED|NEXT"
-                      ((org-agenda-overriding-header "WIP")))
-                (todo "HOLD|DELEGATED"
-                      ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-                (todo "TODO"
-                      ((org-agenda-overriding-header "Task Backlog"))))
-               nil nil))))
-    #+END_SRC
-
-    Basic agenda settings
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq  org-agenda-files (quote ("~/Dropbox/org/personal.org"
-                                      "~/Dropbox/org/planner.org"
-                                      "~/Dropbox/org/policy.org"
-                                      "~/Dropbox/org/projects.org"
-                                      "~/Dropbox/org/refile.org"
-                                      "~/Dropbox/org/security.org"
-                                      "~/Dropbox/org/urs.org"
-                                      "~/Dropbox/org/storage.org"
-                                      "~/Dropbox/org/iam.org"))
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+     (use-package org-plus-contrib
+       :ensure t
+       :bind (("C-c l" . org-store-link)
+              ("C-c a" . org-agenda)
+              ("C-c b" . org-iswitchb)
+              ("C-c r" . org-capture))
+       :init
+       (setq org-agenda-files '("~/Dropbox/org/personal.org"
+                                "~/Dropbox/org/planner.org"
+                                "~/Dropbox/org/policy.org"
+                                "~/Dropbox/org/projects.org"
+                                "~/Dropbox/org/refile.org"
+                                "~/Dropbox/org/security.org"
+                                "~/Dropbox/org/urs.org"
+                                "~/Dropbox/org/storage.org"
+                                "~/Dropbox/org/iam.org")
+             org-agenda-remove-tags t
              org-agenda-skip-unavailable-files t
              org-agenda-span 14
-             org-agenda-remove-tags t)
-    #+END_SRC
-**** Org Latex exports
-     I use the beamer and hitec latex classes
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+             org-catch-invisible-edits 'smart
+             org-clock-in-resume t
+             org-clock-out-remove-zero-time-clocks t
+             org-clock-persist t
+             org-clock-persistence-insinuate t
+             org-time-clocksum-format '(:hours "%d" :require-hours t
+                                               :minutes ":%02d" :require-minutes t)
+             org-completion-use-ido t
+             org-ctrl-k-protect-subtree t
+             org-default-notes-file "~/Dropbox/org/notes.org"
+             org-directory "~/Dropbox/org"
+             org-enforce-todo-checkbox-dependencies t
+             org-enforce-todo-dependencies t
+             org-export-backends '(ascii beamer html
+                                         icalendar latex
+                                         md odt org koma-letter
+                                         taskjuggler)
+             org-export-kill-product-buffer-when-displayed t
+             org-export-with-sub-superscripts nil
+             org-export-with-tags nil
+             org-hide-block-startup t
+             org-html-validation-link nil
+             org-list-allow-alphabetical t
+             org-list-description-max-indent 5
+             org-list-indent-offset 2
+             org-log-done 'time
+             org-log-into-drawer t
+             org-log-refile 'time
+             org-outline-path-complete-in-steps t
+             org-pretty-entities t
+             org-refile-allow-creating-parent-nodes 'confirm
+             org-refile-targets (quote ((nil :maxlevel . 5)
+                                        (org-agenda-files :maxlevel . 5)))
+             org-refile-use-outline-path (quote file)
+             org-startup-align-all-tables t
+             org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
+
+
+       (setq org-capture-templates
+             (quote
+              (("t" "todo" entry
+                (file "~/Dropbox/org/refile.org")
+                "* TODO %?
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+               ("r" "respond" entry
+                (file "~/Dropbox/org/refile.org")
+                "* NEXT Respond to %:from on %:subject
+                            SCHEDULED: %t
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+               ("n" "note" entry
+                (file "~/Dropbox/org/refile.org")
+                "* %? :NOTE:
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+               ("j" "journal" entry
+                (file+datetree "~/Dropbox/org/journal.org")
+                "* %?
+                            %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+               ("p" "phone" entry
+                (file "~/Dropbox/org/refile.org")
+                "* PHONE %? :PHONE:
+                            %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+       (setq org-todo-keywords
+             (quote
+              ((sequence "TODO(t)"
+                         "NEXT(n)"
+                         "STARTED(s!)"
+                         "DELEGATED(w@/!)"
+                         "HOLD(h@/!)"
+                         "|"
+                         "CANCELLED(c@)"
+                         "DONE(d!)"))))
+
+       (setq org-agenda-custom-commands
+             (quote
+              (("n" "Agenda and all TODO's"
+                ((agenda "" nil)
+                 (alltodo "" nil))
+                nil)
+               ("wr" "Weekly Report"
+                ((todo "DONE|CANCELLED"
+                       ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+                 (todo "STARTED|NEXT"
+                       ((org-agenda-overriding-header "WIP")))
+                 (todo "HOLD|DELEGATED"
+                       ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+                 (todo "TODO"
+                       ((org-agenda-overriding-header "Task Backlog"))))
+                nil nil))))
+
        (setq org-latex-classes
              '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
                 ("\\section{%s}" . "\\section*{%s}")
@@ -1767,150 +1658,146 @@
                 ("\\subsection{%s}" . "\\subsection*{%s}")
                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
                ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
-     #+END_SRC
 
-     use the lualatex stuff to generate PDFs
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-latex-pdf-process
-            '("lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"))
-     #+END_SRC
+       (setq org-latex-pdf-process
+             '("lualatex -interaction nonstopmode -output-directory %o %f"
+               "lualatex -interaction nonstopmode -output-directory %o %f"
+               "lualatex -interaction nonstopmode -output-directory %o %f"))
 
-**** org Koma Letter
-
-**** Org Taskjuggler
-     I use the ability to export an org file into taskjuggler format for project
-     planning and creating pretty graphs for pointy-haired bosses. Unfortunately, it
-     appears taskjuggler doesn't yet support the ability to set global project
-     settings. I therefore set the org-taskjuggler-default-global-header, which will
-     not work, but at least puts these values in the generated file. I can then move
-     them into the right place manually.
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
        (setq org-taskjuggler-default-global-header
              " timingresolution 60min
-               timezone \"Australia/Sydney\"
-               dailyworkinghours 7
-               workinghours mon - fri 9:00 - 13:00, 14:00 - 17:00
-               workinghours sat, sun off
-             ")
-     #+END_SRC
+                   timezone \"Australia/Sydney\"
+                   dailyworkinghours 7
+                   workinghours mon - fri 9:00 - 13:00, 14:00 - 17:00
+                   workinghours sat, sun off
+                 "
+             org-taskjuggler-default-project-duration 365)
 
-     Set default project duration to 1 year
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (setq org-taskjuggler-default-project-duration 365)
-     #+END_SRC
-
-     Set default report format
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
        (setq org-taskjuggler-default-reports
-             (quote
-              ("textreport report \"Plan\" {
-               formats html
-               header '== %title =='
+             '("textreport report \"Plan\" {
+                   formats html
+                   header '== %title =='
 
-               center -8<-
-                 [#Plan Plan] | [#Resource_Allocation Resource Allocation]
-                 ----
-                 === Plan ===
-                 <[report id=\"plan\"]>
-                 ----
-                 === Resource Allocation ===
-                 <[report id=\"resourceGraph\"]>
-               ->8-
-             }
+                   center -8<-
+                     [#Plan Plan] | [#Resource_Allocation Resource Allocation]
+                     ----
+                     === Plan ===
+                     <[report id=\"plan\"]>
+                     ----
+                     === Resource Allocation ===
+                     <[report id=\"resourceGraph\"]>
+                   ->8-
+                 }
 
-             # A traditional Gantt chart with a project overview.
-             taskreport plan \"\" {
-               headline \"Project Plan\"
-               columns bsi, name, start, end, effort, chart { width 1500 }
-               loadunit shortauto
-               hideresource 1
-             }
+                 # A traditional Gantt chart with a project overview.
+                 taskreport plan \"\" {
+                   headline \"Project Plan\"
+                   columns bsi, name, start, end, effort, chart { width 1500 }
+                   loadunit shortauto
+                   hideresource 1
+                 }
 
-             # A graph showing resource allocation. It identifies whether each
-             # resource is under- or over-allocated for.
-             resourcereport resourceGraph \"\" {
-               headline \"Resource Allocation Graph\"
-               columns no, name, effort, weekly { width 1500 }
-               loadunit shortauto
-               hidetask ~(isleaf() & isleaf_())
-               sorttasks plan.start.up
-             }")))
-     #+END_SRC
-***** TODO Find fix for taskjuggler project default settings
+                 # A graph showing resource allocation. It identifies whether each
+                 # resource is under- or over-allocated for.
+                 resourcereport resourceGraph \"\" {
+                   headline \"Resource Allocation Graph\"
+                   columns no, name, effort, weekly { width 1500 }
+                   loadunit shortauto
+                   hidetask ~(isleaf() & isleaf_())
+                   sorttasks plan.start.up
+                 }"))
+       :config
+       (bind-key "C-M-<up>" 'org-up-element)
+       (font-lock-add-keywords 'org-mode
+                               '(("^ +\\([-*]\\) "
+                                  (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+       (org-babel-do-load-languages
+        'org-babel-load-languages
+        '(
+          ;;(R . t)
+          (ditaa . t)
+          (dot . t)
+          (emacs-lisp . t)
+          ;;(gnuplot . t)
+          ;;(haskell . nil)
+          (latex . t)
+          (ledger . t)
+          ;;(ocaml . nil)
+          ;;(octave . t)
+          (python . t)
+          (ruby . t)
+          (screen . nil)
+          (sh . t)
+          (sql . nil)
+          (sqlite . t)))
+       (add-to-list 'org-structure-template-alist
+                    '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+                      "<src lang=\"python\">\n?\n</src>"))
+       ;; add <el for emacs-lisp expansion
+       (add-to-list 'org-structure-template-alist
+                    '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+                      "<src lang=\"emacs-lisp\">\n?\n</src>")))
 
-**** Org clocking
-     Basic clock config
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-       (setq org-clock-in-resume t
-             org-clock-out-remove-zero-time-clocks t
-             org-clock-persist t
-             org-clock-persistence-insinuate t
-             org-time-clocksum-format '(:hours "%d" :require-hours t
-                                               :minutes ":%02d" :require-minutes t))
-     #+END_SRC
+     (use-package org-bullets
+       :ensure t
+       :config
+       (add-hook 'org-mode-hook 'org-bullets-mode))
 
-     Remove empty drawers on clock out
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-       ;; Remove empty LOGBOOK drawers on clock out
-       ;; (defun tx-remove-empty-drawer-on-clock-out ()
-       ;;   (interactive)
-       ;;   (save-excursion
-       ;;     (beginning-of-line 0)
-       ;;     (org-remove-empty-drawer-at "LOGBOOK" (point))))
+     (use-package org-fstree)
+   #+END_SRC
 
-       ;; (add-hook 'org-clock-out-hook 'tx-remove-empty-drawer-on-clock-out 'append)
-     #+END_SRC
+*** Some OS X packages
+    If running under OS X, there are a couple of additional packages we need
 
-**** Org export
-     #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-       (setq org-export-backends '(ascii beamer html
-                                         icalendar latex
-                                         md odt org koma-letter
-                                         taskjuggler)
-             org-export-kill-product-buffer-when-displayed t
-             org-export-with-sub-superscripts nil
-             org-export-with-tags nil)
-     #+END_SRC
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+     (when *is-a-mac*
+       (use-package org-mac-link
+         :ensure t
+         :config
+         (bind-key "C-c g" 'org-mac-grb-link org-mode-map)
+         (bind-key "M-h" nil))
+       (use-package org-mac-iCal))
+   #+END_SRC
 
-**** Org key bindings
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (global-set-key "\C-cl" 'org-store-link)
-      (global-set-key "\C-ca" 'org-agenda)
-      (global-set-key "\C-cb" 'org-iswitchb)
-      (global-set-key "\C-cr" 'org-capture)
+*** Org pomadoro
+   I like to use the pomadoro technique for getting work done.
+   See [[https://en.wikipedia.org/wiki/Pomodoro_Technique][Pomadoro Technique]] for details. There is an org package to help with applying
+   this technique using org-mode
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+     (use-package org-pomodoro
+       :ensure t
+       :config
+       (after-load 'org-agenda
+         (define-key org-agenda-mode-map (kbd "P") 'org-pomodoro)))
+   #+END_SRC
 
-    #+END_SRC
+*** Provide
 
-**** Provide
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
+     (message "Done loading local init-org")
 
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-org.el
-      (message "Done loading local init-org")
+     (provide 'init-org)
 
-      (provide 'init-org)
+   #+END_SRC
 
-    #+END_SRC
 ** Markdown
    #+BEGIN_SRC emacs-lisp
    (require 'init-markdown)
    #+END_SRC
 
-*** init-markdown.el
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-markdown.el
-      (message "Load local init-markdown")
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-markdown.el
+     (message "Load local init-markdown")
 
-      (require-package 'markdown-mode)
+     (use-package markdown-mode
+       :defer t
+       :config
+       (after-load 'whitespace-cleanup-mode
+         (push 'markdown-mode whitespace-cleanup-mode-ignore-mode)))
 
-      (after-load 'whitespace-cleanup-mode
-        (push 'markdown-mode whitespace-cleanup-mode-ignore-modes))
+     (message "Done loading local init-markdown")
 
-
-      (message "Done loading local init-markdown")
-
-      (provide 'init-markdown)
-    #+END_SRC
-
+     (provide 'init-markdown)
+   #+END_SRC
 
 ** NXML
    - Reference [[http://sinewalker.wordpress.com/2008/06/26/pretty-printing-xml-with-emacs-nxml-mode/][NXML mode pretty printing]]
@@ -1919,8 +1806,7 @@
      (require 'init-nxml)
    #+END_SRC
 
-*** init-nxml.el
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-nxml.el
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-nxml.el
       (message "Loading local init-nxml")
 
       (add-auto-mode
@@ -1981,19 +1867,21 @@
    (require 'init-html)
    #+END_SRC
 
-*** init-html.el
     #+BEGIN_SRC emacs-lisp :tangle lisp/init-html.el
       (message "Loading local init-html")
 
-      (require-package 'tidy)
-      (add-hook 'html-mode-hook (lambda ()
-                                  (tidy-build-menu html-mode-map)))
-
-      (require-package 'tagedit)
-      (after-load 'sgml-mode
-        (tagedit-add-paredit-like-keybindings)
-        (add-hook 'sgml-mode-hook (lambda ()
-                                    (tagedit-mode 1))))
+      (use-package tidy
+        :defer t
+        :config
+        (add-hook 'html-mode-hook (lambda ()
+                                  (tidy-build-menu html-mode-map))))
+      (use-package tagedit
+        :defer t
+        :config
+        (after-load 'sgml-mode
+          (tagedit-add-paredit-like-keybindings)
+          (add-hook 'sgml-mode-hook (lambda ()
+                                      (tagedit-mode 1)))))
 
       (add-auto-mode 'html-mode "\\.(jsp|tmpl)\\'")
 
@@ -2008,107 +1896,65 @@
    (require 'init-css)
    #+END_SRC
 
-*** init-css.el
-    #+BEGIN_SRC emacs-lisp :tangle lisp/init-css.el
-      (message "Loading local init-css")
+   #+BEGIN_SRC emacs-lisp :tangle lisp/init-css.el
+     (message "Loading local init-css")
 
-      ;;; Colourise CSS colour literals
-      (when (maybe-require-package 'rainbow-mode)
-        (dolist (hook '(css-mode-hook html-mode-hook sass-mode-hook))
-          (add-hook hook 'rainbow-mode)))
+     ;;; Colourise CSS colour literals
+     (when (maybe-require-package 'rainbow-mode)
+       (dolist (hook '(css-mode-hook html-mode-hook sass-mode-hook))
+         (add-hook hook 'rainbow-mode)))
 
-      ;;; Embedding in html
-      ;; (require-package 'mmm-mode)
-      ;; (after-load 'mmm-vars
-      ;;   (mmm-add-group
-      ;;    'html-css
-      ;;    '((css-cdata
-      ;;       :submode css-mode
-      ;;       :face mmm-code-submode-face
-      ;;       :front "<style[^>]*>[ \t\n]*\\(//\\)?<!\\[CDATA\\[[ \t]*\n?"
-      ;;       :back "[ \t]*\\(//\\)?]]>[ \t\n]*</style>"
-      ;;       :insert ((?j js-tag nil @ "<style type=\"text/css\">"
-      ;;                    @ "\n" _ "\n" @ "</style>" @)))
-      ;;      (css
-      ;;       :submode css-mode
-      ;;       :face mmm-code-submode-face
-      ;;       :front "<style[^>]*>[ \t]*\n?"
-      ;;       :back "[ \t]*</style>"
-      ;;       :insert ((?j js-tag nil @ "<style type=\"text/css\">"
-      ;;                    @ "\n" _ "\n" @ "</style>" @)))
-      ;;      (css-inline
-      ;;       :submode css-mode
-      ;;       :face mmm-code-submode-face
-      ;;       :front "style=\""
-      ;;       :back "\"")))
-      ;;   (dolist (mode (list 'html-mode 'nxml-mode))
-      ;;     (mmm-add-mode-ext-class mode "\\.r?html\\(\\.erb\\)?\\'" 'html-css)))
 
-      ;; ;;; SASS and SCSS
-      ;; (require-package 'sass-mode)
-      ;; (require-package 'scss-mode)
-      ;; (setq-default scss-compile-at-save nil)
-
-      ;; ;;; LESS
-      ;; (require-package 'less-css-mode)
-      ;; (when (featurep 'js2-mode)
-      ;;   (require-package 'skewer-less))
-
-      ;; ;;; Auto-complete CSS keywords
-      ;; (after-load 'auto-complete
-      ;;   (dolist (hook '(css-mode-hook sass-mode-hook scss-mode-hook))
-      ;;     (add-hook hook 'ac-css-mode-setup)))
-
-      ;;; Embedding in html
-      (require-package 'mmm-mode)
-      (after-load 'mmm-vars
-        (mmm-add-group
-         'html-css
-         '((css-cdata
-            :submode css-mode
-            :face mmm-code-submode-face
-            :front "<style[^>]*>[ \t\n]*\\(//\\)?<!\\[CDATA\\[[ \t]*\n?"
-            :back "[ \t]*\\(//\\)?]]>[ \t\n]*</style>"
-            :insert ((?j js-tag nil @ "<style type=\"text/css\">"
-                         @ "\n" _ "\n" @ "</style>" @)))
-           (css
-            :submode css-mode
-            :face mmm-code-submode-face
-            :front "<style[^>]*>[ \t]*\n?"
-            :back "[ \t]*</style>"
-            :insert ((?j js-tag nil @ "<style type=\"text/css\">"
-                         @ "\n" _ "\n" @ "</style>" @)))
-           (css-inline
-            :submode css-mode
-            :face mmm-code-submode-face
-            :front "style=\""
-            :back "\"")))
-        (dolist (mode (list 'html-mode 'nxml-mode))
-          (mmm-add-mode-ext-class mode "\\.r?html\\(\\.erb\\)?\\'" 'html-css)))
+     ;;; Embedding in html
+     (require-package 'mmm-mode)
+     (after-load 'mmm-vars
+       (mmm-add-group
+        'html-css
+        '((css-cdata
+           :submode css-mode
+           :face mmm-code-submode-face
+           :front "<style[^>]*>[ \t\n]*\\(//\\)?<!\\[CDATA\\[[ \t]*\n?"
+           :back "[ \t]*\\(//\\)?]]>[ \t\n]*</style>"
+           :insert ((?j js-tag nil @ "<style type=\"text/css\">"
+                        @ "\n" _ "\n" @ "</style>" @)))
+          (css
+           :submode css-mode
+           :face mmm-code-submode-face
+           :front "<style[^>]*>[ \t]*\n?"
+           :back "[ \t]*</style>"
+           :insert ((?j js-tag nil @ "<style type=\"text/css\">"
+                        @ "\n" _ "\n" @ "</style>" @)))
+          (css-inline
+           :submode css-mode
+           :face mmm-code-submode-face
+           :front "style=\""
+           :back "\"")))
+       (dolist (mode (list 'html-mode 'nxml-mode))
+         (mmm-add-mode-ext-class mode "\\.r?html\\(\\.erb\\)?\\'" 'html-css)))
 
 
 
-      ;;; SASS and SCSS
-      (require-package 'sass-mode)
-      (require-package 'scss-mode)
-      (setq-default scss-compile-at-save nil)
+     ;;; SASS and SCSS
+     (require-package 'sass-mode)
+     (require-package 'scss-mode)
+     (setq-default scss-compile-at-save nil)
 
 
-      ;;; LESS
-      (require-package 'less-css-mode)
-      (when (featurep 'js2-mode)
-        (require-package 'skewer-less))
+     ;;; LESS
+     (require-package 'less-css-mode)
+     (when (featurep 'js2-mode)
+       (require-package 'skewer-less))
 
 
-      ;;; Auto-complete CSS keywords
-      (after-load 'auto-complete
-        (dolist (hook '(css-mode-hook sass-mode-hook scss-mode-hook))
-          (add-hook hook 'ac-css-mode-setup)))
+     ;;; Auto-complete CSS keywords
+     (after-load 'auto-complete
+       (dolist (hook '(css-mode-hook sass-mode-hook scss-mode-hook))
+         (add-hook hook 'ac-css-mode-setup)))
 
 
-      (message "Done loading local init-css")
+     (message "Done loading local init-css")
 
-      (provide 'init-css)
+     (provide 'init-css)
 
     #+END_SRC
 
