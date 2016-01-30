@@ -54,9 +54,28 @@
       "t if emacs is running under OSX, nil otherwise")
   #+END_SRC
 
+  Set a constant to determine if spell checking is to be enabled
+
   #+BEGIN_SRC emacs-lisp
     (defconst *spell-check-support-enabled* t
       "t if we want spell checking support enabled, nil otherwise")
+  #+END_SRC
+
+  Force emacs to UTF-8 as the default.
+
+  #+BEGIN_SRC emacs-lisp
+    (prefer-coding-system 'utf-8)
+    (set-default-coding-systems 'utf-8)
+    (set-terminal-coding-system 'utf-8)
+    (set-keyboard-coding-system 'utf-8)
+    ;; backwards compatibility as default-buffer-file-coding-system
+    ;; is deprecated in 23.2.
+    (if (boundp 'buffer-file-coding-system)
+        (setq-default buffer-file-coding-system 'utf-8)
+      (setq default-buffer-file-coding-system 'utf-8))
+
+    ;; Treat clipboard input as UTF-8 string first; compound text next, etc.
+    (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
   #+END_SRC
 
 * Emacspeak
@@ -309,6 +328,58 @@
         (exec-path-from-shell-initialize)))
    #+END_SRC
 
+** Ido
+   #+BEGIN_SRC emacs-lisp
+     (use-package ido
+       :init
+       (setq ido-enable-flex-matching t)
+       (setq ido-everywhere t)
+       (setq ido-use-filename-at-point nil)
+       (setq ido-auto-merge-work-directories-length 0)
+       (setq ido-use-virtual-buffers t)
+       (setq ido-create-new-buffer 'always)
+       (setq ido-file-extensions-order '(".org" ".txt" ".clj" ".cljs" ".py" 
+                                         ".emacs" ".xml" ".el" ".cfg" ".cnf"))
+       (setq ido-default-buffer-method 'selected-window)
+       (setq ido-enable-dot-prefix t)
+       (add-hook 'ido-setup-hook (lambda ()
+                                   (define-key ido-completion-map [up]
+                                     'previous-history-element)))
+       :config
+       (ido-mode 1)
+       (use-package ido-ubiquitous
+         :ensure t
+         :config
+         (ido-ubiquitous-mode t))
+       (use-package smex
+         :ensure t
+         :init
+         (smex-initialize)
+         (setq smex-save-file (expand-file-name ".smex-items" user-emacs-directory))
+         (bind-key "M-x" 'smex)
+         (bind-key "M-X" 'smex-major-mode-commands)
+         (bind-key "C-c C-c M-x" 'execute-extended-command))
+
+     )
+   #+END_SRC
+** Recentf
+   Use recentf to find files I've opened recently quickly
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package recentf
+       :init
+       (setq recentf-max-saved-items 50)
+       :config
+       (defun ido-recentf-open ()
+         "Use `ido-completing-read' to \\[find-file] a recent file"
+         (interactive)
+         (if (find-file (ido-completing-read "Find recent file: " recentf-list))
+             (message "Opening file...")
+           (message "Aborting")))
+       (recentf-mode t)
+       (bind-key "C-x C-r" 'ido-recentf-open))
+   #+END_SRC
+
 ** Better Defaults
   Start with the better-defaults package as a base. See
   [[https://github.com/technomancy/better-defaults][better-defaults on GitHub]]
@@ -336,8 +407,9 @@
           delete-by-moving-to-trash t
           inhibit-startup-message t
           line-move-visual nil
-          message-log-max 2048
-          )
+          message-log-max 2048)
+    (setq kill-buffer-query-functions (remq 'process-kill-buffer-query-function
+                                            kill-buffer-query-functions))
     (setq-default save-place t
                   show-trailing-whitespace t
                   fill-column 80)
@@ -389,6 +461,36 @@
        (push 'browse-kill-ring-mode page-break-lines-modes))
    #+END_SRC
 
+** Fix the mark
+   Enable setting of mark without setting of transient mark mode
+
+   #+BEGIN_SRC emacs-lisp
+     (defun push-mark-no-activate ()
+       "Pushes `point' to `mark-ring' and does not activate the region
+        Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
+       (interactive)
+       (push-mark (point) t nil)
+       (message "Pushed mark to ring"))
+
+     (bind-key "C-`" 'pus-mark-no-activate)
+
+     (defun jump-to-mark ()
+       "Jumps to the local mark, respecting the `mark-ring' order.
+       This is the same as using \\[set-mark-command] with the prefix argument."
+       (interactive)
+       (set-mark-command 1))
+
+     (bind-key "M-`" 'jump-to-mark)
+
+     (defun exchange-point-and-mark-no-activate ()
+       "Identical to \\[exchange-point-and-mark] but will not activate the region."
+       (interactive)
+       (exchange-point-and-mark)
+       (deactivate-mark nil))
+
+     (define-key global-map [remap exchange-point-and-mark]
+       'exchange-point-and-mark-no-activate)
+   #+END_SRC
 ** Basic Modes
   Enable some modes I want on by default
 
@@ -716,6 +818,8 @@
      (use-package dired
        :init
        (setq dired-listing-switches "-la")
+       (add-hook 'dired-load-hook (lambda ()
+                                    (load "dired-x")))
        :config
        (use-package ls-lisp
          :init
@@ -726,6 +830,11 @@
        (use-package diff-hl
          :ensure t)
        (add-hook 'dired-mode-hook 'diff-hl-dired-mode))
+
+     (use-package find-dired
+       :init
+       (setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld")))
+
    #+END_SRC
 ** Spelling
     When running on OSX it is necessary to
@@ -1244,7 +1353,6 @@
 
         (defun conditionally-enable-paredit-mode ()
           "Enable paredit during lisp-related minibuffer commands."
-          (message "Called conditionally-enable-paredit-mode")
           (if (memq this-command paredit-minibuffer-commands)
               (enable-paredit-mode)))
 
