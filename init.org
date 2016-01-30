@@ -205,7 +205,7 @@
      (unless (package-installed-p 'use-package)
        (package-refresh-contents)
        (package-install 'use-package))
-
+     (setq use-package-verbose t)
      (eval-when-compile
        (require 'use-package))
      (require 'diminish)
@@ -221,6 +221,74 @@
        :config (fullframe list-packages quit-window))
    #+END_SRC
 
+* Support Functions
+  Some miscellaneous functions useful for tweaking emacs editing behaviour have
+  been placed in ~lisp/editing-tweaks.el~. 
+** Newline at end of line
+   A simple function stolen from [[http://github.com/purcell/emacs.d]] which
+   makes it easy to jump to a new indented line when within the above line
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el
+     (defun tx/newline-at-end-of-line ()
+       "Move to end of line, enter a newline, and reindent."
+       (interactive)
+       (move-end-of-line 1)
+       (newline-and-indent))
+   #+END_SRC
+
+** Open line after re-indent
+
+   Improved function to open a new line, also stolen from
+   [[http://github.com/purcell/emacs.d]]].
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el 
+     (defun sanityinc/open-line-with-reindent (n)
+       "A version of `open-line' which reindents the start and end positions.
+      If there is a fill prefix and/or a `left-margin', insert them
+      on the new line if the line would have been blank.
+      With arg N, insert N newlines."
+       (interactive "*p")
+       (let* ((do-fill-prefix (and fill-prefix (bolp)))
+              (do-left-margin (and (bolp) (> (current-left-margin) 0)))
+              (loc (point-marker))
+              ;; Don't expand an abbrev before point.
+              (abbrev-mode nil))
+         (delete-horizontal-space t)
+         (newline n)
+         (indent-according-to-mode)
+         (when (eolp)
+           (delete-horizontal-space t))
+         (goto-char loc)
+         (while (> n 0)
+           (cond ((bolp)
+                  (if do-left-margin (indent-to (current-left-margin)))
+                  (if do-fill-prefix (insert-and-inherit fill-prefix))))
+           (forward-line 1)
+           (setq n (1- n)))
+         (goto-char loc)
+         (end-of-line)
+         (indent-according-to-mode)))
+   #+END_SRC
+
+** Kill Back to Indentation
+   Kill the current line back to the indentation 
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el
+     (defun kill-back-to-indentation ()
+     "Kill from point back to the first non-whitespace character on the line."
+     (interactive)
+     (let ((prev-pos (point)))
+       (back-to-indentation)
+       (kill-region (point) prev-pos)))
+
+   #+END_SRC
+
+** Artefact 
+
+   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el
+   (provide 'editing-tweaks)
+   #+END_SRC
+
 * Some simple ELPA packages and basic defaults
   Load some basic elpa packages which don't require additional
   configuration. Also add some standard modes and tweak a few defaults.
@@ -231,6 +299,8 @@
    #+BEGIN_SRC emacs-lisp
     (use-package exec-path-from-shell
       :ensure t
+      :init
+      (setq exec-path-from-shell-check-startup-files nil)
       :config
       (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID"
                      "GPG_AGENT_INFO" "LANG" "LC_CTYPE"))
@@ -461,8 +531,8 @@
       :ensure t
       :config
       (diminish 'voice-lock-mode)
-      (diminish 'auto-fill-function)
-      (diminish 'emacs-lisp-mode "ELisp"))
+      (diminish 'auto-fill-function))
+
   #+END_SRC
 
 ** Scratch Buffers
@@ -693,6 +763,20 @@
        :diminish whitespace-cleanup-mode
        :config
        (global-whitespace-cleanup-mode t))
+   #+END_SRC
+** Rainbow Mode
+   #+BEGIN_SRC emacs-lisp
+     (use-package rainbow-mode
+       :ensure t
+       :commands (rainbow-mode))
+   #+END_SRC
+** Rainbow Delimiters 
+   #+BEGIN_SRC emacs-lisp
+     (use-package rainbow-delimiters 
+       :ensure t
+       :commands (rainbow-delimiters-mode
+                  rainbow-delimiters-mode-enable
+                  rainbow-delimiters-mode-disable))
    #+END_SRC
 * Web Browsing 
   Setup ~browse-url~ defaults
@@ -1131,6 +1215,132 @@
       :ensure t
       :commands (markdown-toc-generate-toc))
   #+END_SRC
+* Programming
+  Setup stuff most useful when writing code
+** Paredit
+   This mode was a little tricky at first, but now I'm use to it, I miss it when
+   it isn't there. 
+
+   #+BEGIN_SRC emacs-lisp
+      (use-package paredit
+        :ensure t
+        :diminish paredit-mode
+        :commands (enable-paredit-mode disable-paredit-mode paredit-mode)
+        :init
+        (defun maybe-map-paredit-newline ()
+          (unless (or (memq major-mode '(inferior-emacs-lisp-mode
+                                         cider-repl-mode))
+                      (minibufferp))
+            (local-set-key (kbd "RET") 'paredit-newline)))
+
+        (add-hook 'paredit-mode-hook 'maybe-map-paredit-newline)
+        :config
+        (defvar paredit-minibuffer-commands '(eval-expression
+                                              pp-eval-expression
+                                              eval-expression-with-eldoc
+                                              ibuffer-do-eval
+                                              ibuffer-do-view-and-eval)
+          "Interactive commands where paredit should be enabled in minibuffer.")
+
+        (defun conditionally-enable-paredit-mode ()
+          "Enable paredit during lisp-related minibuffer commands."
+          (message "Called conditionally-enable-paredit-mode")
+          (if (memq this-command paredit-minibuffer-commands)
+              (enable-paredit-mode)))
+
+        (add-hook 'minibuffer-setup-hook 'conditionally-enable-paredit-mode)
+        (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
+                               (kbd "C-M-<left>") (kbd "C-M-<right>")))
+          (define-key paredit-mode-map binding nil))
+        ;; Modify kill-sentence, which is easily confused with the kill-sexp
+        ;; binding, but doesn't preserve sexp structure
+        (define-key paredit-mode-map [remap kill-sentence] 'paredit-kill)
+        (define-key paredit-mode-map [remap backward-kill-sentence] nil))
+
+     (use-package paredit-everywhere
+       :ensure t
+       :commands (paredit-everywhere-mode)
+       :config
+       (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
+   #+END_SRC
+
+** Emacs Lisp
+   Configure lisp modes. 
+
+   Add the ~elisp-slime-nave~ package to get some nice nav functions from slime.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package elisp-slime-nav
+       :ensure t
+       :diminish elisp-slime-nav-mode
+       :config
+       (dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
+              (add-hook hook 'turn-on-elisp-slime-nav-mode)))
+   #+END_SRC
+
+   Add the ~lively~ package
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package lively
+       :ensure t
+       :commands (lively lively-region))
+   #+END_SRC
+
+   Use ~ipretty~ to improve display of eval results 
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package ipretty
+       :ensure t
+       :init
+       (defadvice pp-display-expression (after tx/make-read-only (expression out-buffer-name) activate)
+         "Enable `view-mode' in the output buffer - if any - so it can be closed with `\"q\"."
+         (when (get-buffer out-buffer-name)
+           (with-current-buffer out-buffer-name
+             (view-mode 1))))
+       :commands (ipretty-mode))
+   #+END_SRC
+
+   Setup ~lisp-mode~
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package lisp-mode
+       :init
+       (add-hook 'lisp-mode-hook 'rainbow-delimiters-mode)
+       (add-hook 'lisp-mode-hook 'enable-paredit-mode)
+       (setq-default initial-scratch-message ";; Elisp scratch buffer\n")
+
+       (defun setup-hippie-expand-for-elisp ()
+         "Locally set `hippie-expand' completion functions for use with Emacs Lisp."
+         (make-local-variable 'hippie-expand-try-functions-list)
+         (add-to-list 'hippie-expand-try-functions-list
+                      'try-complete-lisp-symbol t)
+         (add-to-list 'hippie-expand-try-functions-list
+                      'try-complete-lisp-symbol-partially t)
+         (add-to-list 'hippie-expand-try-functions-list
+                      'my/try-complete-lisp-symbol-without-namespace t))
+
+       (defun my-elisp-setup ()
+         (ipretty-mode 1)
+         (setup-hippie-expand-for-elisp)
+         (enable-paredit-mode))
+
+       (add-hook 'emacs-lisp-mode-hook 'my-elisp-setup)
+       (add-hook 'emacs-lisp-mode-hook (lambda () (setq mode-name "ELisp")))
+
+       :config
+       (rainbow-mode 1)
+       (add-hook 'after-save-hook  'check-parens nil t)
+       (defun tx/eval-last-sexp-or-region (prefix)
+         "Eval region from BEG to END if active, otherwise the last sexp."
+         (interactive "P")
+         (if (and (mark) (use-region-p))
+             (eval-region (min (point) (mark)) (max (point) (mark)))
+           (pp-eval-last-sexp prefix)))
+
+       (bind-key "M-:" 'pp-eval-expression)
+       (bind-key "C-x C-e" 'tx/eval-last-sexp-or-region emacs-lisp-mode-map))
+   #+END_SRC
+
 * Emacs Server
   Start the emacs server so that we can use emacsclient
 
