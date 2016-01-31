@@ -224,7 +224,7 @@
      (unless (package-installed-p 'use-package)
        (package-refresh-contents)
        (package-install 'use-package))
-     (setq use-package-verbose t)
+     ;;(setq use-package-verbose t)
      (eval-when-compile
        (require 'use-package))
      (require 'diminish)
@@ -462,7 +462,7 @@
        (push-mark (point) t nil)
        (message "Pushed mark to ring"))
 
-     (bind-key "C-`" 'pus-mark-no-activate)
+     (bind-key "C-`" 'push-mark-no-activate)
 
      (defun jump-to-mark ()
        "Jumps to the local mark, respecting the `mark-ring' order.
@@ -902,20 +902,19 @@
   #+END_SRC
 * Hippie Expand
   #+BEGIN_SRC emacs-lisp
-    (use-package hippie-expand
-      :init
-      (setq hippie-expand-try-functions-list
-            '(try-complete-file-name-partially
-              try-complete-file-name
-              yas-hippie-try-expand
-              try-expand-dabbrev
-              try-expand-dabbrev-all-buffers
-              try-expand-dabbrev-from-kill)))
+    (setq hippie-expand-try-functions-list
+          '(try-complete-file-name-partially
+            try-complete-file-name
+            yas-hippie-try-expand
+            try-expand-dabbrev
+            try-expand-dabbrev-all-buffers
+            try-expand-dabbrev-from-kill))
   #+END_SRC
 * Auto Complete
   #+BEGIN_SRC emacs-lisp
     (use-package auto-complete
       :ensure t
+      :diminish auto-complete
       :init
       (set-default 'ac-sources
                    '(
@@ -1221,183 +1220,183 @@
   package from the org repository
 
   #+BEGIN_SRC emacs-lisp 
-     (use-package org
-       :ensure org-plus-contrib
-       :demand t
-       :mode ("\\.org\\'" . org-mode)
-       :bind (("C-c l" . org-store-link)
-              ("C-c a" . org-agenda)
-              ("C-c b" . org-iswitchb)
-              ("C-c r" . org-capture))
-       :init
-       (setq org-agenda-files '("~/Dropbox/org/personal.org"
-                                "~/Dropbox/org/planner.org"
-                                "~/Dropbox/org/policy.org"
-                                "~/Dropbox/org/projects.org"
-                                "~/Dropbox/org/refile.org"
-                                "~/Dropbox/org/security.org"
-                                "~/Dropbox/org/urs.org"
-                                "~/Dropbox/org/storage.org"
-                                "~/Dropbox/org/iam.org")
-             org-agenda-remove-tags t
-             org-agenda-skip-unavailable-files t
-             org-agenda-span 14
-             org-catch-invisible-edits 'smart
-             org-clock-in-resume t
-             org-clock-out-remove-zero-time-clocks t
-             org-clock-persist t
-             org-clock-persistence-insinuate t
-             org-time-clocksum-format '(:hours "%d" :require-hours t
-                                               :minutes ":%02d" :require-minutes t)
-             org-completion-use-ido t
-             org-ctrl-k-protect-subtree t
-             org-default-notes-file "~/Dropbox/org/notes.org"
-             org-directory "~/Dropbox/org"
-             org-enforce-todo-checkbox-dependencies t
-             org-enforce-todo-dependencies t
-             org-export-backends '(ascii beamer html
-                                         icalendar latex
-                                         md odt org koma-letter
-                                         taskjuggler)
-             org-export-kill-product-buffer-when-displayed t
-             org-export-with-sub-superscripts nil
-             org-export-with-tags nil
-             org-hide-block-startup t
-             org-html-validation-link nil
-             org-list-allow-alphabetical t
-             org-list-description-max-indent 5
-             org-list-indent-offset 2
-             org-log-done 'time
-             org-log-into-drawer t
-             org-log-refile 'time
-             org-outline-path-complete-in-steps t
-             org-pretty-entities t
-             org-refile-allow-creating-parent-nodes 'confirm
-             org-refile-targets (quote ((nil :maxlevel . 5)
-                                        (org-agenda-files :maxlevel . 5)))
-             org-refile-use-outline-path (quote file)
-             org-startup-align-all-tables t
-             org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
-       (setq org-capture-templates
-             (quote
-              (("t" "todo" entry
-                (file "~/Dropbox/org/refile.org")
-                "* TODO %?
-                                 %U
-                                 %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-               ("r" "respond" entry
-                (file "~/Dropbox/org/refile.org")
-                "* NEXT Respond to %:from on %:subject
-                                 SCHEDULED: %t
-                                 %U
-                                 %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-               ("n" "note" entry
-                (file "~/Dropbox/org/refile.org")
-                "* %? :NOTE:
-                                 %U
-                                 %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-               ("j" "journal" entry
-                (file+datetree "~/Dropbox/org/journal.org")
-                "* %?
-                                 %U" :empty-lines-after 1 :clock-in t :clock-resume t)
-               ("p" "phone" entry
-                (file "~/Dropbox/org/refile.org")
-                "* PHONE %? :PHONE:
-                                 %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
-       (setq org-todo-keywords
-             (quote
-              ((sequence "TODO(t)"
-                         "NEXT(n)"
-                         "STARTED(s!)"
-                         "DELEGATED(w@/!)"
-                         "HOLD(h@/!)"
-                         "|"
-                         "CANCELLED(c@)"
-                         "DONE(d!)"))))
-       (setq org-agenda-custom-commands
-             (quote
-              (("n" "Agenda and all TODO's"
-                ((agenda "" nil)
-                 (alltodo "" nil))
-                nil)
-               ("wr" "Weekly Report"
-                ((todo "DONE|CANCELLED"
-                       ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-                 (todo "STARTED|NEXT"
-                       ((org-agenda-overriding-header "WIP")))
-                 (todo "HOLD|DELEGATED"
-                       ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-                 (todo "TODO"
-                       ((org-agenda-overriding-header "Task Backlog"))))
-                nil nil))))
-       (setq org-latex-classes
-             '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
-                ("\\section{%s}" . "\\section*{%s}")
-                ("\\subsection{%s}" . "\\subsection*{%s}")
-                ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-               ("article" "\\documentclass[a4paper,12pt]{hitec}"
-                ("\\section{%s}" . "\\section*{%s}")
-                ("\\subsection{%s}" . "\\subsection*{%s}")
-                ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-                ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-               ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
-                ("\\part{%s}" . "\\part*{%s}")
-                ("\\chapter{%s}" . "\\chapter*{%s}")
-                ("\\section{%s}" . "\\section*{%s}")
-                ("\\subsection{%s}" . "\\subsection*{%s}")
-                ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-               ("book" "\\documentclass[a4paper,12pt]{scrbook}"
-                ("\\part{%s}" . "\\part*{%s}")
-                ("\\chapter{%s}" . "\\chapter*{%s}")
-                ("\\section{%s}" . "\\section*{%s}")
-                ("\\subsection{%s}" . "\\subsection*{%s}")
-                ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-               ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
-       (setq org-latex-pdf-process
-             '("lualatex -interaction nonstopmode -output-directory %o %f"
-               "lualatex -interaction nonstopmode -output-directory %o %f"
-               "lualatex -interaction nonstopmode -output-directory %o %f"))
-       :config
-       (bind-key "C-M-<up>" 'org-up-element)
-       (org-babel-do-load-languages
-        'org-babel-load-languages
-        '(
-          ;;(R . t)
-          (ditaa . t)
-          (dot . t)
-          (emacs-lisp . t)
-          ;;(gnuplot . t)
-          ;;(haskell . nil)
-          (latex . t)
-          (ledger . t)
-          ;;(ocaml . nil)
-          ;;(octave . t)
-          (python . t)
-          (ruby . t)
-          (screen . nil)
-          (sh . t)
-          (sql . nil)
-          (sqlite . t)))
-       (add-to-list 'org-structure-template-alist
-                    '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-                      "<src lang=\"python\">\n?\n</src>"))
-       ;; add <el for emacs-lisp expansion
-       (add-to-list 'org-structure-template-alist
-                    '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-                      "<src lang=\"emacs-lisp\">\n?\n</src>")))
+    (use-package org
+      :ensure org-plus-contrib
+      :demand t
+      :mode ("\\.org\\'" . org-mode)
+      :bind (("C-c l" . org-store-link)
+             ("C-c a" . org-agenda)
+             ("C-c b" . org-iswitchb)
+             ("C-c r" . org-capture))
+      :init
+      (setq org-agenda-files '("~/Dropbox/org/personal.org"
+                               "~/Dropbox/org/planner.org"
+                               "~/Dropbox/org/policy.org"
+                               "~/Dropbox/org/projects.org"
+                               "~/Dropbox/org/refile.org"
+                               "~/Dropbox/org/security.org"
+                               "~/Dropbox/org/urs.org"
+                               "~/Dropbox/org/storage.org"
+                               "~/Dropbox/org/iam.org")
+            org-agenda-remove-tags t
+            org-agenda-skip-unavailable-files t
+            org-agenda-span 14
+            org-catch-invisible-edits 'smart
+            org-clock-in-resume t
+            org-clock-out-remove-zero-time-clocks t
+            org-clock-persist t
+            org-clock-persistence-insinuate t
+            org-time-clocksum-format '(:hours "%d" :require-hours t
+                                              :minutes ":%02d" :require-minutes t)
+            org-completion-use-ido t
+            org-ctrl-k-protect-subtree t
+            org-default-notes-file "~/Dropbox/org/notes.org"
+            org-directory "~/Dropbox/org"
+            org-enforce-todo-checkbox-dependencies t
+            org-enforce-todo-dependencies t
+            org-export-backends '(ascii beamer html
+                                        icalendar latex
+                                        md odt org koma-letter
+                                        taskjuggler)
+            org-export-kill-product-buffer-when-displayed t
+            org-export-with-sub-superscripts nil
+            org-export-with-tags nil
+            org-hide-block-startup t
+            org-html-validation-link nil
+            org-list-allow-alphabetical t
+            org-list-description-max-indent 5
+            org-list-indent-offset 2
+            org-log-done 'time
+            org-log-into-drawer t
+            org-log-refile 'time
+            org-outline-path-complete-in-steps t
+            org-pretty-entities t
+            org-refile-allow-creating-parent-nodes 'confirm
+            org-refile-targets (quote ((nil :maxlevel . 5)
+                                       (org-agenda-files :maxlevel . 5)))
+            org-refile-use-outline-path (quote file)
+            org-startup-align-all-tables t
+            org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
+      (setq org-capture-templates
+            (quote
+             (("t" "todo" entry
+               (file "~/Dropbox/org/refile.org")
+               "* TODO %?
+                                %U
+                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+              ("r" "respond" entry
+               (file "~/Dropbox/org/refile.org")
+               "* NEXT Respond to %:from on %:subject
+                                SCHEDULED: %t
+                                %U
+                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+              ("n" "note" entry
+               (file "~/Dropbox/org/refile.org")
+               "* %? :NOTE:
+                                %U
+                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+              ("j" "journal" entry
+               (file+datetree "~/Dropbox/org/journal.org")
+               "* %?
+                                %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+              ("p" "phone" entry
+               (file "~/Dropbox/org/refile.org")
+               "* PHONE %? :PHONE:
+                                %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+      (setq org-todo-keywords
+            (quote
+             ((sequence "TODO(t)"
+                        "NEXT(n)"
+                        "STARTED(s!)"
+                        "DELEGATED(w@/!)"
+                        "HOLD(h@/!)"
+                        "|"
+                        "CANCELLED(c@)"
+                        "DONE(d!)"))))
+      (setq org-agenda-custom-commands
+            (quote
+             (("n" "Agenda and all TODO's"
+               ((agenda "" nil)
+                (alltodo "" nil))
+               nil)
+              ("wr" "Weekly Report"
+               ((todo "DONE|CANCELLED"
+                      ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+                (todo "STARTED|NEXT"
+                      ((org-agenda-overriding-header "WIP")))
+                (todo "HOLD|DELEGATED"
+                      ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+                (todo "TODO"
+                      ((org-agenda-overriding-header "Task Backlog"))))
+               nil nil))))
+      (setq org-latex-classes
+            '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+              ("article" "\\documentclass[a4paper,12pt]{hitec}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+              ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
+               ("\\part{%s}" . "\\part*{%s}")
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+              ("book" "\\documentclass[a4paper,12pt]{scrbook}"
+               ("\\part{%s}" . "\\part*{%s}")
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+              ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
+      (setq org-latex-pdf-process
+            '("lualatex -interaction nonstopmode -output-directory %o %f"
+              "lualatex -interaction nonstopmode -output-directory %o %f"
+              "lualatex -interaction nonstopmode -output-directory %o %f"))
+      :config
+      (bind-key "C-M-<up>" 'org-up-element)
+      (org-babel-do-load-languages
+       'org-babel-load-languages
+       '(
+         ;;(R . t)
+         (ditaa . t)
+         (dot . t)
+         (emacs-lisp . t)
+         ;;(gnuplot . t)
+         ;;(haskell . nil)
+         (latex . t)
+         (ledger . t)
+         ;;(ocaml . nil)
+         ;;(octave . t)
+         (python . t)
+         (ruby . t)
+         (screen . nil)
+         (sh . t)
+         (sql . nil)
+         (sqlite . t)))
+      (add-to-list 'org-structure-template-alist
+                   '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+                     "<src lang=\"python\">\n?\n</src>"))
+      ;; add <el for emacs-lisp expansion
+      (add-to-list 'org-structure-template-alist
+                   '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+                     "<src lang=\"emacs-lisp\">\n?\n</src>")))
 
-     (use-package org-bullets
-       :ensure t
-       :config
-       (add-hook 'org-mode-hook 'org-bullets-mode)
-       (font-lock-add-keywords 'org-mode
-                               '(("^ +\\([-*]\\) "
-                                  (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•")))))))
+    (use-package org-bullets
+      :ensure t
+      :config
+      (add-hook 'org-mode-hook 'org-bullets-mode)
+      (font-lock-add-keywords 'org-mode
+                              '(("^ +\\([-*]\\) "
+                                 (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•")))))))
 
-     (use-package org-fstree
-       :disabled t
-       :ensure t)
+    (use-package org-fstree
+      :disabled t
+      :ensure t)
    #+END_SRC
 
 ** Task Juggler
@@ -1495,6 +1494,7 @@
   #+BEGIN_SRC emacs-lisp
     (use-package projectile
       :ensure t
+      :diminish projectile-mode
       :commands (projectile-mode
                  projectile-global-mode)
       :init
@@ -1648,6 +1648,61 @@
        (bind-key "C-x C-e" 'tx/eval-last-sexp-or-region emacs-lisp-mode-map))
    #+END_SRC
 
+** Clojure
+   Setup ~clojure-mode~ and ~cider~. 
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package clojure-mode
+       :ensure t
+       :commands (clojure-mode)
+       :mode (("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-mode)
+              ("\\.cljc\\'" . clojure-mode)
+              ("\\.cljx\\'" . clojure-mode)
+              ("\\.cljs\\'" . clojure-mode)
+              ("\\(?:build\\|profile\\)\\.boot\\'" . clojure-mode)))
+
+     (use-package cljsbuild-mode
+       :ensure t
+       :commands (cljsbuild-mode cljsbuild-start))
+
+     (use-package elein
+       :ensure t
+       :commands (elein-run-cmd elein-run-task))
+
+     (use-package cider
+       :ensure t
+       :commands (cider-jack-in cider-jack-in-clojurescript 
+                                cider-connect cider-apropos cider-apropos-documentation
+                                cider-browse-ns cider-browse-ns-all cider-classpath
+                                cider-open-classpath-entry cider-debug-defun-at-point
+                                cider-grimoire-web cider-grimoire cider-inspect-last-sexp
+                                cider-inspect-defun-at-point cider-inspect
+                                cider-macroexpand-1 cider-macroexpand-all
+                                cider-mode cider-scratch cider-selector)
+       :config
+       (bind-key "C-c M-j" 'cider-jack-in clojure-mode-map)
+       (bind-key "C-c M-J" 'cider-connect clojure-mode-map))
+
+     (use-package ac-cider
+       :ensure t
+       :config
+       (add-hook 'cider-mode-hook 'ac-flyspell-workaround)
+       (add-hook 'cider-mode-hook 'ac-cider-setup)
+       (add-hook 'cider-repl-mode-hook 'ac-cider-setup)
+       (add-to-list 'ac-modes 'cider-mode)
+       (add-to-list 'ac-modes 'cider-repl-mode))
+
+     (use-package clj-refactor
+       :ensure t
+       :config
+       (defun my-clojure-mode-hook ()
+         (clj-refactor-mode 1)
+         (yas-minor-mode 1) ; for adding require/use/import statements
+         ;; This choice of keybinding leaves cider-macroexpand-1 unbound
+         (cljr-add-keybindings-with-prefix "C-c C-m"))
+
+       (add-hook 'clojure-mode-hook #'my-clojure-mode-hook))
+   #+END_SRC
 * Emacs Server
   Start the emacs server so that we can use emacsclient
 
