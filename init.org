@@ -318,6 +318,19 @@
         (exec-path-from-shell-initialize)))
    #+END_SRC
 
+** Tool tips and popups
+   #+BEGIN_SRC emacs-lisp
+     (use-package pos-tip
+       :ensure t)
+
+     (use-package popup
+       :ensure t
+       :config
+       (use-package popup-complete
+         :ensure t
+         :commands (popup-complete--in-region)))
+   #+END_SRC
+
 ** Ido
    #+BEGIN_SRC emacs-lisp
      (use-package ido
@@ -915,113 +928,146 @@
   #+END_SRC
 * Auto Complete
   #+BEGIN_SRC emacs-lisp
-    (use-package auto-complete
+    ;; Turn off auto-complete
+
+    ;; (use-package auto-complete
+    ;;   :ensure t
+    ;;   :diminish auto-complete
+    ;;   :init
+    ;;   (set-default 'ac-sources
+    ;;                '(
+    ;;                  ;;ac-source-dabbrev
+    ;;                  ;;ac-source-emoji
+    ;;                  ac-source-dictionary
+    ;;                  ac-source-words-in-buffer
+    ;;                  ac-source-words-in-same-mode-buffers
+    ;;                  ac-source-words-in-all-buffer
+    ;;                  ))
+
+    ;;   (setq-default ac-expand-on-auto-complete nil)
+    ;;   (setq-default ac-auto-start nil)
+    ;;   (setq-default ac-dwim nil)        ; To get pop-ups with docs even if a word is
+    ;;                                         ; uniquely completed
+    ;;   (setq tab-always-indent 'complete)    ;; use 't when auto-complete is disabled
+
+    ;;   ;; Stop completion-at-point from popping up completion buffers so eagerly
+    ;;   (setq completion-cycle-threshold 5)
+    ;;   (setq c-tab-always-indent nil
+    ;;         c-insert-tab-function 'indent-for-tab-command)
+
+    ;;   :config
+    ;;   (global-auto-complete-mode t)
+    ;;   (add-to-list 'completion-styles 'initials t)
+
+    ;;   (defun tx/auto-complete-at-point ()
+    ;;     (when (and (not (minibufferp))
+    ;;                (fboundp 'auto-complete-mode)
+    ;;                auto-complete-mode)
+    ;;       #'auto-complete))
+
+    ;;   (defun tx/never-indent ()
+    ;;     (set (make-local-variable 'indent-line-function) (lambda () 'noindent)))
+
+    ;;   (defun set-auto-complete-as-completion-at-point-function ()
+    ;;     (setq completion-at-point-functions
+    ;;           (cons 'tx/auto-complete-at-point
+    ;;                 (remove 'tx/auto-complete-at-point
+    ;;                         completion-at-point-functions))))
+
+    ;;   (add-hook 'auto-complete-mode-hook
+    ;;             'set-auto-complete-as-completion-at-point-function)
+
+    ;;   (dolist (mode '(log-edit-mode
+    ;;                   org-mode
+    ;;                   text-mode
+    ;;                   haml-mode
+    ;;                   git-commit-mode
+    ;;                   sass-mode
+    ;;                   yaml-mode
+    ;;                   csv-mode espresso-mode haskell-mode
+    ;;                   html-mode
+    ;;                   nxml-mode
+    ;;                   sh-mode
+    ;;                   smarty-mode
+    ;;                   clojure-mode
+    ;;                   lisp-mode
+    ;;                   textile-mode
+    ;;                   markdown-mode
+    ;;                   tuareg-mode
+    ;;                   js3-mode
+    ;;                   css-mode
+    ;;                   less-css-mode
+    ;;                   sql-mode
+    ;;                   sql-interactive-mode
+    ;;                   inferior-emacs-lisp-mode))
+    ;;     (add-to-list 'ac-modes mode))
+
+    ;;   (defun tx/dabbrev-friend-buffer (other-buffer)
+    ;;     (< (buffer-size other-buffer) (* 1 1024 1024)))
+    ;;   (setq dabbrev-friend-buffer-function 'tx/dabbrev-friend-buffer))
+
+    ;; (use-package auto-complete-auctex
+    ;;   :ensure t
+    ;;   :config
+    ;;   (add-hook 'latex-mode-hook 'ac-auctex-setup))
+
+    ;; (use-package auto-complete-pcmp
+    ;;   :ensure t)
+
+    ;; (use-package ac-ispell
+    ;;   :ensure t
+    ;;   :init
+    ;;   (setq ac-ispell-requires 4
+    ;;         ac-ispell-fuzzy-limit 4)
+    ;;   :config
+    ;;   (add-hook 'text-mode-hook 'ac-ispell-setup)
+    ;;   (add-hook 'latex-mode-hook 'ac-ispell-setup)
+    ;;   (add-hook 'org-mode-hook 'ac-ispell-setup)
+    ;;   (add-hook 'markdown-mode-hook 'ac-ispell-setup))
+
+    ;; (use-package ac-dabbrev
+    ;;   :ensure t
+    ;;   :config
+    ;;   (add-to-list 'ac-sources 'ac-source-dabbrev))
+
+    ;; (use-package ac-emoji
+    ;;   :ensure t
+    ;;   :config
+    ;;   (add-hook 'markdown-mode-hook 'ac-emoji-setup)
+    ;;   (add-hook 'text-mode-hook 'ac-emoji-setup)
+    ;;   (add-hook 'org-mode-hook 'ac-emoji-setup)
+    ;;   (add-hook 'git-commit-mode-hook 'ac-emoji-setup))
+
+  #+END_SRC
+* Company
+  #+BEGIN_SRC emacs-lisp
+    (use-package company
       :ensure t
-      :diminish auto-complete
       :init
-      (set-default 'ac-sources
-                   '(
-                     ;;ac-source-dabbrev
-                     ;;ac-source-emoji
-                     ac-source-dictionary
-                     ac-source-words-in-buffer
-                     ac-source-words-in-same-mode-buffers
-                     ac-source-words-in-all-buffer
-                     ))
-
-      (setq-default ac-expand-on-auto-complete nil)
-      (setq-default ac-auto-start nil)
-      (setq-default ac-dwim nil) ; To get pop-ups with docs even if a word is
-                                 ; uniquely completed
-      (setq tab-always-indent 'complete)  ;; use 't when auto-complete is disabled
-
-      ;; Stop completion-at-point from popping up completion buffers so eagerly
-      (setq completion-cycle-threshold 5)
-      (setq c-tab-always-indent nil
-            c-insert-tab-function 'indent-for-tab-command)
-
+      (setq company-idle-delay 0.9)
+      (setq company-tooltip-limit 10)
+      (setq company-minimum-prefix-length 2)
+      ;; invert the navigation direction if the the completion popup-isearch-match
+      ;; is displayed on top (happens near the bottom of windows)
+      (setq company-tooltip-flip-when-above t)
       :config
-      (global-auto-complete-mode t)
-      (add-to-list 'completion-styles 'initials t)
-
-      (defun tx/auto-complete-at-point ()
-        (when (and (not (minibufferp))
-                   (fboundp 'auto-complete-mode)
-                   auto-complete-mode)
-          #'auto-complete))
-
-      (defun tx/never-indent ()
-        (set (make-local-variable 'indent-line-function) (lambda () 'noindent)))
-
-      (defun set-auto-complete-as-completion-at-point-function ()
-        (setq completion-at-point-functions
-            (cons 'tx/auto-complete-at-point
-                  (remove 'tx/auto-complete-at-point
-                          completion-at-point-functions))))
-
-      (add-hook 'auto-complete-mode-hook
-                'set-auto-complete-as-completion-at-point-function)
-
-      (dolist (mode '(log-edit-mode
-                      org-mode
-                      text-mode
-                      haml-mode
-                      git-commit-mode
-                      sass-mode
-                      yaml-mode
-                      csv-mode espresso-mode haskell-mode
-                      html-mode
-                      nxml-mode
-                      sh-mode
-                      smarty-mode
-                      clojure-mode
-                      lisp-mode
-                      textile-mode
-                      markdown-mode
-                      tuareg-mode
-                      js3-mode
-                      css-mode
-                      less-css-mode
-                      sql-mode
-                      sql-interactive-mode
-                      inferior-emacs-lisp-mode))
-        (add-to-list 'ac-modes mode))
-
-      (defun tx/dabbrev-friend-buffer (other-buffer)
-        (< (buffer-size other-buffer) (* 1 1024 1024)))
-      (setq dabbrev-friend-buffer-function 'tx/dabbrev-friend-buffer))
-
-    (use-package auto-complete-auctex
-      :ensure t
-      :config
-      (add-hook 'latex-mode-hook 'ac-auctex-setup))
-
-    (use-package auto-complete-pcmp
-      :ensure t)
-
-    (use-package ac-ispell
-      :ensure t
-      :init
-      (setq ac-ispell-requires 4
-            ac-ispell-fuzzy-limit 4)
-      :config
-      (add-hook 'text-mode-hook 'ac-ispell-setup)
-      (add-hook 'latex-mode-hook 'ac-ispell-setup)
-      (add-hook 'org-mode-hook 'ac-ispell-setup)
-      (add-hook 'markdown-mode-hook 'ac-ispell-setup))
-
-    (use-package ac-dabbrev
-      :ensure t
-      :config
-      (add-to-list 'ac-sources 'ac-source-dabbrev))
-
-    (use-package ac-emoji
-      :ensure t
-      :config
-      (add-hook 'markdown-mode-hook 'ac-emoji-setup)
-      (add-hook 'text-mode-hook 'ac-emoji-setup)
-      (add-hook 'org-mode-hook 'ac-emoji-setup)
-      (add-hook 'git-commit-mode-hook 'ac-emoji-setup))
+      (global-company-mode 1)
+      (use-package company-auctex
+        :ensure t
+        :config
+        (company-auctex-init))
+      (use-package company-quickhelp
+        :ensure t
+        :config
+        (company-quickhelp-mode 1))
+      (use-package company-statistics
+        :ensure t
+        :config
+        (company-statistics-mode))
+      (eval-after-load 'emacspeak-company-frontend
+        (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
+                                  company-preview-if-just-one-frontend
+                                  company-echo-metadata-frontend))))
   #+END_SRC
 * Web Browsing 
   Setup ~browse-url~ defaults
@@ -1686,14 +1732,14 @@
        (bind-key "C-c M-j" 'cider-jack-in clojure-mode-map)
        (bind-key "C-c M-J" 'cider-connect clojure-mode-map))
 
-     (use-package ac-cider
-       :ensure t
-       :config
-       (add-hook 'cider-mode-hook 'ac-flyspell-workaround)
-       (add-hook 'cider-mode-hook 'ac-cider-setup)
-       (add-hook 'cider-repl-mode-hook 'ac-cider-setup)
-       (add-to-list 'ac-modes 'cider-mode)
-       (add-to-list 'ac-modes 'cider-repl-mode))
+     ;; (use-package ac-cider
+     ;;   :ensure t
+     ;;   :config
+     ;;   (add-hook 'cider-mode-hook 'ac-flyspell-workaround)
+     ;;   (add-hook 'cider-mode-hook 'ac-cider-setup)
+     ;;   (add-hook 'cider-repl-mode-hook 'ac-cider-setup)
+     ;;   (add-to-list 'ac-modes 'cider-mode)
+     ;;   (add-to-list 'ac-modes 'cider-repl-mode))
 
      (use-package clj-refactor
        :ensure t
