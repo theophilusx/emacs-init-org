@@ -240,73 +240,63 @@
        :config (fullframe list-packages quit-window))
    #+END_SRC
 
-* Support Functions
-  Some miscellaneous functions useful for tweaking emacs editing behaviour have
-  been placed in ~lisp/editing-tweaks.el~. 
-** Newline at end of line
-   A simple function stolen from [[http://github.com/purcell/emacs.d]] which
-   makes it easy to jump to a new indented line when within the above line
+* Editing Tweaks
 
-   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el
-     (defun tx/newline-at-end-of-line ()
-       "Move to end of line, enter a newline, and reindent."
-       (interactive)
-       (move-end-of-line 1)
-       (newline-and-indent))
-   #+END_SRC
+  Some simple functions and bindings stolen from
+  [[http://github.com/purcell/emacs.d]] which adds some editing tweaks
 
-** Open line after re-indent
+  #+BEGIN_SRC emacs-lisp
+    (global-set-key (kbd "RET") 'newline-and-indent)
 
-   Improved function to open a new line, also stolen from
-   [[http://github.com/purcell/emacs.d]]].
+    (defun tx/newline-at-end-of-line ()
+      "Move to end of line, enter a newline, and reindent."
+      (interactive)
+      (move-end-of-line 1)
+      (newline-and-indent))
 
-   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el 
-     (defun sanityinc/open-line-with-reindent (n)
-       "A version of `open-line' which reindents the start and end positions.
-      If there is a fill prefix and/or a `left-margin', insert them
-      on the new line if the line would have been blank.
-      With arg N, insert N newlines."
-       (interactive "*p")
-       (let* ((do-fill-prefix (and fill-prefix (bolp)))
-              (do-left-margin (and (bolp) (> (current-left-margin) 0)))
-              (loc (point-marker))
-              ;; Don't expand an abbrev before point.
-              (abbrev-mode nil))
-         (delete-horizontal-space t)
-         (newline n)
-         (indent-according-to-mode)
-         (when (eolp)
-           (delete-horizontal-space t))
-         (goto-char loc)
-         (while (> n 0)
-           (cond ((bolp)
-                  (if do-left-margin (indent-to (current-left-margin)))
-                  (if do-fill-prefix (insert-and-inherit fill-prefix))))
-           (forward-line 1)
-           (setq n (1- n)))
-         (goto-char loc)
-         (end-of-line)
-         (indent-according-to-mode)))
-   #+END_SRC
+    (global-set-key (kbd "S-<return>") 'tx/newline-at-end-of-line)
 
-** Kill Back to Indentation
-   Kill the current line back to the indentation 
+    (global-set-key (kbd "C-c j") 'join-line)
+    (global-set-key (kbd "C-c J") (lambda () (interactive) (join-line 1)))
 
-   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el
-     (defun kill-back-to-indentation ()
-     "Kill from point back to the first non-whitespace character on the line."
-     (interactive)
-     (let ((prev-pos (point)))
-       (back-to-indentation)
-       (kill-region (point) prev-pos)))
+    (defun kill-back-to-indentation ()
+      "Kill from point back to the first non-whitespace character on the line."
+      (interactive)
+      (let ((prev-pos (point)))
+        (back-to-indentation)
+        (kill-region (point) prev-pos)))
 
-   #+END_SRC
+    (global-set-key (kbd "C-M-<backspace>") 'kill-back-to-indentation)
 
-** Artefact 
+    (defun tx/open-line-with-reindent (n)
+      "A version of `open-line' which reindents the start and end positions.
+          If there is a fill prefix and/or a `left-margin', insert them
+          on the new line if the line would have been blank.
+          With arg N, insert N newlines."
+      (interactive "*p")
+      (let* ((do-fill-prefix (and fill-prefix (bolp)))
+             (do-left-margin (and (bolp) (> (current-left-margin) 0)))
+             (loc (point-marker))
+             ;; Don't expand an abbrev before point.
+             (abbrev-mode nil))
+        (delete-horizontal-space t)
+        (newline n)
+        (indent-according-to-mode)
+        (when (eolp)
+          (delete-horizontal-space t))
+        (goto-char loc)
+        (while (> n 0)
+          (cond ((bolp)
+                 (if do-left-margin (indent-to (current-left-margin)))
+                 (if do-fill-prefix (insert-and-inherit fill-prefix))))
+          (forward-line 1)
+          (setq n (1- n)))
+        (goto-char loc)
+        (end-of-line)
+        (indent-according-to-mode)))
 
-   #+BEGIN_SRC emacs-lisp :tangle lisp/editing-tweaks.el
-   (provide 'editing-tweaks)
-   #+END_SRC
+    (global-set-key (kbd "C-o") 'tx/open-line-with-reindent)
+  #+END_SRC
 
 * Some simple ELPA packages and basic defaults
   Load some basic elpa packages which don't require additional
@@ -658,6 +648,15 @@
 
   #+END_SRC
 
+** Fill Column Indicator
+   #+BEGIN_SRC emacs-lisp
+     (use-package fill-column-indicator
+       :ensure t
+       :config
+       (add-hook 'prog-mode-hook 'fci-mode)
+       (add-hook 'text-mode-hook 'fci-mode)
+       (add-hook 'org-mode-hook 'fci-mode))
+   #+END_SRC
 ** Expand Region
   Add the ~expand-region~ package to make it easy to expand/contract the region
   based on the semantic units for the current mode.
@@ -858,6 +857,8 @@
           (when (executable-find ispell-program-name)
             (use-package flyspell
               :diminish flyspell-mode
+              :init
+              (setq flyspell-use-meta-tab nil)
               :config
               (add-hook 'prog-mode-hook 'flyspell-prog-mode)
               (add-hook 'text-mode-hook 'flyspell-mode)))))
@@ -887,6 +888,139 @@
                   rainbow-delimiters-mode-enable
                   rainbow-delimiters-mode-disable))
    #+END_SRC
+* Yasnippet
+  #+BEGIN_SRC emacs-lisp
+    (use-package yasnippet
+    :ensure t
+    :init
+    (setq yas-prompt-functions '(yas-dropdown-prompt))
+    :config
+    (define-key yas-minor-mode-map (kbd "<tab>") nil)
+    (define-key yas-minor-mode-map (kbd "TAB") nil)
+    (define-key yas-minor-mode-map (kbd "C-M-/") 'yas-expand)
+    (yas/load-directory "~/.emacs.d/snippets"))
+  #+END_SRC
+* Hippie Expand
+  #+BEGIN_SRC emacs-lisp
+    (use-package hippie-expand
+      :init
+      (setq hippie-expand-try-functions-list
+            '(try-complete-file-name-partially
+              try-complete-file-name
+              yas-hippie-try-expand
+              try-expand-dabbrev
+              try-expand-dabbrev-all-buffers
+              try-expand-dabbrev-from-kill)))
+  #+END_SRC
+* Auto Complete
+  #+BEGIN_SRC emacs-lisp
+    (use-package auto-complete
+      :ensure t
+      :init
+      (set-default 'ac-sources
+                   '(
+                     ;;ac-source-dabbrev
+                     ;;ac-source-emoji
+                     ac-source-dictionary
+                     ac-source-words-in-buffer
+                     ac-source-words-in-same-mode-buffers
+                     ac-source-words-in-all-buffer
+                     ))
+
+      (setq-default ac-expand-on-auto-complete nil)
+      (setq-default ac-auto-start nil)
+      (setq-default ac-dwim nil) ; To get pop-ups with docs even if a word is
+                                 ; uniquely completed
+      (setq tab-always-indent 'complete)  ;; use 't when auto-complete is disabled
+
+      ;; Stop completion-at-point from popping up completion buffers so eagerly
+      (setq completion-cycle-threshold 5)
+      (setq c-tab-always-indent nil
+            c-insert-tab-function 'indent-for-tab-command)
+
+      :config
+      (global-auto-complete-mode t)
+      (add-to-list 'completion-styles 'initials t)
+
+      (defun tx/auto-complete-at-point ()
+        (when (and (not (minibufferp))
+                   (fboundp 'auto-complete-mode)
+                   auto-complete-mode)
+          #'auto-complete))
+
+      (defun tx/never-indent ()
+        (set (make-local-variable 'indent-line-function) (lambda () 'noindent)))
+
+      (defun set-auto-complete-as-completion-at-point-function ()
+        (setq completion-at-point-functions
+            (cons 'tx/auto-complete-at-point
+                  (remove 'tx/auto-complete-at-point
+                          completion-at-point-functions))))
+
+      (add-hook 'auto-complete-mode-hook
+                'set-auto-complete-as-completion-at-point-function)
+
+      (dolist (mode '(log-edit-mode
+                      org-mode
+                      text-mode
+                      haml-mode
+                      git-commit-mode
+                      sass-mode
+                      yaml-mode
+                      csv-mode espresso-mode haskell-mode
+                      html-mode
+                      nxml-mode
+                      sh-mode
+                      smarty-mode
+                      clojure-mode
+                      lisp-mode
+                      textile-mode
+                      markdown-mode
+                      tuareg-mode
+                      js3-mode
+                      css-mode
+                      less-css-mode
+                      sql-mode
+                      sql-interactive-mode
+                      inferior-emacs-lisp-mode))
+        (add-to-list 'ac-modes mode))
+
+      (defun tx/dabbrev-friend-buffer (other-buffer)
+        (< (buffer-size other-buffer) (* 1 1024 1024)))
+      (setq dabbrev-friend-buffer-function 'tx/dabbrev-friend-buffer))
+
+    (use-package auto-complete-auctex
+      :ensure t
+      :config
+      (add-hook 'latex-mode-hook 'ac-auctex-setup))
+
+    (use-package auto-complete-pcmp
+      :ensure t)
+
+    (use-package ac-ispell
+      :ensure t
+      :init
+      (setq ac-ispell-requires 4
+            ac-ispell-fuzzy-limit 4)
+      :config
+      (add-hook 'text-mode-hook 'ac-ispell-setup)
+      (add-hook 'latex-mode-hook 'ac-ispell-setup)
+      (add-hook 'org-mode-hook 'ac-ispell-setup)
+      (add-hook 'markdown-mode-hook 'ac-ispell-setup))
+
+    (use-package ac-dabbrev
+      :ensure t
+      :config
+      (add-to-list 'ac-sources 'ac-source-dabbrev))
+
+    (use-package ac-emoji
+      :ensure t
+      :config
+      (add-hook 'markdown-mode-hook 'ac-emoji-setup)
+      (add-hook 'text-mode-hook 'ac-emoji-setup)
+      (add-hook 'org-mode-hook 'ac-emoji-setup)
+      (add-hook 'git-commit-mode-hook 'ac-emoji-setup))
+  #+END_SRC
 * Web Browsing 
   Setup ~browse-url~ defaults
 
@@ -930,6 +1064,33 @@
       (add-hook 'after-init-hook 'reapply-themes))
 
    #+END_SRC
+* Windows
+  Use ~switch-window~ to provide an easier way to select the specific window I
+  want.
+
+  #+BEGIN_SRC emacs-lisp
+    (use-package switch-window
+      :ensure t
+      :init
+      (setq-default switch-window-shortcut-style 'alphabet)
+      (setq-default switch-window-timeout nil)
+      :bind ("C-x o" . switch-window)
+      :config
+      (defun split-window-horizontally-instead ()
+        (interactive)
+        (save-excursion
+          (delete-other-windows)
+          (funcall (split-window-func-with-other-buffer 'split-window-horizontally))))
+
+      (defun split-window-vertically-instead ()
+        (interactive)
+        (save-excursion
+          (delete-other-windows)
+          (funcall (split-window-func-with-other-buffer 'split-window-vertically))))
+
+      (global-set-key "\C-x|" 'split-window-horizontally-instead)
+      (global-set-key "\C-x_" 'split-window-vertically-instead))
+  #+END_SRC
 * Custom
   I use different emacs custom files depending on the platform. Need to load
   them
@@ -957,7 +1118,21 @@
                           :foundry "adobe"
                           :family "Source Code Pro"
                           :height 138))
-   #+END_SRC
+  #+END_SRC
+
+  Setup font for emoji
+   - Linux users can use Symbola font. Ubuntu/Debian provides Symbola as
+     package, ttf-ancient-fonts or ttf-ancient-fonts-symbola. :+1:
+
+  #+BEGIN_SRC emacs-lisp
+     (if *is-a-mac*
+         (set-fontset-font t 'symbol
+                           (font-spec :family "Apple Color Emoji")
+                           nil 'prepend)
+       (set-fontset-font t 'symbol
+                         (font-spec :family "Symbola")
+                         nil 'prepend))
+  #+END_SRC
 
   Change font scaling dynamically
 
@@ -1029,7 +1204,10 @@
 
     (use-package magit
       :ensure t
-      :commands (magit-status))
+      :commands (magit-status magit-dispatch-popup)
+      :config
+      (global-set-key (kbd "C-x g") 'magit-status)
+      (global-set-key (kbd "C-x M-g") 'magit-dispatch-popup))
 
     (use-package magit-popup
       :ensure t)
@@ -1301,6 +1479,27 @@
         (define-key org-agenda-mode-map (kbd "P") 'org-pomodoro)))
   #+END_SRC
 
+* Searching
+  Using ~ag~ package for searches. This needs some OS support
+  - On Linux ~apt-get install silversearcher-ag~
+  - On OSX ~brew install the_silver_searcher~
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package ag
+        :ensure t
+        :commands (ag ag-files ag-regex ag-project ag-project-files ag-project-regexp)
+        :config
+        (global-set-key (kbd "M-?") 'ag-project))
+    #+END_SRC
+* Projectile 
+  #+BEGIN_SRC emacs-lisp
+    (use-package projectile
+      :ensure t
+      :commands (projectile-mode
+                 projectile-global-mode)
+      :init
+      (add-hook 'prog-mode-hook 'projectile-mode))
+  #+END_SRC
 * Markdown
   setup for handling various markdown/markup formats
 
