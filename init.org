@@ -749,9 +749,12 @@
 
   #+BEGIN_SRC emacs-lisp
     (when *is-a-mac*
-      (use-package osx-lib)
-      (use-package osx-plist)
-      (use-package osx-trash)
+      (use-package osx-lib
+	:ensure t)
+      (use-package osx-plist
+	:ensure t)
+      (use-package osx-trash
+	:ensure t)
       (use-package osx-location
         :ensure t)
       (setq mac-command-modifier 'meta)
@@ -768,8 +771,6 @@
       (global-set-key (kbd "M-`") 'ns-next-frame)
       (global-set-key (kbd "M-h") 'ns-do-hide-emacs)
       (global-set-key (kbd "M-˙") 'ns-do-hide-others)
-      (eval-after-load 'nxml-mode
-        (define-key nxml-mode-map (kbd "M-h") nil))
       ;; what describe-key reports for cmd-option-h
       (global-set-key (kbd "M-ˍ") 'ns-do-hide-others))
   #+END_SRC
