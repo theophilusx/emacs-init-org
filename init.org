@@ -448,7 +448,10 @@
        :diminish page-break-lines-mode
        :config
        (global-page-break-lines-mode)
-       (push 'browse-kill-ring-mode page-break-lines-modes))
+       (push 'browse-kill-ring-mode page-break-lines-modes)
+       (push 'sql-mode page-break-lines-modes)
+       (push 'text-mode page-break-lines-modes))
+
    #+END_SRC
 
 ** Fix the mark
@@ -1702,6 +1705,28 @@
          (cljr-add-keybindings-with-prefix "C-c C-m"))
 
        (add-hook 'clojure-mode-hook #'my-clojure-mode-hook))
+   #+END_SRC
+** SQL
+   #+BEGIN_SRC emacs-lisp
+      (use-package sql
+        :init
+        (setq-default sql-input-ring-file-name
+                      (expand-file-name ".sqli_history" user-emacs-directory))
+        (defun tx/pop-to-sqli-buffer ()
+          "Switch to the corresponding sqli buffer."
+          (interactive)
+          (if sql-buffer
+              (progn
+                (pop-to-buffer sql-buffer)
+                (goto-char (point-max)))
+            (sql-set-sqli-buffer)
+            (when sql-buffer
+              (tx/pop-to-sqli-buffer))))
+        :config
+        (use-package sql-indent
+          :ensure t)
+        (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map)
+        (add-hook 'sql-interactive-mode-hook 'tx/never-indent))
    #+END_SRC
 * Emacs Server
   Start the emacs server so that we can use emacsclient
