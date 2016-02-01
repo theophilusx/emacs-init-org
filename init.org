@@ -555,10 +555,13 @@
    #+END_SRC
 
 ** Yes or No
-  Lets shorten that irritating yes-or-no
+  Lets shorten that irritating yes-or-no and unnecessary prompts. 
 
   #+BEGIN_SRC emacs-lisp 
-  (fset 'yes-or-no-p 'y-or-n-p)
+    (fset 'yes-or-no-p 'y-or-n-p)
+    (setq kill-buffer-query-functions
+      (remq 'process-kill-buffer-query-function
+             kill-buffer-query-functions))
   #+END_SRC
 
 ** Enable Disabled Commands
@@ -750,13 +753,20 @@
   #+BEGIN_SRC emacs-lisp
     (when *is-a-mac*
       (use-package osx-lib
-	:ensure t)
+        :ensure t
+        :commands (osx-lib-run-osascript osx-lib-osx-version 
+                   osx-lib-run-js osx-lib-do-beep 
+                   osx-lib-notify2 osx-lib-notify3 
+                   osx-lib-copy-to-clipboard osx-lib-reveal-in-finder-as 
+                   osx-lib-reveal-in-finder osx-lib-vpn-connect 
+                   osx-lib-vpn-disconnect osx-lib-say))
       (use-package osx-plist
-	:ensure t)
+        :ensure t
+        :commands (osx-plist-update-environment osx-plist-parse-file))
       (use-package osx-trash
-	:ensure t)
-      (use-package osx-location
-        :ensure t)
+        :ensure t
+        :config
+        (osx-trash-setup))
       (setq mac-command-modifier 'meta)
       (setq mac-option-modifier 'none)
       (setq default-input-method "MacOSX")
@@ -768,11 +778,13 @@
         (dolist (direction '("right" "left"))
           (global-set-key (read-kbd-macro
                            (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-      (global-set-key (kbd "M-`") 'ns-next-frame)
-      (global-set-key (kbd "M-h") 'ns-do-hide-emacs)
-      (global-set-key (kbd "M-˙") 'ns-do-hide-others)
+      ;;(global-set-key (kbd "M-`") 'ns-next-frame)
+      ;;(global-set-key (kbd "M-h") 'ns-do-hide-emacs)
+      ;;(global-set-key (kbd "M-˙") 'ns-do-hide-others)
       ;; what describe-key reports for cmd-option-h
-      (global-set-key (kbd "M-ˍ") 'ns-do-hide-others))
+      ;;(global-set-key (kbd "M-ˍ") 'ns-do-hide-others))
+      )
+
   #+END_SRC
 
 ** Timestamps
@@ -1046,8 +1058,8 @@
       :ensure t
       :init
       (setq company-idle-delay 0.9)
-      (setq company-tooltip-limit 10)
-      (setq company-minimum-prefix-length 2)
+      ;;(setq company-tooltip-limit 10)
+      ;;(setq company-minimum-prefix-length 2)
       ;; invert the navigation direction if the the completion popup-isearch-match
       ;; is displayed on top (happens near the bottom of windows)
       (setq company-tooltip-flip-when-above t)
@@ -1219,6 +1231,20 @@
     ;; (setq-default mode-line-format nil)
    #+END_SRC
 
+* Utilities
+  Some simple utilities which can be occasionally useful.
+
+** Free Keys
+   The ~free-keys~ package provides a convenient way to identify keys which are
+   potential bind candidates. Combine this with the
+   ~describe-personal-keybindings~ function from the ~bind-keys~ package and
+   you can go to town with customising your emacs! 
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package free-keys
+       :ensure t
+       :commands (free-keys))
+   #+END_SRC 
 * Version Control
   Setup version control stuff
 
@@ -1509,9 +1535,7 @@
         :ensure t
         :config
         (bind-key "C-c g" 'org-mac-grb-link org-mode-map)
-        (bind-key "M-h" nil))
-      (use-package org-mac-iCal
-        :ensure t))
+        (bind-key "M-h" nil)))
   #+END_SRC
 
 ** Org pomadoro
