@@ -148,8 +148,11 @@
      (add-to-list 'load-path *emacspeak-src-dir*)
      (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
      (setenv "DTK_PROGRAM" *emacspeak-server*)
-     (setq emacspeak-wizards-available-browsers
-           '(eww-browse-url browse-url-default-browser))
+     (if *is-a-mac*
+         (setq emacspeak-wizards-available-browsers
+               '(eww-browse-url browse-url-default-macosx-browser))
+       (setq emacspeak-wizards-available-browsers
+             '(eww-browse-url browse-url-default-browser)))
      (setq dtk-program *emacspeak-server*)
      (setq dtk-use-tones nil)
      (setq emacspeak-mail-alert nil)
@@ -320,15 +323,15 @@
 
 ** Tool tips and popups
    #+BEGIN_SRC emacs-lisp
-     (use-package pos-tip
-       :ensure t)
+     ;; (use-package pos-tip
+     ;;   :ensure t)
 
-     (use-package popup
-       :ensure t
-       :config
-       (use-package popup-complete
-         :ensure t
-         :commands (popup-complete--in-region)))
+     ;; (use-package popup
+     ;;   :ensure t
+     ;;   :config
+     ;;   (use-package popup-complete
+     ;;     :ensure t
+     ;;     :commands (popup-complete--in-region)))
    #+END_SRC
 
 ** Ido
@@ -763,10 +766,10 @@
       (use-package osx-plist
         :ensure t
         :commands (osx-plist-update-environment osx-plist-parse-file))
-      (use-package osx-trash
-        :ensure t
-        :config
-        (osx-trash-setup))
+      ;; (use-package osx-trash
+      ;;   :ensure t
+      ;;   :config
+      ;;   (osx-trash-setup))
       (setq mac-command-modifier 'meta)
       (setq mac-option-modifier 'none)
       (setq default-input-method "MacOSX")
@@ -1058,29 +1061,34 @@
       :ensure t
       :init
       (setq company-idle-delay 0.9)
-      ;;(setq company-tooltip-limit 10)
+      (setq company-tooltip-limit 10)
       ;;(setq company-minimum-prefix-length 2)
       ;; invert the navigation direction if the the completion popup-isearch-match
       ;; is displayed on top (happens near the bottom of windows)
-      (setq company-tooltip-flip-when-above t)
+      ;;(setq company-tooltip-flip-when-above t)
       :config
       (global-company-mode 1)
       (use-package company-auctex
         :ensure t
         :config
         (company-auctex-init))
-      (use-package company-quickhelp
-        :ensure t
-        :config
-        (company-quickhelp-mode 1))
-      (use-package company-statistics
-        :ensure t
-        :config
-        (company-statistics-mode))
+      ;; (use-package company-quickhelp
+      ;;   :ensure t
+      ;;   :config
+      ;;   (company-quickhelp-mode 1))
+      ;; I like the idea of the company-statistics package, but
+      ;; it seems to adversely impact performance and I seem to have
+      ;; experienced some lock-ups where emacs stops responding which
+      ;; appear to be related to this package (could be wrong). 
+      ;; (use-package company-statistics
+      ;;   :ensure t
+      ;;   :config
+      ;;   (company-statistics-mode))
       (eval-after-load 'emacspeak-company-frontend
-        (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-                                  company-preview-if-just-one-frontend
-                                  company-echo-metadata-frontend))))
+        (setq company-frontends '(emacspeak-company-frontend
+                                  company-pseudo-tooltip-unless-just-one-frontend
+                                  company-preview-if-just-one-frontend))))
+
   #+END_SRC
 * Web Browsing 
   Setup ~browse-url~ defaults
