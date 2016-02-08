@@ -766,10 +766,6 @@
       (use-package osx-plist
         :ensure t
         :commands (osx-plist-update-environment osx-plist-parse-file))
-      ;; (use-package osx-trash
-      ;;   :ensure t
-      ;;   :config
-      ;;   (osx-trash-setup))
       (setq mac-command-modifier 'meta)
       (setq mac-option-modifier 'none)
       (setq default-input-method "MacOSX")
@@ -1258,31 +1254,23 @@
 
   #+BEGIN_SRC emacs-lisp
     (use-package gh
-      :disabled t
       :ensure t)
 
     (use-package git-commit
-      :disabled t
       :ensure t)
-
-    (use-package git-lens
-      :disabled t
-      :ensure t)
+      :config
+      (global-git-commit-mode)
 
     (use-package git-timemachine
-      :disabled t
-      :ensure t)
+      :ensure t
+      :commands (git-timemachine-toggle git-timemachine 
+                 git-timemachine-switch-browser))
 
     (use-package github-browse-file
-      :disabled t
-      :ensure t)
-
-    (use-package github-clone
-      :disabled t
-      :ensure t)
+      :ensure t
+      :commands (github-browse-file github-browse-file-blame))
 
     (use-package gitignore-mode
-      :disabled t
       :ensure t)
 
     (use-package magit
@@ -1295,9 +1283,6 @@
     (use-package magit-popup
       :ensure t)
 
-    (use-package magit-rockstar
-      :disabled t
-      :ensure t)
    #+END_SRC
 * Org Mode
   Start by getting required package. I'm using the org-plus-contrib
@@ -1442,7 +1427,7 @@
               "lualatex -interaction nonstopmode -output-directory %o %f"
               "lualatex -interaction nonstopmode -output-directory %o %f"))
       :config
-      (bind-key "C-M-<up>" 'org-up-element)
+      ;; (bind-key "C-M-<up>" 'org-up-element)
       (org-babel-do-load-languages
        'org-babel-load-languages
        '(
@@ -1474,9 +1459,10 @@
       :ensure t
       :config
       (add-hook 'org-mode-hook 'org-bullets-mode)
-      (font-lock-add-keywords 'org-mode
-                              '(("^ +\\([-*]\\) "
-                                 (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•")))))))
+      ;; (font-lock-add-keywords 'org-mode
+      ;;                         '(("^ +\\([-*]\\) "
+      ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+      )
 
     (use-package org-fstree
       :disabled t
