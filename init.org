@@ -940,150 +940,92 @@
   #+END_SRC
 * Auto Complete
   #+BEGIN_SRC emacs-lisp
-    ;; Turn off auto-complete
-
-    ;; (use-package auto-complete
-    ;;   :ensure t
-    ;;   :diminish auto-complete
-    ;;   :init
-    ;;   (set-default 'ac-sources
-    ;;                '(
-    ;;                  ;;ac-source-dabbrev
-    ;;                  ;;ac-source-emoji
-    ;;                  ac-source-dictionary
-    ;;                  ac-source-words-in-buffer
-    ;;                  ac-source-words-in-same-mode-buffers
-    ;;                  ac-source-words-in-all-buffer
-    ;;                  ))
-
-    ;;   (setq-default ac-expand-on-auto-complete nil)
-    ;;   (setq-default ac-auto-start nil)
-    ;;   (setq-default ac-dwim nil)        ; To get pop-ups with docs even if a word is
-    ;;                                         ; uniquely completed
-    ;;   (setq tab-always-indent 'complete)    ;; use 't when auto-complete is disabled
-
-    ;;   ;; Stop completion-at-point from popping up completion buffers so eagerly
-    ;;   (setq completion-cycle-threshold 5)
-    ;;   (setq c-tab-always-indent nil
-    ;;         c-insert-tab-function 'indent-for-tab-command)
-
-    ;;   :config
-    ;;   (global-auto-complete-mode t)
-    ;;   (add-to-list 'completion-styles 'initials t)
-
-    ;;   (defun tx/auto-complete-at-point ()
-    ;;     (when (and (not (minibufferp))
-    ;;                (fboundp 'auto-complete-mode)
-    ;;                auto-complete-mode)
-    ;;       #'auto-complete))
-
-    ;;   (defun tx/never-indent ()
-    ;;     (set (make-local-variable 'indent-line-function) (lambda () 'noindent)))
-
-    ;;   (defun set-auto-complete-as-completion-at-point-function ()
-    ;;     (setq completion-at-point-functions
-    ;;           (cons 'tx/auto-complete-at-point
-    ;;                 (remove 'tx/auto-complete-at-point
-    ;;                         completion-at-point-functions))))
-
-    ;;   (add-hook 'auto-complete-mode-hook
-    ;;             'set-auto-complete-as-completion-at-point-function)
-
-    ;;   (dolist (mode '(log-edit-mode
-    ;;                   org-mode
-    ;;                   text-mode
-    ;;                   haml-mode
-    ;;                   git-commit-mode
-    ;;                   sass-mode
-    ;;                   yaml-mode
-    ;;                   csv-mode espresso-mode haskell-mode
-    ;;                   html-mode
-    ;;                   nxml-mode
-    ;;                   sh-mode
-    ;;                   smarty-mode
-    ;;                   clojure-mode
-    ;;                   lisp-mode
-    ;;                   textile-mode
-    ;;                   markdown-mode
-    ;;                   tuareg-mode
-    ;;                   js3-mode
-    ;;                   css-mode
-    ;;                   less-css-mode
-    ;;                   sql-mode
-    ;;                   sql-interactive-mode
-    ;;                   inferior-emacs-lisp-mode))
-    ;;     (add-to-list 'ac-modes mode))
-
-    ;;   (defun tx/dabbrev-friend-buffer (other-buffer)
-    ;;     (< (buffer-size other-buffer) (* 1 1024 1024)))
-    ;;   (setq dabbrev-friend-buffer-function 'tx/dabbrev-friend-buffer))
-
-    ;; (use-package auto-complete-auctex
-    ;;   :ensure t
-    ;;   :config
-    ;;   (add-hook 'latex-mode-hook 'ac-auctex-setup))
-
-    ;; (use-package auto-complete-pcmp
-    ;;   :ensure t)
-
-    ;; (use-package ac-ispell
-    ;;   :ensure t
-    ;;   :init
-    ;;   (setq ac-ispell-requires 4
-    ;;         ac-ispell-fuzzy-limit 4)
-    ;;   :config
-    ;;   (add-hook 'text-mode-hook 'ac-ispell-setup)
-    ;;   (add-hook 'latex-mode-hook 'ac-ispell-setup)
-    ;;   (add-hook 'org-mode-hook 'ac-ispell-setup)
-    ;;   (add-hook 'markdown-mode-hook 'ac-ispell-setup))
-
-    ;; (use-package ac-dabbrev
-    ;;   :ensure t
-    ;;   :config
-    ;;   (add-to-list 'ac-sources 'ac-source-dabbrev))
-
-    ;; (use-package ac-emoji
-    ;;   :ensure t
-    ;;   :config
-    ;;   (add-hook 'markdown-mode-hook 'ac-emoji-setup)
-    ;;   (add-hook 'text-mode-hook 'ac-emoji-setup)
-    ;;   (add-hook 'org-mode-hook 'ac-emoji-setup)
-    ;;   (add-hook 'git-commit-mode-hook 'ac-emoji-setup))
-
-  #+END_SRC
-* Company
-  #+BEGIN_SRC emacs-lisp
-    (use-package company
+    (use-package auto-complete
       :ensure t
       :init
-      (setq company-idle-delay 0.9)
-      (setq company-tooltip-limit 10)
-      ;;(setq company-minimum-prefix-length 2)
-      ;; invert the navigation direction if the the completion popup-isearch-match
-      ;; is displayed on top (happens near the bottom of windows)
-      ;;(setq company-tooltip-flip-when-above t)
+
+      (setq-default ac-expand-on-auto-complete nil)
+      (setq-default ac-auto-start nil)
+      (setq-default ac-dwim nil)        ; To get pop-ups with docs even if a word is
+                                            ; uniquely completed
+      (setq tab-always-indent 'complete)    ;; use 't when auto-complete is disabled
+
+      ;; Stop completion-at-point from popping up completion buffers so eagerly
+      ;; (setq completion-cycle-threshold 5)
+      (setq c-tab-always-indent nil
+            c-insert-tab-function 'indent-for-tab-command)
+
+      (add-to-list 'completion-styles 'initials t)
+
+      (defun tx/auto-complete-at-point ()
+        (when (and (not (minibufferp))
+                   (fboundp 'auto-complete-mode)
+                   auto-complete-mode)
+          #'auto-complete))
+
+      (defun tx/never-indent ()
+        (set (make-local-variable 'indent-line-function) (lambda () 'noindent)))
+
+      (defun set-auto-complete-as-completion-at-point-function ()
+        (setq completion-at-point-functions
+              (cons 'tx/auto-complete-at-point
+                    (remove 'tx/auto-complete-at-point
+                            completion-at-point-functions))))
+
+      (add-hook 'auto-complete-mode-hook
+                'set-auto-complete-as-completion-at-point-function)
+
       :config
-      (global-company-mode 1)
-      (use-package company-auctex
-        :ensure t
-        :config
-        (company-auctex-init))
-      ;; (use-package company-quickhelp
-      ;;   :ensure t
-      ;;   :config
-      ;;   (company-quickhelp-mode 1))
-      ;; I like the idea of the company-statistics package, but
-      ;; it seems to adversely impact performance and I seem to have
-      ;; experienced some lock-ups where emacs stops responding which
-      ;; appear to be related to this package (could be wrong). 
-      ;; (use-package company-statistics
-      ;;   :ensure t
-      ;;   :config
-      ;;   (company-statistics-mode))
-      (eval-after-load 'emacspeak-company-frontend
-        (setq company-frontends '(emacspeak-company-frontend
-                                  company-pseudo-tooltip-unless-just-one-frontend
-                                  company-preview-if-just-one-frontend))))
+      (require 'auto-complete-config)
+      (set-default 'ac-sources
+                   '(ac-source-yasnippet
+                     ac-source-dabbrev
+                     ac-source-dictionary
+                     ac-source-words-in-same-mode-buffers
+                     ac-source-words-in-buffer
+                     ac-source-words-in-all-buffer))
+      (add-hook 'emacs-lisp-mode-hook 'ac-emacs-lisp-mode-setup)
+      (add-hook 'c-mode-common-hook 'ac-cc-mode-setup)
+      (add-hook 'ruby-mode-hook 'ac-ruby-mode-setup)
+      (add-hook 'css-mode-hook 'ac-css-mode-setup)
+      (add-hook 'auto-complete-mode-hook 'ac-common-setup)
+      (global-auto-complete-mode t)
+      (defun tx/dabbrev-friend-buffer (other-buffer)
+        (< (buffer-size other-buffer) (* 1 1024 1024)))
+      (setq dabbrev-friend-buffer-function 'tx/dabbrev-friend-buffer))
+
+    (use-package ac-dabbrev
+      :ensure t)
+
+    (use-package auto-complete-auctex
+      :ensure t
+      :commands (ac-auctex-setup)
+      :config
+      (add-hook 'latex-mode-hook 'ac-auctex-setup))
+
+    (use-package auto-complete-pcmp
+      :ensure t)
+
+    (use-package ac-ispell
+      :ensure t
+      :commands (ac-ispell-setup)
+      :init
+      (setq ac-ispell-requires 4
+            ac-ispell-fuzzy-limit 4)
+      :config
+      (add-hook 'text-mode-hook 'ac-ispell-setup)
+      (add-hook 'latex-mode-hook 'ac-ispell-setup)
+      (add-hook 'org-mode-hook 'ac-ispell-setup)
+      (add-hook 'markdown-mode-hook 'ac-ispell-setup))
+
+    (use-package ac-emoji
+      :ensure t
+      :commands (ac-emoji-setup)
+      :config
+      (add-hook 'markdown-mode-hook 'ac-emoji-setup)
+      (add-hook 'text-mode-hook 'ac-emoji-setup)
+      (add-hook 'org-mode-hook 'ac-emoji-setup)
+      (add-hook 'git-commit-mode-hook 'ac-emoji-setup))
 
   #+END_SRC
 * Web Browsing 
@@ -1733,38 +1675,41 @@
               ("\\.cljc\\'" . clojure-mode)
               ("\\.cljx\\'" . clojure-mode)
               ("\\.cljs\\'" . clojure-mode)
-              ("\\(?:build\\|profile\\)\\.boot\\'" . clojure-mode)))
-
-     (use-package cljsbuild-mode
-       :ensure t
-       :commands (cljsbuild-mode cljsbuild-start))
-
-     (use-package elein
-       :ensure t
-       :commands (elein-run-cmd elein-run-task))
+              ("\\(?:build\\|profile\\)\\.boot\\'" . clojure-mode))
+       :init
+       (add-hook 'clojure-mode-hook 'subword-mode)
+       (add-hook 'clojure-mode-hook 'rainbow-delimiters-mode)
+       (add-hook 'clojure-mode-hook 'enable-paredit-mode)
+       (add-hook 'clojure-mode-hook
+                 (lambda ()
+                   (add-hook 'after-save-hook 'check-parens nil t))))
 
      (use-package cider
        :ensure t
-       :commands (cider-jack-in cider-jack-in-clojurescript 
-                                cider-connect cider-apropos cider-apropos-documentation
-                                cider-browse-ns cider-browse-ns-all cider-classpath
-                                cider-open-classpath-entry cider-debug-defun-at-point
-                                cider-grimoire-web cider-grimoire cider-inspect-last-sexp
-                                cider-inspect-defun-at-point cider-inspect
-                                cider-macroexpand-1 cider-macroexpand-all
-                                cider-mode cider-scratch cider-selector)
+       :commands (cider-jack-in
+                  cider-jack-in-clojurescript 
+                  cider-connect)
        :config
-       (bind-key "C-c M-j" 'cider-jack-in clojure-mode-map)
-       (bind-key "C-c M-J" 'cider-connect clojure-mode-map))
+       (add-hook 'cider-repl-mode-hook 'subword-mode)
+       (add-hook 'cider-repl-mode-hook 'paredit-mode)
+       (setq nrepl-popup-stacktraces nil))
 
-     ;; (use-package ac-cider
-     ;;   :ensure t
-     ;;   :config
-     ;;   (add-hook 'cider-mode-hook 'ac-flyspell-workaround)
-     ;;   (add-hook 'cider-mode-hook 'ac-cider-setup)
-     ;;   (add-hook 'cider-repl-mode-hook 'ac-cider-setup)
-     ;;   (add-to-list 'ac-modes 'cider-mode)
-     ;;   (add-to-list 'ac-modes 'cider-repl-mode))
+     (use-package ac-cider
+       :ensure t
+       :config
+       (add-hook 'cider-repl-mode-hook 'ac-cider-setup)
+       (add-hook 'cider-mode-hook 'ac-cider-setup)
+       (add-hook 'cider-repl-mode-hook 'set-auto-complete-as-completion-at-point-function)
+       (add-hook 'cider-mode-hook 'set-auto-complete-as-completion-at-point-function)
+       (add-hook 'cider-repl-mode-hook 'subword-mode)
+       (add-hook 'cider-repl-mode-hook 'paredit-mode)
+       (add-hook 'cider-mode-hook 'ac-flyspell-workaround)
+       (add-to-list 'ac-modes 'cider-mode)
+       (add-to-list 'ac-modes 'cider-repl-mode)
+       (bind-key "C-c M-j" 'cider-jack-in clojure-mode-map)
+       (bind-key "C-c M-J" 'cider-connect clojure-mode-map)
+       (bind-key "C-c C-d" 'ac-cider-popup-doc cider-mode-map)
+     )
 
      (use-package clj-refactor
        :ensure t
@@ -1776,6 +1721,14 @@
          (cljr-add-keybindings-with-prefix "C-c C-m"))
 
        (add-hook 'clojure-mode-hook #'my-clojure-mode-hook))
+
+     (use-package cljsbuild-mode
+       :ensure t
+       :commands (cljsbuild-mode cljsbuild-start))
+
+     (use-package elein
+       :ensure t
+       :commands (elein-run-cmd elein-run-task))
    #+END_SRC
 ** SQL
    #+BEGIN_SRC emacs-lisp
