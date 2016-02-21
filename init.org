@@ -756,6 +756,7 @@
   #+BEGIN_SRC emacs-lisp
     (when *is-a-mac*
       (use-package osx-lib
+        :disabled t
         :ensure t
         :commands (osx-lib-run-osascript osx-lib-osx-version 
                    osx-lib-run-js osx-lib-do-beep 
@@ -764,6 +765,7 @@
                    osx-lib-reveal-in-finder osx-lib-vpn-connect 
                    osx-lib-vpn-disconnect osx-lib-say))
       (use-package osx-plist
+        :disabled t
         :ensure t
         :commands (osx-plist-update-environment osx-plist-parse-file))
       (setq mac-command-modifier 'meta)
@@ -1228,7 +1230,17 @@
    #+END_SRC
 * Org Mode
   Start by getting required package. I'm using the org-plus-contrib
-  package from the org repository
+  package from the org repository.
+
+  *Note*: Occasionally, you may run into problems when installing org from a
+  repository. Essentially the problem can occur if you have some of the bundled
+  org files loaded when you try to install a repo version. The easiest way to
+  fix this is to reload org mode using the command
+
+  : C-u M-x org-reload
+
+  Then remove the repo package version (in my case, this is org-plus-congtrib)
+  and re-install. This will normally ensure a 'stable' environment. 
 
   #+BEGIN_SRC emacs-lisp 
     (use-package org
@@ -1472,8 +1484,9 @@
    If running under OS X, there are a couple of additional packages we need
 
    #+BEGIN_SRC emacs-lisp 
-    (when *is-a-mac*
+   (when *is-a-mac*
       (use-package org-mac-link
+        :disabled t
         :ensure t
         :config
         (bind-key "C-c g" 'org-mac-grb-link org-mode-map)
