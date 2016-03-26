@@ -411,11 +411,11 @@
           backup-directory-alist `(("." . ,(concat user-emacs-directory
                                                    "backups")))
           delete-by-moving-to-trash t
+          eldoc-idle-delay 2.5
           inhibit-startup-message t
           line-move-visual nil
           message-log-max 2048)
-    (setq kill-buffer-query-functions (remq 'process-kill-buffer-query-function
-                                            kill-buffer-query-functions))
+
     (setq-default save-place t
                   show-trailing-whitespace t
                   fill-column 80)
