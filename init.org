@@ -1059,18 +1059,19 @@
   I like to use the solarized dark theme
 
   #+BEGIN_SRC emacs-lisp
-    (use-package color-theme-sanityinc-solarized
-      :ensure t
-      :init (setq-default custom-enabled-themes '(sanityinc-solarized-dark))
-      :config
-      (defun reapply-themes ()
-        "Forcibly load the themes listed in `custom-enabled-themes'."
-        (dolist (theme custom-enabled-themes)
-          (unless (custom-theme-p theme)
-            (load-theme theme)))
-        (custom-set-variables `(custom-enabled-themes
-                                (quote ,custom-enabled-themes))))
-      (add-hook 'after-init-hook 'reapply-themes))
+        (use-package solarized-theme
+          :ensure t
+          :init 
+          (setq-default custom-enabled-themes '(solarized-dark))
+          :config
+          (defun reapply-themes ()
+            "Forcibly load the themes listed in `custom-enabled-themes'."
+            (dolist (theme custom-enabled-themes)
+              (unless (custom-theme-p theme)
+                (load-theme theme)))
+            (custom-set-variables `(custom-enabled-themes
+                                    (quote ,custom-enabled-themes))))
+          (add-hook 'after-init-hook 'reapply-themes))
 
    #+END_SRC
 * Windows
@@ -1414,15 +1415,6 @@
       (add-to-list 'org-structure-template-alist
                    '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
                      "<src lang=\"emacs-lisp\">\n?\n</src>")))
-
-    (use-package org-bullets
-      :ensure t
-      :config
-      (add-hook 'org-mode-hook 'org-bullets-mode)
-      ;; (font-lock-add-keywords 'org-mode
-      ;;                         '(("^ +\\([-*]\\) "
-      ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-      )
 
     (use-package org-fstree
       :disabled t
