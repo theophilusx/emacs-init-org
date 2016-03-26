@@ -22,7 +22,7 @@
   ensure everything is loaded correctly. Check the ~*Messages*~ buffer for any
   errors or warnings.
 
-* load path
+* Load path
   The following adds additional directories to the emacs load-path so that
   emacs can find various additional libraries etc
 
@@ -41,7 +41,7 @@
   (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
   #+END_SRC
 
-* Set some constants
+* Set Some Constants
   I set a couple of constants which can then be used to control configuration
   settings in my init file.
 
@@ -301,7 +301,7 @@
     (global-set-key (kbd "C-o") 'tx/open-line-with-reindent)
   #+END_SRC
 
-* Some simple ELPA packages and basic defaults
+* Some Simple ELPA Packages and Basic Defaults
   Load some basic elpa packages which don't require additional
   configuration. Also add some standard modes and tweak a few defaults.
 
@@ -1045,7 +1045,7 @@
              ("C-c C-z u" . browse-url)
              ("C-c C-z v" . browse-url-of-file)))
   #+END_SRC
-* Local packages
+* Local Packages
   I put locally managed packages i.e. those not installed via elpa into the lib
   directory.
 
