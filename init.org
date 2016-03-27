@@ -1,4 +1,109 @@
+#+TITLE: Emacs init.el File
+#+DATE: \today
+#+AUTHOR: Tim Cross
+
+* Introduction 
+  This is my emacs configuration file. It is not suitable for everyone, but it
+  may have some examples or ideas worthy of theft - feel free. 
+
+  This version of my configuration file uses auto-complete, yasnippet, ido/smex
+  and hippie expand. It removes many of the GUI elements I don't use often and
+  it is the configuration I use on both Linux and OSX. It is constantly under
+  refinement as I strive to find the optimum configuration for my needs. An
+  important focus for my setup is Emacspeak as I'm a vision impaired user who
+  relies heavily on the auditory support it provides. y 
+
+  Currently, I am in the process of migrating my configuration to use John
+  Wiegley's excellent [[https://github.com/jwiegley/use-package][use-package]], which I think is an excellent way to restructure your
+  configuration code.
+
+** Inspiration 
+   An important quality for programmers and those working in IT is one which I
+   appear to have in abundance and can say is extremely natural for me -
+   laziness. I will usually look for a solution amongst the work of others
+   before embarking on the difficult and time consuming process of original
+   thought! If I must be original, then I want to try and do that in solving
+   issues which others have not solved, not re-invent another wheel. 
+
+   Much of my configuration has been /borrowed/ from the configuration of
+   others. In some cases, I cannot even remember where I borrowed it
+   from. However, the following repositories have been a source of either code,
+   ideas or inspiration for my own setup. Many others not listed have also
+   influenced my approach. If you feel I have copied your work and have not
+   given it sufficient attribution, this is due to oversight and not
+   intent. Drop me a line and I will try to ensure you are credited
+   appropriately. 
+
+   There are a large number of Git and Subversion repositories out there which
+   contain individual configuration setups. I regularly study many of these
+   repositories and often try out some of the ideas they contain. Sometimes I
+   like them, sometimes I don't and often I tweak them to better suit my own
+   warped view on the world. In particular, I have found the following
+   repositories very useful.
+
+   [[https://github.com/purcell/emacs.d][Steve Purcell's emacs.d Setup]]. I really like this setup. A lot of my
+   configuration has been taken from this repository. Highly recommend it as a
+   good starting point. 
+
+   [[https://github.com/bbatsov/prelude][Bozhidar Batsov's Prelude]]. This is a very popular emacs setup, especially
+   within the Clojure community. It has some very nice settings for a new emacs
+   user and it is relatively easy to add Emacspeak support (just put your
+   Emacspeak init code in the ~<prelude>/personal/preload~ directory and it will
+   mostly work. Prelude also uses company-mode for completions, which is more
+   compatible with Emacspeak than aut-complete, which does not support speech. 
+
+   [[https://github.com/howardabrams][Howard Abrams' Repositories]]. Howard has some really interesting
+   repositories. I found his blog posts and videos on /literate devops/ really
+   interesting. I've had a long interest in literate programming and really like
+   some of the concepts. Org mode's /Babel/ support makes some of these concepts
+   vary achievable for Emacs users. Well worth reading his blog and watching his
+   videos. In my view, the thing we do worst and the thing we need most is good
+   documentation. Literate devops provides a vary interesting model which is
+   both applicable in managing complex environments, such as a modern data
+   centre or enterprise as well as for just managing your own setup. My new
+   approach to managing my emacs configuration is based on these same
+   ideas. However, Howard has taken this to the next level.  
+
+   [[https://github.com/tvraman/emacspeak][Emacspeak Repository]]. Emacspeak is a core part of my environment. The work
+   done by T.V. Raman is quite unique in the area of accessibility and Assistive 
+   Technology. for example, Emacspeak uses /voice lock/ which is similar to
+   Emacs's font-lock, except instead of using different font properties to
+   communicate additional meaning to the user, it uses different voice
+   properties, such as voice type (male, female, child etc), pitch, rate etc to
+   communicate additional meaning as well as other auditory cues, such as
+   auditory icons and tones to create an auditory environment which is more than
+   just a /dumb/ screen reader. I could write pages about why Raman's work is
+   different and pushes the boundaries with respect to providing more accessible
+   interfaces for the blind and vision impaired, but won't. Instead, if your
+   interested in the area, I suggest doing a Google and reading about some of
+   the work he has done and his papers or articles.   
+
+   [[https://github.com/jwiegley][John Wiegley's Repositories]]. John has been a very prolific contributor
+   towards Emacs and has recently taken on the role as lead maintainer for the
+   emacs' project. John has written a number of Emacs libraries which have grown
+   in popularity. Recently, he developed the /use-package/ library which aims to
+   make management of package configuration more modular and easier to
+   maintain. An interesting attribute of his package management approach focuses
+   on delayed loading of packages. This can greatly speed up the loading of
+   emacs and probably reduces the level of resource consumption. 
+
+   There are many other interesting Emacs related repositories out there and I
+   highly recommend spending some time reviewing them. When learning Emacs, at
+   some point you will need to learn Emacs Lisp. If your already familiar with a
+   lisp like language, you probably won't find it too hard. However, there are
+   really only two key activities all of us must do in order to learn any
+   programming language. The first is to read and look at examples of how the
+   language is used by others to solve problems. The second is to bite the
+   bullet, sit down and write some code in that language. Both activities are
+   essential and you have to do both. 
+
 * Core Setup
+  I use Emacs Org mode a lot and have moved the management of my configuration
+  into Org format using /Babel/ to generate the actual configuration files. I
+  previously use to put various configuration settings into separate ~.el~
+  files. However, now that all the configuration is generated using Org Babel, I
+  just put it all in one big ~init.el~ file. 
+
   This section contains the core configuration settings which are needed in
   order to have my init.el file work.
 
@@ -10,7 +115,7 @@
 
   Then, from inside the ~.emacs.d~ directory, run
 
-  ~./setup.sh~
+  : ./setup.sh
 
   This should create the init.el and other files used in the configuration as
   well as setup any necessary directories. Once this has been done, you can run
@@ -22,23 +127,27 @@
   ensure everything is loaded correctly. Check the ~*Messages*~ buffer for any
   errors or warnings.
 
-* Load path
+* Load Path
   The following adds additional directories to the emacs load-path so that
   emacs can find various additional libraries etc
 
-  Add the directories which my init files live
+  Add any additional directories containing ELisp packages which I need. These
+  days, nearly all the additional packages I use are managed using the Emacs
+  Lisp Package Archive (ELPA) repositories, so there isn't much in these
+  directories. 
+
+  Any separate init code which I have written and which is added to my ~init.el~
+  file via a /require/ statement goes in the ~.emacs.d/lisp~ subdirectory.
 
   #+BEGIN_SRC emacs-lisp
-    (message "Loading local init")
-
     (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-
   #+END_SRC
 
-  Add the directory I use for locally installed elisp libraries or packages
+  Any small third party libraries I use which are not packaged in an ELPA
+  repository go in the ~.emacs.d/lib~  subdirectory.
 
   #+BEGIN_SRC emacs-lisp
-  (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
+    (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
   #+END_SRC
 
 * Set Some Constants
@@ -47,21 +156,23 @@
 
   I run emacs on both OSX and Linux. To handle differences in configuration
   settings for the two platforms, I set a constant which determines if emacs is
-  running on OSX or not
+  running on OSX or not. 
 
   #+BEGIN_SRC emacs-lisp
     (defconst *is-a-mac* (eq system-type 'darwin)
-      "t if emacs is running under OSX, nil otherwise")
+      "T if emacs is running under OSX, nil otherwise.")
   #+END_SRC
 
-  Set a constant to determine if spell checking is to be enabled
+  Set a constant to determine if spell checking is to be enabled. Not sure if I
+  really need this, but leaving it in place for now.
 
   #+BEGIN_SRC emacs-lisp
     (defconst *spell-check-support-enabled* t
-      "t if we want spell checking support enabled, nil otherwise")
+      "T if we want spell checking support enabled, nil otherwise.")
   #+END_SRC
 
-  Force emacs to UTF-8 as the default.
+  Force emacs to UTF-8 as the default. This probably isn't required anymore with
+  recent versions of Emacs, but leaving it in place for now. 
 
   #+BEGIN_SRC emacs-lisp
     (prefer-coding-system 'utf-8)
@@ -93,7 +204,8 @@
  or bad advice out there than correct advice. In fact, I find OSX forums seem
  to have a very high ratio of bad answers compared to good ones. I suspect the
  solution to this issue is to use launchctl to set the variables.
- #+BEGIN_SRC emacs-lisp
+
+  #+BEGIN_SRC emacs-lisp
    ;; (if *is-a-mac*
    ;;     (require 'init-emacspeak)
    ;;   (if (getenv "RUN_EMACSPEAK")
@@ -153,25 +265,26 @@
                '(eww-browse-url browse-url-default-macosx-browser))
        (setq emacspeak-wizards-available-browsers
              '(eww-browse-url browse-url-default-browser)))
-     (setq dtk-program *emacspeak-server*)
-     (setq dtk-use-tones nil)
-     (setq emacspeak-mail-alert nil)
-     (setq tts-default-speech-rate 90)
-     (setq outloud-default-speech-rate 90)
-     (setq emacspeak-vm-use-raman-settings nil)
-     (setq mac-default-speech-rate 400)
-     (setq emacspeak-erc-my-nick "theophilusx")
-     (setq emacspeak-erc-speak-all-participants t)
-     (setq emacspeak-play-program "/home/tcross/bin/play")
-     (setq emacspeak-play-args nil)
+     (setq dtk-program *emacspeak-server*
+           dtk-use-tones nil
+           emacspeak-mail-alert nil
+           tts-default-speech-rate 90
+           outloud-default-speech-rate 90
+           emacspeak-vm-use-raman-settings nil
+           mac-default-speech-rate 400
+           emacspeak-erc-my-nick "theophilusx"
+           emacspeak-erc-speak-all-participants t
+           emacspeak-play-emacspeak-startup-icon nil
+           emacspeak-play-program "/home/tcross/bin/play"
+           emacspeak-play-args nil
+           emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
+           emacspeak-speak-tooltips t)
      (if *is-a-mac*
          (progn
            (setq emacspeak-soxplay-command "/usr/local/bin/play -v 1.2 %s earwax &")
            (setq sox-play "/usr/local/bin/play"))
        (setq emacspeak-soxplay-command "/usr/bin/play -v 1.2 %s earwax &")
        (setq sox-play "/usr/bin/play"))
-     (setq emacspeak-auditory-icon-function
-           'emacspeak-soxplay-auditory-icon)
      (add-hook 'emacspeak-startup-hook
                (lambda ()
                  (dtk-set-rate tts-default-speech-rate 1)
@@ -323,15 +436,15 @@
 
 ** Tool tips and popups
    #+BEGIN_SRC emacs-lisp
-     ;; (use-package pos-tip
-     ;;   :ensure t)
+     (use-package pos-tip
+       :ensure t)
 
-     ;; (use-package popup
-     ;;   :ensure t
-     ;;   :config
-     ;;   (use-package popup-complete
-     ;;     :ensure t
-     ;;     :commands (popup-complete--in-region)))
+     (use-package popup
+       :ensure t
+       :config
+       (use-package popup-complete
+         :ensure t
+         :commands (popup-complete--in-region)))
    #+END_SRC
 
 ** Ido
