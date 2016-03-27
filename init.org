@@ -189,6 +189,68 @@
     (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
   #+END_SRC
 
+* ELPA
+  ELPA has made managing add-on elisp packages *much* easier than it use to
+  be. The trick is to only load packages you really want/need and not get
+  carried away loading lots of additional packages /just in case/.
+
+  A word of warning regarding the use of packages from archives such as
+  melpa. There is no consistent testing or analysis of packages added to
+  various emacs package archives (with the only exception perhaps being the
+  official GNU archive). This is a security risk. Theoretically, it would be
+  possible to install a package which either deliberately or accidentally
+  compromises your security. Probably the best thing to do if you don't have
+  time to review the code or don't have the skills to do this is rely on
+  reputation. Probably always a good idea to google a package before adding it
+  to see what other users have found while using the package. As packages can
+  vary in quality, this will also identify packages which may not be well
+  written or have numerous bugs etc.
+
+  I just found John Wiegley's use-package macro, which I think is a really
+  convenient way to manage the installation and configuration of ELPA
+  packages. Therefore, I plan to migrate my configuration to use that package.
+
+   First, we need to load package.el and then we need to add some additional package
+   repositories. I add
+
+   - The Org repository so that I can use most recent org-plus-contrib package
+   - The melpa repository
+
+   #+BEGIN_SRC emacs-lisp
+     (require 'package)
+
+     (setq package-enable-at-startup nil)
+     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+     (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
+     (package-initialize)
+
+   #+END_SRC
+
+   We have a slight bootstrap or /chicken and egg/ problem, we need the
+   use-package package from ELPA before we can use it, but it is what we want
+   to use to install the package. Therefore, need a simple light weight way to
+   get that package. Lets do the simple way
+
+   #+BEGIN_SRC emacs-lisp
+     (unless (package-installed-p 'use-package)
+       (package-refresh-contents)
+       (package-install 'use-package))
+     ;;(setq use-package-verbose t)
+     (eval-when-compile
+       (require 'use-package))
+     (require 'diminish)
+     (require 'bind-key)
+   #+END_SRC
+
+   Use the ~fullframe~ package to ensure that the package listing uses one window
+   which fills the current frame
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package fullframe
+       :ensure t
+       :config (fullframe list-packages quit-window))
+   #+END_SRC
+
 * Emacspeak
  Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
  facility, it is important that it is loaded as early as possible in the Emacs boot
@@ -292,69 +354,6 @@
                  (emacspeak-sounds-select-theme "3d/")))
      (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
  #+END_SRC
-
-* ELPA
-
-  ELPA has made managing add-on elisp packages *much* easier than it use to
-  be. The trick is to only load packages you really want/need and not get
-  carried away loading lots of additional packages /just in case/.
-
-  A word of warning regarding the use of packages from archives such as
-  melpa. There is no consistent testing or analysis of packages added to
-  various emacs package archives (with the only exception perhaps being the
-  official GNU archive). This is a security risk. Theoretically, it would be
-  possible to install a package which either deliberately or accidentally
-  compromises your security. Probably the best thing to do if you don't have
-  time to review the code or don't have the skills to do this is rely on
-  reputation. Probably always a good idea to google a package before adding it
-  to see what other users have found while using the package. As packages can
-  vary in quality, this will also identify packages which may not be well
-  written or have numerous bugs etc.
-
-  I just found John Wiegley's use-package macro, which I think is a really
-  convenient way to manage the installation and configuration of ELPA
-  packages. Therefore, I plan to migrate my configuration to use that package.
-
-   First, we need to load package.el and then we need to add some additional package
-   repositories. I add
-
-   - The Org repository so that I can use most recent org-plus-contrib package
-   - The melpa repository
-
-   #+BEGIN_SRC emacs-lisp
-     (require 'package)
-
-     (setq package-enable-at-startup nil)
-     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-     (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
-     (package-initialize)
-
-   #+END_SRC
-
-   We have a slight bootstrap or /chicken and egg/ problem, we need the
-   use-package package from ELPA before we can use it, but it is what we want
-   to use to install the package. Therefore, need a simple light weight way to
-   get that package. Lets do the simple way
-
-   #+BEGIN_SRC emacs-lisp
-     (unless (package-installed-p 'use-package)
-       (package-refresh-contents)
-       (package-install 'use-package))
-     ;;(setq use-package-verbose t)
-     (eval-when-compile
-       (require 'use-package))
-     (require 'diminish)
-     (require 'bind-key)
-   #+END_SRC
-
-   Use the ~fullframe~ package to ensure that the package listing uses one window
-   which fills the current frame
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package fullframe
-       :ensure t
-       :config (fullframe list-packages quit-window))
-   #+END_SRC
 
 * Editing Tweaks
 
