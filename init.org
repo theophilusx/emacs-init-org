@@ -1791,7 +1791,6 @@
        :mode (("\\.\\(clj\\|dtm\\|edn\\)\\'" . clojure-mode)
               ("\\.cljc\\'" . clojure-mode)
               ("\\.cljx\\'" . clojure-mode)
-              ("\\.cljs\\'" . clojure-mode)
               ("\\(?:build\\|profile\\)\\.boot\\'" . clojure-mode))
        :init
        (add-hook 'clojure-mode-hook 'subword-mode)
