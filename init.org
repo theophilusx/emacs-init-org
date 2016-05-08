@@ -631,7 +631,8 @@
   [[http://github.com/purcell/emacs.d]] which adds some editing tweaks
 
   #+BEGIN_SRC emacs-lisp
-    (global-set-key (kbd "RET") 'newline-and-indent)
+    ;;(global-set-key (kbd "RET") 'newline-and-indent)
+    (bind-key "RET" 'newline-and-indent)
 
     (defun tx/newline-at-end-of-line ()
       "Move to end of line, enter a newline, and reindent."
@@ -639,10 +640,16 @@
       (move-end-of-line 1)
       (newline-and-indent))
 
-    (global-set-key (kbd "S-<return>") 'tx/newline-at-end-of-line)
+    ;;(global-set-key (kbd "S-<return>") 'tx/newline-at-end-of-line)
+    (bind-key "S-RET" 'tx/newline-at-end-of-line)
 
-    (global-set-key (kbd "C-c j") 'join-line)
-    (global-set-key (kbd "C-c J") (lambda () (interactive) (join-line 1)))
+    ;;(global-set-key (kbd "C-c j") 'join-line)
+    (bind-key "C-c j" 'join-line)
+
+    ;;(global-set-key (kbd "C-c J") (lambda () (interactive) (join-line 1)))
+    (bind-key "C-c J" (lambda ()
+                       (interactive)
+                       (join-line 1)))
 
     (defun kill-back-to-indentation ()
       "Kill from point back to the first non-whitespace character on the line."
@@ -651,7 +658,8 @@
         (back-to-indentation)
         (kill-region (point) prev-pos)))
 
-    (global-set-key (kbd "C-M-<backspace>") 'kill-back-to-indentation)
+    ;;(global-set-key (kbd "C-M-<backspace>") 'kill-back-to-indentation)
+    (bind-key "<C-M-backspace>" 'kill-back-to-indentation)
 
     (defun tx/open-line-with-reindent (n)
       "A version of `open-line' which reindents the start and end positions.
@@ -680,7 +688,8 @@
         (end-of-line)
         (indent-according-to-mode)))
 
-    (global-set-key (kbd "C-o") 'tx/open-line-with-reindent)
+    ;;(global-set-key (kbd "C-o") 'tx/open-line-with-reindent)
+    (bind-key "C-o" 'tx/open-line-with-reindent)
   #+END_SRC
 
 * Some Simple ELPA Packages and Basic Defaults
@@ -718,7 +727,22 @@
 
 ** Ido
    #+BEGIN_SRC emacs-lisp
+     (use-package ido-ubiquitous
+       :ensure t
+       :config
+       (ido-ubiquitous-mode t))
+
+     (use-package smex
+       :ensure t
+       :init
+       (smex-initialize)
+       (setq smex-save-file (expand-file-name ".smex-items" user-emacs-directory))
+       (bind-key "M-x" 'smex)
+       (bind-key "M-X" 'smex-major-mode-commands)
+       (bind-key "C-c C-c M-x" 'execute-extended-command))
+
      (use-package ido
+       :demand t
        :init
        (setq ido-enable-flex-matching t)
        (setq ido-everywhere t)
@@ -730,25 +754,11 @@
                                          ".emacs" ".xml" ".el" ".cfg" ".cnf"))
        (setq ido-default-buffer-method 'selected-window)
        (setq ido-enable-dot-prefix t)
-       (add-hook 'ido-setup-hook (lambda ()
-                                   (define-key ido-completion-map [up]
-                                     'previous-history-element)))
+       ;; (add-hook 'ido-setup-hook (lambda ()
+       ;;                             (define-key ido-completion-map [up]
+       ;;                               'previous-history-element)))
        :config
-       (ido-mode 1)
-       (use-package ido-ubiquitous
-         :ensure t
-         :config
-         (ido-ubiquitous-mode t))
-       (use-package smex
-         :ensure t
-         :init
-         (smex-initialize)
-         (setq smex-save-file (expand-file-name ".smex-items" user-emacs-directory))
-         (bind-key "M-x" 'smex)
-         (bind-key "M-X" 'smex-major-mode-commands)
-         (bind-key "C-c C-c M-x" 'execute-extended-command))
-
-     )
+       (ido-mode 1))
    #+END_SRC
 ** Recentf
    Use recentf to find files I've opened recently quickly
