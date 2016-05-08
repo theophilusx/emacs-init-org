@@ -889,8 +889,11 @@
        (exchange-point-and-mark)
        (deactivate-mark nil))
 
-     (define-key global-map [remap exchange-point-and-mark]
-       'exchange-point-and-mark-no-activate)
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;; (define-key global-map [remap exchange-point-and-mark] ;;
+     ;;   'exchange-point-and-mark-no-activate)                ;;
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
    #+END_SRC
 ** Basic Modes
   Enable some modes I want on by default
@@ -1317,9 +1320,13 @@
     :init
     (setq yas-prompt-functions '(yas-dropdown-prompt))
     :config
-    (define-key yas-minor-mode-map (kbd "<tab>") nil)
-    (define-key yas-minor-mode-map (kbd "TAB") nil)
-    (define-key yas-minor-mode-map (kbd "C-M-/") 'yas-expand)
+    ;; (define-key yas-minor-mode-map (kbd "<tab>") nil)         
+    ;; (define-key yas-minor-mode-map (kbd "TAB") nil)           
+    ;; (define-key yas-minor-mode-map (kbd "C-M-/") 'yas-expand) 
+    (bind-key "<tab>" nil yas-minor-mode-map)
+    (bind-key "TAB" nil yas-minor-mode-map)
+    (bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
+
     (yas/load-directory "~/.emacs.d/snippets"))
   #+END_SRC
 * Hippie Expand
@@ -1490,8 +1497,10 @@
           (delete-other-windows)
           (funcall (split-window-func-with-other-buffer 'split-window-vertically))))
 
-      (global-set-key "\C-x|" 'split-window-horizontally-instead)
-      (global-set-key "\C-x_" 'split-window-vertically-instead))
+      ;; (global-set-key "\C-x |" 'split-window-horizontally-instead)
+      ;; (global-set-key "\C-x _" 'split-window-vertically-instead))
+      (bind-key "C-x |" 'split-window-horizontally-instead)
+      (bind-key "C-x _" 'split-window-vertically-instead))
   #+END_SRC
 * Custom
   I use different emacs custom files depending on the platform. Need to load
@@ -1613,9 +1622,8 @@
     (use-package magit
       :ensure t
       :commands (magit-status magit-dispatch-popup)
-      :config
-      (global-set-key (kbd "C-x g") 'magit-status)
-      (global-set-key (kbd "C-x M-g") 'magit-dispatch-popup))
+      :bind (("C-x g" . magit-status)
+             ("C-x M-g" . magit-dispatch-popup)))
 
     (use-package magit-popup
       :ensure t)
@@ -1632,7 +1640,8 @@
         :ensure t
         :commands (ag ag-files ag-regex ag-project ag-project-files ag-project-regexp)
         :config
-        (global-set-key (kbd "M-?") 'ag-project))
+        ;;(global-set-key (kbd "M-?") 'ag-project)
+        (bind-key "M-?" 'ag-project))
     #+END_SRC
 * Projectile 
   #+BEGIN_SRC emacs-lisp
@@ -1703,10 +1712,13 @@
         (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
                                (kbd "C-M-<left>") (kbd "C-M-<right>")))
           (define-key paredit-mode-map binding nil))
+
         ;; Modify kill-sentence, which is easily confused with the kill-sexp
         ;; binding, but doesn't preserve sexp structure
-        (define-key paredit-mode-map [remap kill-sentence] 'paredit-kill)
-        (define-key paredit-mode-map [remap backward-kill-sentence] nil))
+        ;;(define-key paredit-mode-map [remap kill-sentence] 'paredit-kill)
+        ;;(define-key paredit-mode-map [remap backward-kill-sentence] nil)
+        (bind-key [remap kill-sentence] 'paredit-kill paredit-mode-map)
+        (bind-key [remap backward-kill-sentence] nil paredit-mode-map))
 
      (use-package paredit-everywhere
        :ensure t
