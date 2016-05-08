@@ -622,7 +622,7 @@
       :disabled t
       :config
       (after-load 'org-agenda
-        (define-key org-agenda-mode-map (kbd "P") 'org-pomodoro)))
+        (bind-key "P" 'org-pomodoro org-agenda-mode-map)))
   #+END_SRC
 
 * Editing Tweaks
@@ -1836,16 +1836,8 @@
          (yas-minor-mode 1) ; for adding require/use/import statements
          ;; This choice of keybinding leaves cider-macroexpand-1 unbound
          (cljr-add-keybindings-with-prefix "C-c C-m"))
-
        (add-hook 'clojure-mode-hook #'my-clojure-mode-hook))
 
-     (use-package cljsbuild-mode
-       :ensure t
-       :commands (cljsbuild-mode cljsbuild-start))
-
-     (use-package elein
-       :ensure t
-       :commands (elein-run-cmd elein-run-task))
    #+END_SRC
 ** SQL
    #+BEGIN_SRC emacs-lisp
