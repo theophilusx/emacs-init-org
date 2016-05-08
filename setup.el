@@ -1,4 +1,5 @@
 ;;; Simple elisp file to setup my emacs init files
+(setq debug-on-error t)
 
 (defun tangle-my-init (my-org-file)
   (message "Tangling init file from %s" my-org-file)
