@@ -430,29 +430,25 @@
       (setq org-capture-templates
             (quote
              (("t" "todo" entry
-               (file "~/Dropbox/org/refile.org")
-               "* TODO %?
-                                %U
-                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+               (file+headline "~/Dropbox/org/refile.org" "* Tasks")
+               "* TODO %?\n  %U\n  %a"
+               :empty-lines-after 1 :clock-resume t)
               ("r" "respond" entry
-               (file "~/Dropbox/org/refile.org")
-               "* NEXT Respond to %:from on %:subject
-                                SCHEDULED: %t
-                                %U
-                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+               (file+headline "~/Dropbox/org/refile.org" "* Tasks")
+               "* NEXT Respond to %:from on %:subject\n   SCHEDULED: %t\n  %U\n  %a"
+               :empty-lines-after 1 :clock-resume t)
               ("n" "note" entry
-               (file "~/Dropbox/org/refile.org")
-               "* %? :NOTE:
-                                %U
-                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+               (file+headline "~/Dropbox/org/refile.org" "* Notes")
+               "* %? :NOTE:\n  %U\n  %a"
+               :empty-lines-after 1 :clock-resume t)
               ("j" "journal" entry
                (file+datetree "~/Dropbox/org/journal.org")
-               "* %?
-                                %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+               "* %?\n  %U"
+               :empty-lines-after 1 :clock-resume t)
               ("p" "phone" entry
-               (file "~/Dropbox/org/refile.org")
-               "* PHONE %? :PHONE:
-                                %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+               (file+headline "~/Dropbox/org/refile.org" "* Tasks")
+               "* PHONE %? :PHONE:\n  %U"
+               :empty-lines-after 1 :clock-resume t))))
       (setq org-todo-keywords
             (quote
              ((sequence "TODO(t)"
@@ -476,7 +472,7 @@
                       ((org-agenda-overriding-header "WIP")))
                 (todo "HOLD|DELEGATED"
                       ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-                (todo "TODO"
+                (todo "TODO|PHONE"
                       ((org-agenda-overriding-header "Task Backlog"))))
                nil nil))))
       (setq org-latex-classes
