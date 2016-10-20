@@ -2,7 +2,7 @@
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
-* Introduction 
+* +Introduction 
   This is my emacs configuration file. It is not suitable for everyone, but it
   may have some examples or ideas worthy of theft - feel free. 
 
@@ -97,7 +97,7 @@
    bullet, sit down and write some code in that language. Both activities are
    essential and you have to do both. 
 
-* Core Setup
+* +Core Setup
   I use Emacs Org mode a lot and have moved the management of my configuration
   into Org format using /Babel/ to generate the actual configuration files. I
   previously use to put various configuration settings into separate ~.el~
@@ -127,7 +127,7 @@
   ensure everything is loaded correctly. Check the ~*Messages*~ buffer for any
   errors or warnings.
 
-* Load Path
+* +Load Path
   The following adds additional directories to the emacs load-path so that
   emacs can find various additional libraries etc
 
@@ -150,7 +150,7 @@
     (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
   #+END_SRC
 
-* Set Some Constants
+* +Set Some Constants
   I set a couple of constants which can then be used to control configuration
   settings in my init file.
 
@@ -189,7 +189,7 @@
     (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
   #+END_SRC
 
-* ELPA
+* +ELPA
   ELPA has made managing add-on elisp packages *much* easier than it use to
   be. The trick is to only load packages you really want/need and not get
   carried away loading lots of additional packages /just in case/.
@@ -251,7 +251,7 @@
        :config (fullframe list-packages quit-window))
    #+END_SRC
 
-* Emacspeak
+* +Emacspeak
  Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
  facility, it is important that it is loaded as early as possible in the Emacs boot
  process.
@@ -355,7 +355,7 @@
      (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
  #+END_SRC
 
-* Org Mode
+* +Org Mode
   Start by getting required package. I'm using the org-plus-contrib
   package from the org repository.
 
@@ -625,7 +625,7 @@
         (bind-key "P" 'org-pomodoro org-agenda-mode-map)))
   #+END_SRC
 
-* Editing Tweaks
+* +Editing Tweaks
 
   Some simple functions and bindings stolen from
   [[http://github.com/purcell/emacs.d]] which adds some editing tweaks
@@ -696,7 +696,7 @@
   Load some basic elpa packages which don't require additional
   configuration. Also add some standard modes and tweak a few defaults.
 
-** Exec path
+** +Exec path
    Set up the exec path for emacs
 
    #+BEGIN_SRC emacs-lisp
@@ -725,7 +725,7 @@
          :commands (popup-complete--in-region)))
    #+END_SRC
 
-** Ido
+** +Ido
    #+BEGIN_SRC emacs-lisp
      (use-package ido-ubiquitous
        :ensure t
@@ -760,7 +760,7 @@
        :config
        (ido-mode 1))
    #+END_SRC
-** Recentf
+** +Recentf
    Use recentf to find files I've opened recently quickly
 
    #+BEGIN_SRC emacs-lisp
@@ -778,7 +778,7 @@
        (bind-key "C-x C-r" 'ido-recentf-open))
    #+END_SRC
 
-** Better Defaults
+** +Better Defaults
   Start with the better-defaults package as a base. See
   [[https://github.com/technomancy/better-defaults][better-defaults on GitHub]]
 
@@ -787,7 +787,7 @@
       :ensure t)
   #+END_SRC
 
-** Scroll Bars
+** +Scroll Bars
   I also want to disable scrollbars 
 
   #+BEGIN_SRC emacs-lisp
@@ -795,7 +795,7 @@
     ;;   (scroll-bar-mode -1))
   #+END_SRC
 
-** Setq and Setq-defaults
+** +Setq and Setq-defaults
   Set some defaults
 
   #+BEGIN_SRC emacs-lisp 
@@ -813,7 +813,7 @@
                   fill-column 80)
   #+END_SRC
 
-** Browse Kill Ring
+** +Browse Kill Ring
   Add the ~browse-kill-ring~ package to make it easier to retrieve killed content history
 
   #+BEGIN_SRC emacs-lisp
@@ -828,7 +828,7 @@
     (bind-key "M-p" browse-kill-ring-previous browse-kill-ring-mode-map))
   #+END_SRC
 
-** Delete Selection
+** +Delete Selection
   When the selection is active and I type, I want what I type to
   replace the currently highlighted selection.
 
@@ -836,7 +836,7 @@
   (delete-selection-mode)
   #+END_SRC
 
-** Undo Tree
+** +Undo Tree
    Add the ~undo-tree~ package for managing undo/redo
 
    #+BEGIN_SRC emacs-lisp
@@ -846,7 +846,7 @@
        :config (global-undo-tree-mode))
    #+END_SRC
 
-** Page Break Lines Mode
+** +Page Break Lines Mode
    Display lines to show where page breaks are. Useful in making the
    browse-kill-ring mode look a little better. See [[https://github.com/purcell/page-break-lines][page-break-lines on GitHub]]
 
@@ -862,7 +862,7 @@
 
    #+END_SRC
 
-** Fix the mark
+** +Fix the mark
    Enable setting of mark without setting of transient mark mode
 
    #+BEGIN_SRC emacs-lisp
@@ -895,7 +895,7 @@
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
    #+END_SRC
-** Basic Modes
+** +Basic Modes
   Enable some modes I want on by default
 
   #+BEGIN_SRC emacs-lisp
@@ -906,7 +906,7 @@
     (global-prettify-symbols-mode))
   #+END_SRC
 
-** Highlight symbol Mode
+** +Highlight symbol Mode
    Highlight symbols and enable navigation by symbol in programming modes. See
    [[http://nschum.de/src/emacs/highlight-symbol/]].
 
@@ -927,7 +927,7 @@
            ad-do-it)))
    #+END_SRC
 
-** Move Or Duplicate Lines
+** +Move Or Duplicate Lines
    Add the ability to move lines up/down or duplicate lines. 
 
    #+BEGIN_SRC emacs-lisp
@@ -938,7 +938,7 @@
               ("C-c p" . md/duplicate-down)
               ("C-c P" . md/duplicate-up)))
    #+END_SRC
-** Whole line or region
+** +Whole line or region
    Allow region oriented commands to work on the current line if no region is
    defined.
 
@@ -952,7 +952,7 @@
 
    #+END_SRC
 
-** Yes or No
+** +Yes or No
   Lets shorten that irritating yes-or-no and unnecessary prompts. 
 
   #+BEGIN_SRC emacs-lisp 
@@ -962,7 +962,7 @@
              kill-buffer-query-functions))
   #+END_SRC
 
-** Enable Disabled Commands
+** +Enable Disabled Commands
   Now lets enable some of those handy commands which are disabled by default
 
   #+BEGIN_SRC emacs-lisp
@@ -974,7 +974,7 @@
 
   #+END_SRC
 
-** Electric Pair Mode
+** +Electric Pair Mode
   Most of my time is spent programming. I rarely want to enter a
   bracket or paren without also entering its closing one, so lets turn
   on ~electric-pair-mode~ mode if it exists
@@ -984,7 +984,7 @@
       (electric-pair-mode))
   #+END_SRC
 
-** Go To Address
+** +Go To Address
   Lets make addresses action buttons when we find them in comments in
   programming buffers
 
@@ -995,7 +995,7 @@
       (add-hook hook 'goto-address-prog-mode))
   #+END_SRC
 
-** Make Scripts Executable
+** +Make Scripts Executable
   When we create a script, we want the saved file to be made executable
 
   #+BEGIN_SRC emacs-lisp
@@ -1003,7 +1003,7 @@
               'executable-make-buffer-file-executable-if-script-p)
   #+END_SRC
 
-** Text Mode Stuff
+** +Text Mode Stuff
   Lets enable some modes for text-mode
 
   #+BEGIN_SRC emacs-lisp 
@@ -1012,7 +1012,7 @@
 
   #+END_SRC
 
-** Grep and Wgrep
+** +Grep and Wgrep
   The ~wgrep~ package allows for writing of grep buffers back to file. See
   [[http://github.com/mhayashi1120/Emacs-wgrep][wgrep on GitHub]]
 
@@ -1031,7 +1031,7 @@
 
   #+END_SRC
 
-** Diminish Mode
+** +Diminish Mode
   The ~diminish~ package allows us to remove or change minor mode entries in
   the mode-line. See [[https://github.com/myrjola/diminish.el][diminish on GitHub]]
 
@@ -1044,7 +1044,7 @@
 
   #+END_SRC
 
-** Scratch Buffers
+** +Scratch Buffers
   Use the ~scratch~ package to easily create a scratch buffer in the same mode
   as current buffer
 
@@ -1055,7 +1055,7 @@
 
   #+END_SRC
 
-** Unfill
+** +Unfill
   Add the ~unfill~ package to enable doing the reverse of filling
 
   #+BEGIN_SRC emacs-lisp
@@ -1065,7 +1065,7 @@
 
   #+END_SRC
 
-** Fill Column Indicator
+** +Fill Column Indicator
    #+BEGIN_SRC emacs-lisp
      (use-package fill-column-indicator
        :ensure t
@@ -1074,7 +1074,7 @@
        (add-hook 'text-mode-hook 'fci-mode)
        (add-hook 'org-mode-hook 'fci-mode))
    #+END_SRC
-** Expand Region
+** +Expand Region
   Add the ~expand-region~ package to make it easy to expand/contract the region
   based on the semantic units for the current mode.
 
@@ -1085,7 +1085,7 @@
 
   #+END_SRC
 
-** Lua
+** +Lua
   Add support for editing lua scripts
 
   #+BEGIN_SRC emacs-lisp
@@ -1097,7 +1097,7 @@
 
   #+END_SRC
 
-** Htmlize
+** +Htmlize
   Add the ~htmlize~ package to provide an easy way to turn buffer contents into
   HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
 
@@ -1108,7 +1108,7 @@
                                 htmlize-many-files htmlize-many-files-dired))
   #+END_SRC
 
-** Regex Tool
+** +Regex Tool
   Add the handy ~regex-tool~ package
 
   #+BEGIN_SRC emacs-lisp
@@ -1118,7 +1118,7 @@
 
   #+END_SRC
 
-** Stack Exchange
+** +Stack Exchange
   When I'm a bit bored or want a break from my own problems, I sometimes like
   to look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub]].
 
@@ -1136,7 +1136,7 @@
 
   #+END_SRC
 
-** Auctex
+** +Auctex
   Use the ~auctex~ package for writing LaTeX.
 
   #+BEGIN_SRC emacs-lisp
@@ -1145,7 +1145,7 @@
 
   #+END_SRC
 
-** OSX Stuff
+** +OSX Stuff
   Add some packages which are useful when running under OSX
 
   #+BEGIN_SRC emacs-lisp
@@ -1183,7 +1183,7 @@
 
   #+END_SRC
 
-** Timestamps
+** +Timestamps
    Surprises me how often people ask for this functionality without realizing it
    is already built-in. 
 
@@ -1199,7 +1199,7 @@
        :config
        (add-hook 'write-file-hooks 'time-stamp))
    #+END_SRC
-** Calendar
+** +Calendar
    Configure the calendar
 
    #+BEGIN_SRC emacs-lisp
@@ -1217,12 +1217,12 @@
              icalendar-recurring-start-year 2013))
 
    #+END_SRC
-** Crontab
+** +Crontab
    #+BEGIN_SRC emacs-lisp
      (use-package crontab-mode
        :mode ("\\.?cron\\(tab\\)?\\'" . crontab-mode))
    #+END_SRC
-** CSV
+** +CSV
    #+BEGIN_SRC emacs-lisp
      (use-package csv-mode
        :ensure t
@@ -1233,7 +1233,7 @@
          :ensure t)
        :mode ("\\.[Cc][Ss][Vv]\\'" . csv-mode))
    #+END_SRC
-** Dired
+** +Dired
 
    I like to have directories listed first. Easiest way to do this is use the
    ~ls-lisp~ library
@@ -1260,7 +1260,7 @@
        (setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld")))
 
    #+END_SRC
-** Spelling
+** +Spelling
     When running on OSX it is necessary to
     - Install a spell checker. I prefer to use /homebrew/ to install both emacs and
       associated programs i.e
@@ -1289,7 +1289,7 @@
               (add-hook 'text-mode-hook 'flyspell-mode)))))
     #+END_SRC
 
-** Whitespace
+** +Whitespace
    Cleanup whitespace
 
    #+BEGIN_SRC emacs-lisp
@@ -1299,13 +1299,13 @@
        :config
        (global-whitespace-cleanup-mode t))
    #+END_SRC
-** Rainbow Mode
+** +Rainbow Mode
    #+BEGIN_SRC emacs-lisp
      (use-package rainbow-mode
        :ensure t
        :commands (rainbow-mode))
    #+END_SRC
-** Rainbow Delimiters 
+** +Rainbow Delimiters 
    #+BEGIN_SRC emacs-lisp
      (use-package rainbow-delimiters 
        :ensure t
@@ -1313,7 +1313,7 @@
                   rainbow-delimiters-mode-enable
                   rainbow-delimiters-mode-disable))
    #+END_SRC
-* Yasnippet
+* +Yasnippet
   #+BEGIN_SRC emacs-lisp
     (use-package yasnippet
     :ensure t
@@ -1329,7 +1329,7 @@
 
     (yas/load-directory "~/.emacs.d/snippets"))
   #+END_SRC
-* Hippie Expand
+* +Hippie Expand
   #+BEGIN_SRC emacs-lisp
     (setq hippie-expand-try-functions-list
           '(try-expand-dabbrev
@@ -1429,7 +1429,7 @@
       (add-hook 'git-commit-mode-hook 'ac-emoji-setup))
 
   #+END_SRC
-* Web Browsing 
+* +Web Browsing 
   Setup ~browse-url~ defaults
 
   #+BEGIN_SRC emacs-lisp
@@ -1444,7 +1444,7 @@
              ("C-c C-z u" . browse-url)
              ("C-c C-z v" . browse-url-of-file)))
   #+END_SRC
-* Local Packages
+* +Local Packages
   I put locally managed packages i.e. those not installed via elpa into the lib
   directory.
 
@@ -1454,7 +1454,7 @@
 
    #+END_SRC
 
-* Themes
+* +Themes
   I like to use the solarized dark theme
 
   #+BEGIN_SRC emacs-lisp
@@ -1473,7 +1473,7 @@
           (add-hook 'after-init-hook 'reapply-themes))
 
    #+END_SRC
-* Windows
+* +Windows
   Use ~switch-window~ to provide an easier way to select the specific window I
   want.
 
@@ -1502,7 +1502,7 @@
       (bind-key "C-x |" 'split-window-horizontally-instead)
       (bind-key "C-x _" 'split-window-vertically-instead))
   #+END_SRC
-* Custom
+* +Custom
   I use different emacs custom files depending on the platform. Need to load
   them
 
@@ -1514,7 +1514,7 @@
     (when (file-exists-p custom-file)
       (load custom-file))
   #+END_SRC
-* Fonts
+* +Fonts
   Setup font related things
 
   Set default font. I quite like the Source Code Pro font from Adobe.
@@ -1565,7 +1565,7 @@
               'sanityinc/maybe-adjust-visual-fill-column))
   #+END_SRC
 
-* Mode line
+* +Mode line
 
   Setup powerline to configure the mode-line
 
@@ -1581,7 +1581,7 @@
     ;; (setq-default mode-line-format nil)
    #+END_SRC
 
-* Utilities
+* +Utilities
   Some simple utilities which can be occasionally useful.
 
 ** Free Keys
@@ -1595,7 +1595,7 @@
        :ensure t
        :commands (free-keys))
    #+END_SRC 
-* Version Control
+* +Version Control
   Setup version control stuff
 
   #+BEGIN_SRC emacs-lisp
@@ -1630,7 +1630,7 @@
 
    #+END_SRC
 
-* Searching
+* +Searching
   Using ~ag~ package for searches. This needs some OS support
   - On Linux ~apt-get install silversearcher-ag~
   - On OSX ~brew install the_silver_searcher~
@@ -1643,7 +1643,7 @@
         ;;(global-set-key (kbd "M-?") 'ag-project)
         (bind-key "M-?" 'ag-project))
     #+END_SRC
-* Projectile 
+* +Projectile 
   #+BEGIN_SRC emacs-lisp
     (use-package projectile
       :ensure t
@@ -1653,7 +1653,7 @@
       :init
       (add-hook 'prog-mode-hook 'projectile-mode))
   #+END_SRC
-* Markdown
+* +Markdown
   setup for handling various markdown/markup formats
 
   #+BEGIN_SRC emacs-lisp
@@ -1676,9 +1676,9 @@
       :ensure t
       :commands (markdown-toc-generate-toc))
   #+END_SRC
-* Programming
+* +Programming
   Setup stuff most useful when writing code
-** Paredit
+** +Paredit
    This mode was a little tricky at first, but now I'm use to it, I miss it when
    it isn't there. 
 
@@ -1727,7 +1727,7 @@
        (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
    #+END_SRC
 
-** Emacs Lisp
+** +Emacs Lisp
    Configure lisp modes. 
 
    Add the ~elisp-slime-nave~ package to get some nice nav functions from slime.
@@ -1804,7 +1804,7 @@
        (bind-key "C-x C-e" 'tx/eval-last-sexp-or-region emacs-lisp-mode-map))
    #+END_SRC
 
-** Clojure
+** +Clojure
    Setup ~clojure-mode~ and ~cider~. 
 
    #+BEGIN_SRC emacs-lisp
@@ -1861,7 +1861,7 @@
        (add-hook 'clojure-mode-hook #'my-clojure-mode-hook))
 
    #+END_SRC
-** SQL
+** +SQL
    #+BEGIN_SRC emacs-lisp
       (use-package sql
         :init
@@ -1883,7 +1883,7 @@
         (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map)
         (add-hook 'sql-interactive-mode-hook 'tx/never-indent))
    #+END_SRC
-* Emacs Server
+* +Emacs Server
   Start the emacs server so that we can use emacsclient
 
   #+BEGIN_SRC emacs-lisp
