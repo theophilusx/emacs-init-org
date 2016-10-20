@@ -219,7 +219,7 @@
    #+BEGIN_SRC emacs-lisp
      (require 'package)
 
-     (setq package-enable-at-startup nil)
+     ;;(setq package-enable-at-startup nil)
      (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
      (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
      (package-initialize)
@@ -1643,7 +1643,6 @@
   #+BEGIN_SRC emacs-lisp
     (use-package projectile
       :ensure t
-      :diminish projectile-mode
       :commands (projectile-mode
                  projectile-global-mode)
       :init
