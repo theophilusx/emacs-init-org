@@ -175,7 +175,7 @@ bytecomp warnings. Put some defvars in place to silence them.
         (dolist (direction '("right" "left"))
           (global-set-key (read-kbd-macro
                            (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-      (bind-key "M='" 'ns-next-frame)
+      (bind-key "M-'" 'ns-next-frame)
       (bind-key "M-h" 'ns-do-hide-emacs)
       (bind-key "M-`" 'ms-do-hide-others))
 
