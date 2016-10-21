@@ -1689,6 +1689,17 @@ bytecomp warnings. Put some defvars in place to silence them.
   #+END_SRC
 * Emacs Server 
   Start the emacs server so that we can use emacsclient
+** Edit Server
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package edit-server
+       :ensure t
+       :config
+       (edit-server-start))
+
+   #+END_SRC
+
+** Emacs Server
 
   #+BEGIN_SRC emacs-lisp
     (use-package server
