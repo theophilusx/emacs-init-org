@@ -196,7 +196,7 @@ bytecomp warnings. Put some defvars in place to silence them.
 
   #+BEGIN_SRC emacs-lisp 
     (use-package org
-      :ensure t
+      :ensure org-plus-contrib
       :demand t
       :mode ("\\.org\\'" . org-mode)
       :init
@@ -1607,8 +1607,7 @@ bytecomp warnings. Put some defvars in place to silence them.
            :ensure t)
          (use-package sqlup-mode
            :ensure t)
-         (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map)
-         (add-hook 'sql-interactive-mode-hook 'tx/never-indent)))
+         (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map)))
    #+END_SRC
 
 * Theme 
