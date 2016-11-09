@@ -1586,6 +1586,19 @@ bytecomp warnings. Put some defvars in place to silence them.
 
 ** SQL
    #+BEGIN_SRC emacs-lisp
+     (use-package sql-indent
+       :ensure t
+       :config
+       (eval-after-load 'sql
+         (load-library "sql-indent")))
+
+    
+     (use-package sqlup-mode
+       :ensure t
+       :config
+       (add-hook 'sql-mode-hook 'sqlup-mode)
+       (add-hook 'sql-interactive-mode-hook 'sqlup-mode))
+
      (use-package sql
        :init
        (progn 
@@ -1602,12 +1615,9 @@ bytecomp warnings. Put some defvars in place to silence them.
              (when sql-buffer
                (tx/pop-to-sqli-buffer)))))
        :config
-       (progn
-         (use-package sql-indent
-           :ensure t)
-         (use-package sqlup-mode
-           :ensure t)
-         (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map)))
+       (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map))
+
+  
    #+END_SRC
 
 * Theme 
