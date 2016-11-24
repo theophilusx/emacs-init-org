@@ -948,40 +948,65 @@ bytecomp warnings. Put some defvars in place to silence them.
          (bind-key "M-?" 'ag-project))
      #+END_SRC
 
-** Hippie Expand
-   #+BEGIN_SRC emacs-lisp
-     (use-package hippie-expand
-       :init
-       (setq hippie-expand-try-functions-list
-             '(try-complete-file-name-partially
-               try-complete-file-name
-               try-expand-dabbrev
-               try-expand-dabbrev-all-buffers
-               try-expand-dabbrev-from-kill))
-     :bind
-     ("M-/" . hippie-expand))
+** Completions 
+   Trying a new completions approach. Now combine hippie expand, yasnippets,
+   company and flyspell on a single key with a custom function to control what
+   it does. Will probably require tweaking.
+*** Yasnippet
+    #+BEGIN_SRC emacs-lisp
+      (use-package yasnippet
+        :ensure t
+        :init
+        (setq yas-prompt-functions '(yas-dropdown-prompt
+                                     yas-ido-prompt))
+        :config
+        (progn
+          (bind-key "<tab>" nil yas-minor-mode-map)
+          (bind-key "TAB" nil yas-minor-mode-map)
+          ;;(bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
+          (yas/load-directory "~/.emacs.d/snippets")
+          (yas-global-mode 1)))
+    #+END_SRC
 
-   #+END_SRC
+*** Company
+    #+BEGIN_SRC emacs-lisp
+      (use-package company
+        :ensure t
+        :init
+        (setq company-idle-delay 1.0
+              company-selection-wrap-around t
+              company-tooltip-idle-delay 1.5)
+        :config
+        (progn
+          (add-hook 'prog-mode-hook 'company-mode)
+          (add-hook 'org-mode-hook 'company-mode)
+          (add-hook 'after-init-hook
+                    (lambda ()
+                      (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
+                                                company-preview-if-just-one-frontend
+                                                company-echo-metadata-frontend))))))
 
-** Company
-   #+BEGIN_SRC emacs-lisp
-     (use-package company
-       :ensure t
-       :init
-       (setq company-idle-delay 1.5
-             company-selection-wrap-around t
-             company-tooltip-idle-delay 2.0)
-       :config
-       (progn
-         (add-hook 'prog-mode-hook 'company-mode)
-         (add-hook 'org-mode-hook 'company-mode)
-         (add-hook 'after-init-hook
-                   (lambda ()
-                     (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-                                               company-preview-if-just-one-frontend
-                                               company-echo-metadata-frontend))))))
+    #+END_SRC
+*** Hippie Expand
+    #+BEGIN_SRC emacs-lisp
+      (use-package hippie-expand
+        :init
+        ;; (setq hippie-expand-try-functions-list
+        ;;       '(try-complete-file-name-partially
+        ;;         try-complete-file-name
+        ;;         try-expand-dabbrev
+        ;;         try-expand-dabbrev-all-buffers
+        ;;         try-expand-dabbrev-from-kill))
+        (setq hippie-expand-try-functions-list
+            '(try-flyspell
+              yas-hippie-try-expand 
+              try-expand-dabbrev-all-buffers 
+              (lambda (arg) (call-interactively 'company-complete))))
+      :bind
+      ("M-/" . hippie-expand))
 
-   #+END_SRC
+    #+END_SRC
+
 ** Aok
    #+BEGIN_SRC emacs-lisp
      (use-package aok
@@ -1120,25 +1145,6 @@ bytecomp warnings. Put some defvars in place to silence them.
        (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
    #+END_SRC
 
-** Yasnippet
-   #+BEGIN_SRC emacs-lisp
-     (use-package yasnippet
-       :ensure t
-       :init
-       (setq yas-prompt-functions '(yas-dropdown-prompt
-                                    yas-ido-prompt))
-       :config
-       ;; (define-key yas-minor-mode-map (kbd "<tab>") nil)         
-       ;; (define-key yas-minor-mode-map (kbd "TAB") nil)           
-       ;; (define-key yas-minor-mode-map (kbd "C-M-/") 'yas-expand)
-       (progn
-         (bind-key "<tab>" nil yas-minor-mode-map)
-         (bind-key "TAB" nil yas-minor-mode-map)
-         (bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
-         (yas/load-directory "~/.emacs.d/snippets")
-         (yas-global-mode 1)))
-   #+END_SRC
-
 ** Imenu
    #+BEGIN_SRC emacs-lisp
      (use-package imenu-anywhere
@@ -1154,7 +1160,8 @@ bytecomp warnings. Put some defvars in place to silence them.
       openOffice. These are distributed in /*.oxt/ files, which are just /zip/
       archives. Unzip them and put the /*.aff/ and /*.dic/ files in
       /~/Library/Spelling/ directory.
-    - I also setup symbolic links from the dictionaries I want to /default.aff/ and /default.dic/
+    - I also setup symbolic links from the dictionaries I want to /default.aff/
+      and /default.dic/
 
     #+BEGIN_SRC emacs-lisp 
       (when *spell-check-support-enabled*
@@ -1169,6 +1176,10 @@ bytecomp warnings. Put some defvars in place to silence them.
               :diminish flyspell-mode
               :init
               (setq flyspell-use-meta-tab nil)
+              (defun try-flyspell (arg)
+                (if (nth 4 (syntax-ppss))
+                    (call-interactively 'flyspell-correct-word-before-point)
+                  nil))
               :config
               (add-hook 'prog-mode-hook 'flyspell-prog-mode)
               (add-hook 'text-mode-hook 'flyspell-mode)))))
@@ -1556,32 +1567,42 @@ bytecomp warnings. Put some defvars in place to silence them.
    Setup ~clojure-mode~ and ~cider~. 
 
    #+BEGIN_SRC emacs-lisp
-          (use-package clojure-mode
-            :ensure t
-            :init
-            (setq clojure-align-forms-automatically t)
-            :config
-            (add-hook 'clojure-mode-hook #'paredit-mode)
-            (add-hook 'clojure-mode-hook #'subword-mode)
-            (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
+     (use-package clojure-mode
+       :ensure t
+       :init
+       (setq clojure-align-forms-automatically t)
+       :config
+       (add-hook 'clojure-mode-hook #'paredit-mode)
+       (add-hook 'clojure-mode-hook #'subword-mode)
+       (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
-          (use-package cider
-            :ensure t
-            :init
-            (setq cider-prompt-for-symbol nil
-                  cider-font-lock-dynamically '(macro core function var)
-                  cider-eldoc-display-for-symbol-at-point nil
-                  eldoc-echo-area-use-multiline-p t
-                  cider-overlays-use-font-lock t
-                  cider-use-overlays t
-                  cider-show-error-buffer nil
-                  cider-repl-history-file (expand-file-name "repl-history"
-                                                            user-emacs-directory))
-            :config
-            (add-hook 'cider-mode-hook #'eldoc-mode)
-            (add-hook 'cider-repl-mode-hook #'eldoc-mode)
-            (add-hook 'cider-repl-mode-hook #'paredit-mode)
-            (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
+     (use-package cider
+       :ensure t
+       :init
+       (setq cider-prompt-for-symbol nil
+             cider-font-lock-dynamically '(macro core function var)
+             cider-eldoc-display-for-symbol-at-point nil
+             eldoc-echo-area-use-multiline-p t
+             cider-overlays-use-font-lock t
+             cider-use-overlays t
+             cider-show-error-buffer nil
+             cider-repl-history-file (expand-file-name "repl-history"
+                                                       user-emacs-directory))
+       :config
+       (add-hook 'cider-mode-hook #'eldoc-mode)
+       (add-hook 'cider-repl-mode-hook #'eldoc-mode)
+       (add-hook 'cider-repl-mode-hook #'paredit-mode)
+       (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
+
+     (use-package clj-refactor
+       :ensure t
+       :config
+       (add-hook 'clojure-mode-hook (lambda ()
+                                      (clj-refactor-mode 1)
+                                      ;; insert keybinding setup here
+                                      ))
+       (cljr-add-keybindings-with-prefix "C-c C-m")
+       (setq cljr-warn-on-eval nil))
    #+END_SRC
 
 ** SQL
