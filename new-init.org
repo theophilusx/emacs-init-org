@@ -1556,43 +1556,46 @@ bytecomp warnings. Put some defvars in place to silence them.
    Setup ~clojure-mode~ and ~cider~. 
 
    #+BEGIN_SRC emacs-lisp
-          (use-package clojure-mode
-            :ensure t
-            :init
-            (setq clojure-align-forms-automatically t)
-            :config
-            (add-hook 'clojure-mode-hook #'paredit-mode)
-            (add-hook 'clojure-mode-hook #'subword-mode)
-            (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
+     (use-package clojure-snippets
+       :ensure t)
 
-          (use-package cider
-            :ensure t
-            :init
-            (setq cider-prompt-for-symbol nil
-                  cider-font-lock-dynamically '(macro core function var)
-                  cider-eldoc-display-for-symbol-at-point nil
-                  eldoc-echo-area-use-multiline-p t
-                  cider-overlays-use-font-lock t
-                  cider-use-overlays t
-                  cider-show-error-buffer nil
-                  cider-repl-history-file (expand-file-name "repl-history"
-                                                            user-emacs-directory))
-            :config
-            (add-hook 'cider-mode-hook #'eldoc-mode)
-            (add-hook 'cider-repl-mode-hook #'eldoc-mode)
-            (add-hook 'cider-repl-mode-hook #'paredit-mode)
-            (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
+     (use-package clojure-mode
+       :ensure t
+       :init
+       (setq clojure-align-forms-automatically t)
+       :config
+       (add-hook 'clojure-mode-hook #'paredit-mode)
+       (add-hook 'clojure-mode-hook #'subword-mode)
+       (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
+
+     (use-package cider
+       :ensure t
+       :init
+       (setq cider-prompt-for-symbol nil
+             cider-font-lock-dynamically '(macro core function var)
+             cider-eldoc-display-for-symbol-at-point nil
+             eldoc-echo-area-use-multiline-p t
+             cider-overlays-use-font-lock t
+             cider-use-overlays t
+             cider-show-error-buffer nil
+             cider-repl-history-file (expand-file-name "repl-history"
+                                                       user-emacs-directory))
+       :config
+       (add-hook 'cider-mode-hook #'eldoc-mode)
+       (add-hook 'cider-repl-mode-hook #'eldoc-mode)
+       (add-hook 'cider-repl-mode-hook #'paredit-mode)
+       (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
    #+END_SRC
 
 ** SQL
    #+BEGIN_SRC emacs-lisp
-     (use-package sql-indent
-       :ensure t
-       :config
-       (eval-after-load 'sql
-         (load-library "sql-indent")))
+     ;; (use-package sql-indent
+     ;;   :ensure t
+     ;;   :config
+     ;;   (eval-after-load 'sql
+     ;;     (load-library "sql-indent")))
 
-    
+
      (use-package sqlup-mode
        :ensure t
        :config
@@ -1617,7 +1620,7 @@ bytecomp warnings. Put some defvars in place to silence them.
        :config
        (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map))
 
-  
+
    #+END_SRC
 
 * Theme 
