@@ -79,6 +79,13 @@
      (require 'bind-key)
    #+END_SRC
 
+  Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
+  correctly. 
+
+  #+BEGIN_SRC emacs-lisp
+    (use-package hydra
+      :ensure t)
+  #+END_SRC
 * Emacspeak
  Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
  facility, it is important that it is loaded as early as possible in the Emacs boot
@@ -105,6 +112,7 @@
  prompt to open the Emacspeak info documentation
 
  #+BEGIN_SRC emacs-lisp 
+   (require 'info)
    (add-to-list 'Info-additional-directory-list
                 (expand-file-name "info"  *emacspeak-src-dir*))
  #+END_SRC
@@ -532,6 +540,7 @@ bytecomp warnings. Put some defvars in place to silence them.
           initial-fram-alist '((top . 1) (left . 1) (width . 81) (height . 29))
           line-move-visual nil
           load-prefer-newer t
+          max-mini-window-height 0.50
           message-log-max 2048
           mouse-yank-at-point t
           require-final-newline t
@@ -1019,13 +1028,6 @@ bytecomp warnings. Put some defvars in place to silence them.
 
     #+END_SRC
 
-*** Hydra
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package hydra
-        :ensure t)
-
-    #+END_SRC
 ** Aok
    #+BEGIN_SRC emacs-lisp
      (use-package aok
@@ -1327,25 +1329,24 @@ bytecomp warnings. Put some defvars in place to silence them.
    ~ls-lisp~ library
 
    #+BEGIN_SRC emacs-lisp
-     (use-package dired
-       :init
-       (setq dired-listing-switches "-la")
-       (add-hook 'dired-load-hook (lambda ()
-                                    (load "dired-x")))
-       :config
-       (use-package ls-lisp
-         :init
-         (setq ls-lisp-dirs-first t
-               ls-lisp-ignore-case t
-               ls-lisp-use-insert-directory-program nil
-               ls-lisp-use-localized-time-format t))
-       (use-package diff-hl
-         :ensure t)
-       (add-hook 'dired-mode-hook 'diff-hl-dired-mode))
+        (use-package diff-hl
+          :ensure t
+          :config
+          (add-hook 'dired-mode-hook 'diff-hl-dir-mode))
 
-     (use-package find-dired
-       :init
-       (setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld")))
+        (use-package dired
+          :init
+          (setq dired-listing-switches "-la --group-directories-first"
+                dired-auto-revert-buffer t
+                dired-recursive-deletes 'always
+                dired-recursive-copies 'always
+                dired-dwim-target t)
+          :config
+          (require 'dired-x))
+
+        (use-package find-dired
+          :init
+          (setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld")))
 
    #+END_SRC
 ** Stack Exchange
