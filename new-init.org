@@ -1852,6 +1852,38 @@
        :ensure t)
 
    #+END_SRC
+** Javascript
+
+   #+BEGIN_SRC emacs-lisp
+          (use-package js2-mode
+            :ensure t
+            :mode "\\.js\\'"
+            :interpreter ("node" . js2-mode)
+            :init
+            (setq-default js2-basic-offset 2
+                          js2-bounce-indent-p nil)
+            :config
+            (use-package xref-js2
+              :ensure t)
+            (js2-imenu-extras-setup)
+            (define-key js2-mode-map (kbd "M-.") nil)
+            (add-hook 'js2-mode-hook
+                      (lambda ()
+                        (add-hook 'xref-backend-functions
+                                  #'xref-js2-xref-backend nil t))))
+
+     (use-package js2-refactor
+       :ensure t
+       :config
+       (add-hook 'js2-mode-hook #'js2-refactor-mode)
+       (js2r-add-keybindings-with-prefix "C-c C-m"))
+
+     (use-package tern
+       :ensure t
+       :config
+       (add-hook 'js2-mode-hook #'tern-mode))
+
+   #+END_SRC
 * Theme 
   #+BEGIN_SRC emacs-lisp
     (use-package solarized-theme
