@@ -63,6 +63,8 @@
 
    #+END_SRC
 
+** use-package
+
    We have a slight bootstrap or /chicken and egg/ problem, we need the
    use-package package from ELPA before we can use it, but it is what we want
    to use to install the package. Therefore, need a simple light weight way to
@@ -72,7 +74,7 @@
      (unless (package-installed-p 'use-package)
        (package-refresh-contents)
        (package-install 'use-package))
-     ;;(setq use-package-verbose t)
+     (setq use-package-verbose nil)
      (eval-when-compile
        (require 'use-package))
      (require 'diminish)
@@ -81,10 +83,105 @@
 
   Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
   correctly. 
-
+** hydra
   #+BEGIN_SRC emacs-lisp
     (use-package hydra
-      :ensure t)
+      :ensure t
+      :config
+      (defun hydra-move-splitter-left (arg)
+        "Move window splitter left."
+        (interactive "p")
+        (if (let ((windmove-wrap-around))
+              (windmove-find-other-window 'right))
+            (shrink-window-horizontally arg)
+          (enlarge-window-horizontally arg)))
+
+      (defun hydra-move-splitter-right (arg)
+        "Move window splitter right."
+        (interactive "p")
+        (if (let ((windmove-wrap-around))
+              (windmove-find-other-window 'right))
+            (enlarge-window-horizontally arg)
+          (shrink-window-horizontally arg)))
+
+      (defun hydra-move-splitter-up (arg)
+        "Move window splitter up."
+        (interactive "p")
+        (if (let ((windmove-wrap-around))
+              (windmove-find-other-window 'up))
+            (enlarge-window arg)
+          (shrink-window arg)))
+
+      (defun hydra-move-splitter-down (arg)
+        "Move window splitter down."
+        (interactive "p")
+        (if (let ((windmove-wrap-around))
+              (windmove-find-other-window 'up))
+            (shrink-window arg)
+          (enlarge-window arg)))
+
+      (use-package winner
+        :config
+        (winner-mode 1))
+      (use-package windmove
+        :config
+        (windmove-default-keybindings))
+      (defhydra my-hydra-zoom ()
+        "zoom"
+        ("-" text-scale-decrease "out")
+        ("+" text-scale-increase "in")
+        ("0" (text-scale-adjust 0) "reset")
+        ("q" nil "quit" :color blue))
+      (defhydra my-hydra-error ()
+        "goto-error"
+        ("h" first-error "first")
+        ("j" next-error "next")
+        ("k" previous-error "prev")
+        ("v" recenter-top-bottom "recenter")
+        ("q" nil "quit"))
+      (require 'winner)
+      (defhydra my-hydra-window (:color red :hint nil)
+        "
+     Split: _v_ert _x_:horz
+    Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
+      Move: _s_wap
+    Frames: _f_rame new  _df_ delete
+      Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+        ("h" windmove-left)
+        ("j" windmove-down)
+        ("k" windmove-up)
+        ("l" windmove-right)
+        ("H" hydra-move-splitter-left)
+        ("J" hydra-move-splitter-down)
+        ("K" hydra-move-splitter-up)
+        ("L" hydra-move-splitter-right)
+        ("|" (lambda ()
+               (interactive)
+               (split-window-right)
+               (windmove-right)))
+        ("_" (lambda ()
+               (interactive)
+               (split-window-below)
+               (windmove-down)))
+        ("v" split-window-right)
+        ("x" split-window-below)
+        ;;("t" transpose-frame "'")
+        ;; winner-mode must be enabled
+        ("u" winner-undo)
+        ("r" winner-redo) ;;Fixme, not working?
+        ("o" delete-other-windows :exit t)
+        ("a" ace-window :exit t)
+        ("f" new-frame :exit t)
+        ("s" ace-swap-window)
+        ("da" ace-delete-window)
+        ("dw" delete-window)
+        ("db" kill-this-buffer)
+        ("df" delete-frame :exit t)
+        ("q" nil)
+        ;;("i" ace-maximize-window "ace-one" :color blue)
+        ;;("b" ido-switch-buffer "buf")
+        ("m" headlong-bookmark-jump)))
+
   #+END_SRC
 * Emacspeak
  Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
@@ -95,7 +192,7 @@
  emacspeak distro
 
  #+BEGIN_SRC emacs-lisp 
-     (defconst *emacspeak-src-dir* "~/git/emacspeak/trunk"
+     (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
        "Where emacs will find the emacspeak distro")
    #+END_SRC
 
@@ -118,14 +215,13 @@
  #+END_SRC
 
  Seems to be a couple of references to free variables which throw up 
-bytecomp warnings. Put some defvars in place to silence them.
+ bytecomp warnings. Put some defvars in place to silence them.
 
  #+BEGIN_SRC emacs-lisp
    (defvar emacspeak-we-url-executor nil)
    (defvar org-ans2 nil)
    (defvar ido-process-ignore-lists nil)
  #+END_SRC
-
 
  When emacs is not being run in batch mode and when emacspeak is not
  yet loaded, then load it
@@ -136,37 +232,73 @@ bytecomp warnings. Put some defvars in place to silence them.
      (add-to-list 'load-path *emacspeak-src-dir*)
      (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
      (setenv "DTK_PROGRAM" *emacspeak-server*)
-     (if *is-a-mac*
-         (setq emacspeak-wizards-available-browsers
-               '(eww-browse-url browse-url-default-macosx-browser))
-       (setq emacspeak-wizards-available-browsers
-             '(eww-browse-url browse-url-default-browser)))
      (setq dtk-program *emacspeak-server*
            dtk-use-tones nil
-           emacspeak-mail-alert nil
-           tts-default-speech-rate 90
-           outloud-default-speech-rate 90
-           emacspeak-vm-use-raman-settings nil
-           mac-default-speech-rate 400
+           emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
            emacspeak-erc-my-nick "theophilusx"
            emacspeak-erc-speak-all-participants t
+           emacspeak-mail-alert nil
            emacspeak-play-emacspeak-startup-icon nil
            emacspeak-play-program "/home/tcross/bin/play"
            emacspeak-play-args nil
-           emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
-           emacspeak-speak-tooltips t)
-     (if *is-a-mac*
-         (progn
-           (setq emacspeak-soxplay-command "/usr/local/bin/play -v 1.2 %s earwax &")
-           (setq sox-play "/usr/local/bin/play"))
-       (setq emacspeak-soxplay-command "/usr/bin/play -v 1.2 %s earwax &")
-       (setq sox-play "/usr/bin/play"))
+           emacspeak-speak-tooltips t
+           emacspeak-wizards-available-browsers (if *is-a-mac*
+                                                    '(eww-browse-url browse-url-default-macosx-browser)
+                                                  '(eww-browse-url browse-url-default-browser))
+           emacspeak-vm-use-raman-settings nil
+           mac-default-speech-rate 400        
+           outloud-default-speech-rate 90
+           sox-play (if *is-a-mac*
+                        "/usr/local/bin/play"
+                      "/usr/bin/play")
+           emacspeak-soxplay-command (if *is-a-mac*
+                                         "/usr/local/bin/play -v 1.2 %s earwax &"
+                                       "/usr/bin/play -v 1.2 %s earwax &")
+           tts-default-speech-rate 90)
      (add-hook 'emacspeak-startup-hook
                (lambda ()
                  (dtk-set-rate tts-default-speech-rate 1)
                  (dtk-interp-sync)
                  (emacspeak-sounds-select-theme "3d/")))
      (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
+ #+END_SRC
+
+ I like to set my own key bindings and there are a lot of emacspeak key bindings
+ I don't need/want. However, emacspeak does a key binding /refresh/ at the end
+ of the init process by adding some emacspeak setup functions to the
+ =after-init-hook=. This means we need to make our setup changes in this hook
+ and ensure our changes are added /after/ emacspeak hook functions run by
+ appending them.
+
+ #+BEGIN_SRC emacs-lisp
+   (defhydra my-hydra-wizards ()
+     "Emacspeak Wizards"
+     ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
+     ("b" emacspeak-wizards-cycle-browser "Browser")
+     ("e" emacspeak-wizards-eww-buffer-list "eww")
+     ("r" emacspeak-wizards-find-file-as-root "root")
+     ("g" emacspeak-wizards-find-grep "Grep")
+     ("f" emacspeak-wizards-finder-find "Find")
+     ("F" emacspeak-wizards-generate-finder "Finder")
+     ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
+     ("s" emacspeak-wizards-spot-words "Spot")
+     ("t" emacspeak-wizards-tramp-open-location "Tramp"))
+   (defun my-esp-bindings ()
+     (message "Loading my emacspeak key bindings...")
+     (unbind-key "<S-left>")
+     (unbind-key "<S-right>")
+     (unbind-key "<C-left>")
+     (unbind-key "<C-right>")
+     (unbind-key "<C-down>")
+     (unbind-key "<C-up>")
+     (unbind-key "<S-up>")
+     (unbind-key "<S-down>")
+     (bind-key "<f5>" 'my-hydra-window/body)
+     (bind-key "<f7>" 'my-hydra-wizards/body)
+     (bind-key "C-z" 'my-hydra-zoom/body))
+
+
+   (add-hook 'after-init-hook #'my-esp-bindings t)
  #+END_SRC
 
 * OSX Tweaks
@@ -440,7 +572,7 @@ bytecomp warnings. Put some defvars in place to silence them.
         :ensure t
         :config
         (bind-key "C-c g" 'org-mac-grb-link org-mode-map)
-        (bind-key "M-h" nil)))
+        (unbind-key "M-h")))
   #+END_SRC
 
 ** Org pomadoro
@@ -756,20 +888,20 @@ bytecomp warnings. Put some defvars in place to silence them.
 
 ** Guide Key
    #+BEGIN_SRC emacs-lisp
-     (use-package guide-key
-       :ensure t
-       :diminish guide-key
-       :init
-       (setq guide-key/guide-key-sequence '("C-x r" "C-c" "C-c p" "C-x 8" 
-                                            "C-h" "C-c C-t" "C-c ," "C-c C-r" 
-                                            "C-c M-t" "C-c @" "C-c &"))
-       :config
-       (guide-key-mode 1))
+     ;; (use-package guide-key
+     ;;   :ensure t
+     ;;   :diminish guide-key
+     ;;   :init
+     ;;   (setq guide-key/guide-key-sequence '("C-x r" "C-c" "C-c p" "C-x 8" 
+     ;;                                        "C-h" "C-c C-t" "C-c ," "C-c C-r" 
+     ;;                                        "C-c M-t" "C-c @" "C-c &"))
+     ;;   :config
+     ;;   (guide-key-mode 1))
    #+END_SRC
 ** Dropdown List
    #+BEGIN_SRC emacs-lisp
-     (use-package dropdown-list
-       :ensure t)
+     ;; (use-package dropdown-list
+     ;;   :ensure t)
 
    #+END_SRC
 * Editing 
@@ -968,8 +1100,8 @@ bytecomp warnings. Put some defvars in place to silence them.
                                      yas-ido-prompt))
         :config
         (progn
-          (bind-key "<tab>" nil yas-minor-mode-map)
-          (bind-key "TAB" nil yas-minor-mode-map)
+          (unbind-key "<tab>" yas-minor-mode-map)
+          (unbind-key "TAB" yas-minor-mode-map)
           ;;(bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
           (yas/load-directory "~/.emacs.d/snippets")
           (yas-global-mode 1)))
@@ -1270,29 +1402,29 @@ bytecomp warnings. Put some defvars in place to silence them.
 
 ** Switch Window
   #+BEGIN_SRC emacs-lisp
-    (use-package switch-window
-      :ensure t
-      :init
-      (setq-default switch-window-shortcut-style 'alphabet)
-      (setq-default switch-window-timeout nil)
-      :config
-      (defun split-window-horizontally-instead ()
-        (interactive)
-        (save-excursion
-          (delete-other-windows)
-          (funcall (split-window-func-with-other-buffer 'split-window-horizontally))))
+    ;; (use-package switch-window
+    ;;   :ensure t
+    ;;   :init
+    ;;   (setq-default switch-window-shortcut-style 'alphabet)
+    ;;   (setq-default switch-window-timeout nil)
+    ;;   :config
+    ;;   (defun split-window-horizontally-instead ()
+    ;;     (interactive)
+    ;;     (save-excursion
+    ;;       (delete-other-windows)
+    ;;       (funcall (split-window-func-with-other-buffer 'split-window-horizontally))))
 
-      (defun split-window-vertically-instead ()
-        (interactive)
-        (save-excursion
-          (delete-other-windows)
-          (funcall (split-window-func-with-other-buffer 'split-window-vertically))))
+    ;;   (defun split-window-vertically-instead ()
+    ;;     (interactive)
+    ;;     (save-excursion
+    ;;       (delete-other-windows)
+    ;;       (funcall (split-window-func-with-other-buffer 'split-window-vertically))))
 
-      ;; (global-set-key "\C-x |" 'split-window-horizontally-instead)
-      ;; (global-set-key "\C-x _" 'split-window-vertically-instead))
-      (bind-key "C-x |" 'split-window-horizontally-instead)
-      (bind-key "C-x _" 'split-window-vertically-instead)
-      (bind-key "C-x o" 'switch-window))
+    ;;   ;; (global-set-key "\C-x |" 'split-window-horizontally-instead)
+    ;;   ;; (global-set-key "\C-x _" 'split-window-vertically-instead))
+    ;;   (bind-key "C-x |" 'split-window-horizontally-instead)
+    ;;   (bind-key "C-x _" 'split-window-vertically-instead)
+    ;;   (bind-key "C-x o" 'switch-window))
   #+END_SRC
 
 ** REST Client
@@ -1492,11 +1624,16 @@ bytecomp warnings. Put some defvars in place to silence them.
       (if *is-a-mac*
           (setq browse-url-browser-function 'browse-url-default-macosx-browser)
         (setq browse-url-browser-function 'browse-url-default-browser))
-      :bind (("C-c C-z ." . browse-url-at-point)
-             ("C-c C-z b" . browse-url-of-buffer)
-             ("C-c C-z r" . browse-url-of-region)
-             ("C-c C-z u" . browse-url)
-             ("C-c C-z v" . browse-url-of-file)))
+      (defhydra my-hydra-browse-url ()
+        "Browse URL"
+        ("." browse-url-at-point "at point")
+        ("b" browse-url-of-buffer "buffer")
+        ("r" browse-url-of-region "region")
+        ("u" browse-url "URL")
+        ("f" browse-url-of-file "File")
+        ("d" emacspeak-wizards-unhex-uri "Decode")
+        ("q" nil "Quit"))
+      :bind ("<f6>" . my-hydra-browse-url/body))
   #+END_SRC
 
 ** Markdown
