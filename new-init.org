@@ -302,12 +302,16 @@
  #+END_SRC
 
 * OSX Tweaks
-  Some tweaks to make emacs and OSX get on better 
+  Some tweaks to make emacs and OSX get on better. Note that I also install the
+  coreutils package from homebrew to get some GNU flavoured utilities. These
+  tend to start with 'g', so we need to do some additional variable settings. 
 
   #+BEGIN_SRC emacs-lisp
     (when *is-a-mac*
       (setq mac-command-modifier 'meta)
       (setq mac-option-modifier 'none)
+      (setq dired-free-space-program "gdf")
+      (setq insert-directory-program "gls")
       (setq default-input-method "MacOSX")
       ;; Make mouse wheel / trackpad scrolling less jerky
       (setq mouse-wheel-scroll-amount '(1 ((shift) . 5)
