@@ -322,7 +322,16 @@
                            (concat "<" multiple "wheel-" direction ">")) 'ignore)))
       (bind-key "M-'" 'ns-next-frame)
       (bind-key "M-h" 'ns-do-hide-emacs)
-      (bind-key "M-`" 'ms-do-hide-others))
+      (bind-key "M-`" 'ms-do-hide-others)
+      (use-package applescript-mode
+        :ensure t
+        :mode ("\\.applescript" . applescript-mode))
+      (use-package osx-plist
+        :ensure t)
+      (use-package osx-trash
+        :ensure t
+        :config (osx-trash-setup)))
+
 
   #+END_SRC
 * Org Mode
