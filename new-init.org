@@ -659,6 +659,7 @@
 
     (fset 'yes-or-no-p 'y-or-n-p)
 
+    (global-linum-mode t)
   #+END_SRC
 
 ** Enable some disabled modes
@@ -717,6 +718,7 @@
      (when (display-graphic-p)
        (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
    #+END_SRC
+
 
 * Fonts
   Setup font related things
