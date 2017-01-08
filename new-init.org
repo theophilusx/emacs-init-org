@@ -659,9 +659,8 @@
 
     (fset 'yes-or-no-p 'y-or-n-p)
 
-    (global-linum-mode t)
   #+END_SRC
-
+  
 ** Enable some disabled modes
   #+BEGIN_SRC emacs-lisp
     (put 'narrow-to-region 'disabled nil)
@@ -718,7 +717,6 @@
      (when (display-graphic-p)
        (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
    #+END_SRC
-
 
 * Fonts
   Setup font related things
@@ -1318,6 +1316,13 @@
      (use-package imenu-anywhere
        :ensure t)
    #+END_SRC
+** Line numbers
+
+   #+BEGIN_SRC emacs-lisp
+    (use-package linum
+      :config
+      (add-hook 'prog-mode-hook 'linum-mode))
+   #+END_SRC
 * Utility Modes 
 ** Spelling
     When running on OSX it is necessary to
@@ -1904,6 +1909,11 @@
    #+BEGIN_SRC emacs-lisp
    (use-package powershell
      :ensure t)
+   #+END_SRC
+** Python
+
+   #+BEGIN_SRC emacs-lisp
+   
    #+END_SRC
 * Theme 
   #+BEGIN_SRC emacs-lisp
