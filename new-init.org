@@ -1913,7 +1913,28 @@
 ** Python
 
    #+BEGIN_SRC emacs-lisp
-   
+     (use-package python
+       :init
+       (use-package jedi
+         :ensure t
+         :mode ("\\.py\\'" . python-mode)
+         :init
+         (setq jedi:complete-on-dot t)
+         :config
+         (add-hook 'python-mode-hook 'jedi:setup)
+         (jedi:install-server))
+       (use-package company-jedi
+         :ensure t)
+       (use-package importmagic
+         :ensure t)
+       (use-package elpy
+         :ensure t
+         :init
+         (setq elpy-rpc-backend "jedi")
+         :config
+         (elpy-enable)))
+
+
    #+END_SRC
 * Theme 
   #+BEGIN_SRC emacs-lisp
