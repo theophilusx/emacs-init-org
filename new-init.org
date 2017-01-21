@@ -302,6 +302,14 @@
       (add-hook 'after-init-hook #'my-esp-bindings t)
  #+END_SRC
 
+ I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
+ they are mature enough, I will generally submit them for inclusion 
+
+ #+BEGIN_SRC emacs-lisp
+   ;; Require my emacspeak-smartparens.el
+   (when (featurep 'emacspeak)
+     (require 'emacspeak-smartparens))
+ #+END_SRC
 * OSX Tweaks
   Some tweaks to make emacs and OSX get on better. Note that I also install the
   coreutils package from homebrew to get some GNU flavoured utilities. These
@@ -1204,8 +1212,11 @@
    #+END_SRC
 ** Electric Pair Mode
   #+BEGIN_SRC emacs-lisp 
-    (when (fboundp 'electric-pair-mode)
-      (electric-pair-mode))
+    ;; Testing smartparens and I don't think this is needed to be explicitly
+    ;; loaded if smartparens is, so comment out for now
+
+    ;; (when (fboundp 'electric-pair-mode)
+    ;;   (electric-pair-mode))
   #+END_SRC
 ** Goto Address
   Lets make addresses action buttons when we find them in comments in
@@ -1265,8 +1276,9 @@
    it isn't there. 
 
    #+BEGIN_SRC emacs-lisp
-     ;; Trying out smartparens as paredit replacement, so commenting out paredint
-     ;; stuff for now
+     ;; Testing smartparens as a paredit replacement as docs indicate it
+     ;; may work better with emacspeak or be easier to make work than
+     ;; paredit
 
      ;; (use-package paredit
      ;;   :ensure t
@@ -1315,6 +1327,18 @@
      ;;   (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
    #+END_SRC
 
+** Smartparens
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package smartparens-config
+         :ensure smartparens
+         :config
+         (show-smartparens-global-mode t)
+         (sp-use-smartparens-bindings)
+         (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
+         (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
+
+   #+END_SRC
 ** Imenu
    #+BEGIN_SRC emacs-lisp
      (use-package imenu-anywhere
@@ -1700,15 +1724,18 @@
 *** Add the ~elisp-slime-nave~ package to get some nice nav functions.
 
    #+BEGIN_SRC emacs-lisp
-     (use-package elisp-slime-nav
-       :ensure t
-       ;; :diminish elisp-slime-nav-mode
-       :config
-       (dolist (hook '(emacs-lisp-mode-hook
-                       ielm-mode-hook
-                       lisp-mode-hook
-                       clojure-mode-hook))
-              (add-hook hook 'turn-on-elisp-slime-nav-mode)))
+     ;; Trying out smartparens which also has advanced navigation support, so
+     ;; disabling this package for now
+
+     ;; (use-package elisp-slime-nav
+     ;;   :ensure t
+     ;;   ;; :diminish elisp-slime-nav-mode
+     ;;   :config
+     ;;   (dolist (hook '(emacs-lisp-mode-hook
+     ;;                   ielm-mode-hook
+     ;;                   lisp-mode-hook
+     ;;                   clojure-mode-hook))
+     ;;          (add-hook hook 'turn-on-elisp-slime-nav-mode)))
    #+END_SRC
 
 *** Use ~ipretty~ to improve display of eval results 
@@ -1769,7 +1796,7 @@
        :init
        (setq clojure-align-forms-automatically t)
        :config
-       (add-hook 'clojure-mode-hook #'paredit-mode)
+       ;; (add-hook 'clojure-mode-hook #'paredit-mode)
        (add-hook 'clojure-mode-hook #'subword-mode)
        (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
@@ -1790,7 +1817,7 @@
        :config
        (add-hook 'cider-mode-hook #'eldoc-mode)
        (add-hook 'cider-repl-mode-hook #'eldoc-mode)
-       (add-hook 'cider-repl-mode-hook #'paredit-mode)
+       ;; (add-hook 'cider-repl-mode-hook #'paredit-mode)
        (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
        (add-hook 'cider-mode-hook #'cider-hydra-mode)
        (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
@@ -1974,10 +2001,10 @@
         (diminish 'hs-minor-mode)
         (diminish 'doc-view-minor-mode " DV")
         (diminish 'view-mode " RO")
-        (diminish 'elisp-slime-nav-mode)
+        ;; (diminish 'elisp-slime-nav-mode)
         (diminish 'yas-minor-mode)
-        (diminish 'paredit-everywhere-mode " Par")
-        (diminish 'paredit-mode " Par")
+        ;; (diminish 'paredit-everywhere-mode " Par")
+        ;; (diminish 'paredit-mode " Par")
         (diminish 'rainbow-mode "")
         (diminish 'company-mode)
         (diminish 'global-whitespace-newline-mode)
