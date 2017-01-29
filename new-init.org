@@ -183,6 +183,279 @@
         ("m" headlong-bookmark-jump)))
 
   #+END_SRC
+* Org Mode
+  Start by getting required package. I'm using the org-plus-contrib
+  package from the org repository.
+
+  *Note*: Occasionally, you may run into problems when installing org from a
+  repository. Essentially the problem can occur if you have some of the bundled
+  org files loaded when you try to install a repo version. The easiest way to
+  fix this is to reload org mode using the command
+
+  : C-u M-x org-reload
+
+  Then remove the repo package version (in my case, this is org-plus-congtrib)
+  and re-install. This will normally ensure a 'stable' environment. 
+
+  #+BEGIN_SRC emacs-lisp 
+        (use-package org
+          :ensure org-plus-contrib
+          :demand t
+          :mode ("\\.org\\'" . org-mode)
+          :init
+          (setq org-agenda-files '("~/Dropbox/org/personal.org"
+                                   "~/Dropbox/org/planner.org"
+                                   "~/Dropbox/org/policy.org"
+                                   "~/Dropbox/org/projects.org"
+                                   "~/Dropbox/org/refile.org"
+                                   "~/Dropbox/org/security.org"
+                                   "~/Dropbox/org/urs.org"
+                                   "~/Dropbox/org/storage.org"
+                                   "~/Dropbox/org/iam.org")
+                org-agenda-remove-tags t
+                org-agenda-skip-unavailable-files t
+                org-agenda-span 14
+                org-catch-invisible-edits 'smart
+                org-clock-in-resume t
+                org-clock-out-remove-zero-time-clocks t
+                org-clock-persist t
+                org-time-clocksum-format '(:hours "%d" :require-hours t
+                                                  :minutes ":%02d" :require-minutes t)
+                org-ctrl-k-protect-subtree t
+                org-default-notes-file "~/Dropbox/org/notes.org"
+                org-directory "~/Dropbox/org"
+                org-enforce-todo-checkbox-dependencies t
+                org-enforce-todo-dependencies t
+                org-export-backends '(ascii beamer html
+                                            icalendar latex texinfo
+                                            md odt org koma-letter
+                                            taskjuggler)
+                org-export-with-sub-superscripts nil
+                org-export-with-tags nil
+                org-hide-block-startup t
+                org-html-validation-link nil
+                org-list-allow-alphabetical t
+                org-list-description-max-indent 5
+                org-list-indent-offset 2
+                org-log-done 'time
+                org-log-into-drawer t
+                org-log-refile 'time
+                org-outline-path-complete-in-steps t
+                org-pretty-entities t
+                org-refile-allow-creating-parent-nodes 'confirm
+                org-refile-targets (quote ((nil :maxlevel . 5)
+                                           (org-agenda-files :maxlevel . 5)))
+                org-refile-use-outline-path (quote file)
+                org-startup-align-all-tables t
+                org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
+          (setq org-capture-templates
+                (quote
+                 (("t" "todo" entry
+                   (file "~/Dropbox/org/refile.org")
+                   "* TODO %?
+                                    %U
+                                    %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+                  ("r" "respond" entry
+                   (file "~/Dropbox/org/refile.org")
+                   "* NEXT Respond to %:from on %:subject
+                                    SCHEDULED: %t
+                                    %U
+                                    %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+                  ("n" "note" entry
+                   (file "~/Dropbox/org/refile.org")
+                   "* %? :NOTE:
+                                    %U
+                                    %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+                  ("j" "journal" entry
+                   (file+datetree "~/Dropbox/org/journal.org")
+                   "* %?
+                                    %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+                  ("p" "phone" entry
+                   (file "~/Dropbox/org/refile.org")
+                   "* PHONE %? :PHONE:
+                                    %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+          (setq org-todo-keywords
+                (quote
+                 ((sequence "TODO(t)"
+                            "NEXT(n)"
+                            "STARTED(s!)"
+                            "DELEGATED(w@/!)"
+                            "HOLD(h@/!)"
+                            "|"
+                            "CANCELLED(c@)"
+                            "DONE(d!)"))))
+          (setq org-agenda-custom-commands
+                (quote
+                 (("n" "Agenda and all TODO's"
+                   ((agenda "" nil)
+                    (alltodo "" nil))
+                   nil)
+                  ("wr" "Weekly Report"
+                   ((todo "DONE|CANCELLED"
+                          ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+                    (todo "STARTED|NEXT"
+                          ((org-agenda-overriding-header "WIP")))
+                    (todo "HOLD|DELEGATED"
+                          ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+                    (todo "TODO"
+                          ((org-agenda-overriding-header "Task Backlog"))))
+                   nil nil))))
+          (setq org-latex-classes
+                '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+                  ("article" "\\documentclass[a4paper,12pt]{hitec}"
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+                  ("une-article" "\\documentclass[a4paper,12pt]{article}"
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+                  ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
+                   ("\\part{%s}" . "\\part*{%s}")
+                   ("\\chapter{%s}" . "\\chapter*{%s}")
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+                  ("book" "\\documentclass[a4paper,12pt]{scrbook}"
+                   ("\\part{%s}" . "\\part*{%s}")
+                   ("\\chapter{%s}" . "\\chapter*{%s}")
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+                  ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
+          (setq org-latex-pdf-process
+                '("lualatex -interaction nonstopmode -output-directory %o %f"
+                  "lualatex -interaction nonstopmode -output-directory %o %f"
+                  "lualatex -interaction nonstopmode -output-directory %o %f"))
+          :config
+          (org-babel-do-load-languages
+           'org-babel-load-languages
+           '(
+             (R . nil)
+             (C . t)
+             (clojure . t)
+             (css . t)
+             (java . t)
+             (js . t)
+             (makefile . t)
+             (perl . t)
+             (ditaa . t)
+             (dot . t)
+             (emacs-lisp . t)
+             (gnuplot . nil)
+             (haskell . nil)
+             (latex . t)
+             (ledger . t)
+             (ocaml . nil)
+             (octave . nil)
+             (python . t)
+             (ruby . t)
+             (screen . nil)
+             (sh . t)
+             (sql . nil)
+             (sqlite . t)))
+          (add-to-list 'org-structure-template-alist
+                       '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+                         "<src lang=\"python\">\n?\n</src>"))
+          ;; add <el for emacs-lisp expansion
+          (add-to-list 'org-structure-template-alist
+                       '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+                         "<src lang=\"emacs-lisp\">\n?\n</src>"))
+          (bind-key "C-c l" 'org-store-link)
+          (bind-key "C-c a" 'org-agenda)
+          (bind-key "C-c b" 'org-switchb)
+          (bind-key "C-c r" 'org))
+
+
+
+   #+END_SRC
+
+** Task Juggler
+  I use org-taskjuggler for producing project gant charts etc
+
+  #+BEGIN_SRC emacs-lisp
+    ;; (use-package org-taskjuggler
+    ;;   :disabled t
+    ;;   :ensure t
+    ;;   :init
+    ;;   (setq org-taskjuggler-default-global-header
+    ;;       " timingresolution 60min
+    ;;             timezone \"Australia/Sydney\"
+    ;;             dailyworkinghours 7
+    ;;             workinghours mon - fri 9:00 - 13:00, 14:00 - 17:00
+    ;;             workinghours sat, sun off
+    ;;           "
+    ;;       org-taskjuggler-default-project-duration 365)
+    ;;   (setq org-taskjuggler-default-reports
+    ;;       '("textreport report \"Plan\" {
+    ;;             formats html
+    ;;             header '== %title =='
+
+    ;;             center -8<-
+    ;;               [#Plan Plan] | [#Resource_Allocation Resource Allocation]
+    ;;               ----
+    ;;               === Plan ===
+    ;;               <[report id=\"plan\"]>
+    ;;               ----
+    ;;               === Resource Allocation ===
+    ;;               <[report id=\"resourceGraph\"]>
+    ;;             ->8-
+    ;;           }
+
+    ;;           # A traditional Gantt chart with a project overview.
+    ;;           taskreport plan \"\" {
+    ;;             headline \"Project Plan\"
+    ;;             columns bsi, name, start, end, effort, chart { width 1500 }
+    ;;             loadunit shortauto
+    ;;             hideresource 1
+    ;;           }
+
+    ;;           # A graph showing resource allocation. It identifies whether each
+    ;;           # resource is under- or over-allocated for.
+    ;;           resourcereport resourceGraph \"\" {
+    ;;             headline \"Resource Allocation Graph\"
+    ;;             columns no, name, effort, weekly { width 1500 }
+    ;;             loadunit shortauto
+    ;;             hidetask ~(isleaf() & isleaf_())
+    ;;             sorttasks plan.start.up
+    ;;           }")))
+
+   #+END_SRC
+
+** Some OS X packages
+   If running under OS X, there are a couple of additional packages we need
+
+   #+BEGIN_SRC emacs-lisp 
+   (when *is-a-mac*
+      (use-package org-mac-link
+        :disabled t
+        :ensure t
+        :config
+        (bind-key "C-c g" 'org-mac-grb-link org-mode-map)
+        (unbind-key "M-h")))
+  #+END_SRC
+
+** Org pomadoro
+  I like to use the pomadoro technique for getting work done.
+  See [[https://en.wikipedia.org/wiki/Pomodoro_Technique][Pomadoro Technique]] for details. There is an org package to help with applying
+  this technique using org-mode
+
+  #+BEGIN_SRC emacs-lisp 
+    (use-package org-pomodoro
+      :ensure t
+      :disabled t
+      :config
+      (after-load 'org-agenda
+        (bind-key "P" 'org-pomodoro org-agenda-mode-map)))
+  #+END_SRC
+
 * Emacspeak
  Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
  facility, it is important that it is loaded as early as possible in the Emacs boot
@@ -343,274 +616,6 @@
 
 
   #+END_SRC
-* Org Mode
-  Start by getting required package. I'm using the org-plus-contrib
-  package from the org repository.
-
-  *Note*: Occasionally, you may run into problems when installing org from a
-  repository. Essentially the problem can occur if you have some of the bundled
-  org files loaded when you try to install a repo version. The easiest way to
-  fix this is to reload org mode using the command
-
-  : C-u M-x org-reload
-
-  Then remove the repo package version (in my case, this is org-plus-congtrib)
-  and re-install. This will normally ensure a 'stable' environment. 
-
-  #+BEGIN_SRC emacs-lisp 
-    (use-package org
-      :ensure org-plus-contrib
-      :demand t
-      :mode ("\\.org\\'" . org-mode)
-      :init
-      (setq org-agenda-files '("~/Dropbox/org/personal.org"
-                               "~/Dropbox/org/planner.org"
-                               "~/Dropbox/org/policy.org"
-                               "~/Dropbox/org/projects.org"
-                               "~/Dropbox/org/refile.org"
-                               "~/Dropbox/org/security.org"
-                               "~/Dropbox/org/urs.org"
-                               "~/Dropbox/org/storage.org"
-                               "~/Dropbox/org/iam.org")
-            org-agenda-remove-tags t
-            org-agenda-skip-unavailable-files t
-            org-agenda-span 14
-            org-catch-invisible-edits 'smart
-            org-clock-in-resume t
-            org-clock-out-remove-zero-time-clocks t
-            org-clock-persist t
-            org-clock-persistence-insinuate t
-            org-time-clocksum-format '(:hours "%d" :require-hours t
-                                              :minutes ":%02d" :require-minutes t)
-            org-completion-use-ido t
-            org-ctrl-k-protect-subtree t
-            org-default-notes-file "~/Dropbox/org/notes.org"
-            org-directory "~/Dropbox/org"
-            org-enforce-todo-checkbox-dependencies t
-            org-enforce-todo-dependencies t
-            org-export-backends '(ascii beamer html
-                                        icalendar latex
-                                        md odt org koma-letter
-                                        taskjuggler)
-            org-export-kill-product-buffer-when-displayed t
-            org-export-with-sub-superscripts nil
-            org-export-with-tags nil
-            org-hide-block-startup t
-            org-html-validation-link nil
-            org-list-allow-alphabetical t
-            org-list-description-max-indent 5
-            org-list-indent-offset 2
-            org-log-done 'time
-            org-log-into-drawer t
-            org-log-refile 'time
-            org-outline-path-complete-in-steps t
-            org-pretty-entities t
-            org-refile-allow-creating-parent-nodes 'confirm
-            org-refile-targets (quote ((nil :maxlevel . 5)
-                                       (org-agenda-files :maxlevel . 5)))
-            org-refile-use-outline-path (quote file)
-            org-startup-align-all-tables t
-            org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
-      (setq org-capture-templates
-            (quote
-             (("t" "todo" entry
-               (file "~/Dropbox/org/refile.org")
-               "* TODO %?
-                                %U
-                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("r" "respond" entry
-               (file "~/Dropbox/org/refile.org")
-               "* NEXT Respond to %:from on %:subject
-                                SCHEDULED: %t
-                                %U
-                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("n" "note" entry
-               (file "~/Dropbox/org/refile.org")
-               "* %? :NOTE:
-                                %U
-                                %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("j" "journal" entry
-               (file+datetree "~/Dropbox/org/journal.org")
-               "* %?
-                                %U" :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("p" "phone" entry
-               (file "~/Dropbox/org/refile.org")
-               "* PHONE %? :PHONE:
-                                %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
-      (setq org-todo-keywords
-            (quote
-             ((sequence "TODO(t)"
-                        "NEXT(n)"
-                        "STARTED(s!)"
-                        "DELEGATED(w@/!)"
-                        "HOLD(h@/!)"
-                        "|"
-                        "CANCELLED(c@)"
-                        "DONE(d!)"))))
-      (setq org-agenda-custom-commands
-            (quote
-             (("n" "Agenda and all TODO's"
-               ((agenda "" nil)
-                (alltodo "" nil))
-               nil)
-              ("wr" "Weekly Report"
-               ((todo "DONE|CANCELLED"
-                      ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-                (todo "STARTED|NEXT"
-                      ((org-agenda-overriding-header "WIP")))
-                (todo "HOLD|DELEGATED"
-                      ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-                (todo "TODO"
-                      ((org-agenda-overriding-header "Task Backlog"))))
-               nil nil))))
-      (setq org-latex-classes
-            '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("article" "\\documentclass[a4paper,12pt]{hitec}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("une-article" "\\documentclass[a4paper,12pt]{article}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("book" "\\documentclass[a4paper,12pt]{scrbook}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
-      (setq org-latex-pdf-process
-            '("lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"))
-      :config
-      (org-babel-do-load-languages
-       'org-babel-load-languages
-       '(
-         ;;(R . t)
-         (ditaa . t)
-         (dot . t)
-         (emacs-lisp . t)
-         ;;(gnuplot . t)
-         ;;(haskell . nil)
-         (latex . t)
-         (ledger . t)
-         ;;(ocaml . nil)
-         ;;(octave . t)
-         (python . t)
-         (ruby . t)
-         (screen . nil)
-         (sh . t)
-         (sql . nil)
-         (sqlite . t)))
-      (add-to-list 'org-structure-template-alist
-                   '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-                     "<src lang=\"python\">\n?\n</src>"))
-      ;; add <el for emacs-lisp expansion
-      (add-to-list 'org-structure-template-alist
-                   '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-                     "<src lang=\"emacs-lisp\">\n?\n</src>"))
-      (bind-key "C-c l" 'org-store-link)
-      (bind-key "C-c a" 'org-agenda)
-      (bind-key "C-c b" 'org-iswitch)
-      (bind-key "C-c r" 'org-capture))
-
-
-   #+END_SRC
-
-** Task Juggler
-  I use org-taskjuggler for producing project gant charts etc
-
-  #+BEGIN_SRC emacs-lisp
-    ;; (use-package org-taskjuggler
-    ;;   :disabled t
-    ;;   :ensure t
-    ;;   :init
-    ;;   (setq org-taskjuggler-default-global-header
-    ;;       " timingresolution 60min
-    ;;             timezone \"Australia/Sydney\"
-    ;;             dailyworkinghours 7
-    ;;             workinghours mon - fri 9:00 - 13:00, 14:00 - 17:00
-    ;;             workinghours sat, sun off
-    ;;           "
-    ;;       org-taskjuggler-default-project-duration 365)
-    ;;   (setq org-taskjuggler-default-reports
-    ;;       '("textreport report \"Plan\" {
-    ;;             formats html
-    ;;             header '== %title =='
-
-    ;;             center -8<-
-    ;;               [#Plan Plan] | [#Resource_Allocation Resource Allocation]
-    ;;               ----
-    ;;               === Plan ===
-    ;;               <[report id=\"plan\"]>
-    ;;               ----
-    ;;               === Resource Allocation ===
-    ;;               <[report id=\"resourceGraph\"]>
-    ;;             ->8-
-    ;;           }
-
-    ;;           # A traditional Gantt chart with a project overview.
-    ;;           taskreport plan \"\" {
-    ;;             headline \"Project Plan\"
-    ;;             columns bsi, name, start, end, effort, chart { width 1500 }
-    ;;             loadunit shortauto
-    ;;             hideresource 1
-    ;;           }
-
-    ;;           # A graph showing resource allocation. It identifies whether each
-    ;;           # resource is under- or over-allocated for.
-    ;;           resourcereport resourceGraph \"\" {
-    ;;             headline \"Resource Allocation Graph\"
-    ;;             columns no, name, effort, weekly { width 1500 }
-    ;;             loadunit shortauto
-    ;;             hidetask ~(isleaf() & isleaf_())
-    ;;             sorttasks plan.start.up
-    ;;           }")))
-
-   #+END_SRC
-
-** Some OS X packages
-   If running under OS X, there are a couple of additional packages we need
-
-   #+BEGIN_SRC emacs-lisp 
-   (when *is-a-mac*
-      (use-package org-mac-link
-        :disabled t
-        :ensure t
-        :config
-        (bind-key "C-c g" 'org-mac-grb-link org-mode-map)
-        (unbind-key "M-h")))
-  #+END_SRC
-
-** Org pomadoro
-  I like to use the pomadoro technique for getting work done.
-  See [[https://en.wikipedia.org/wiki/Pomodoro_Technique][Pomadoro Technique]] for details. There is an org package to help with applying
-  this technique using org-mode
-
-  #+BEGIN_SRC emacs-lisp 
-    (use-package org-pomodoro
-      :ensure t
-      :disabled t
-      :config
-      (after-load 'org-agenda
-        (bind-key "P" 'org-pomodoro org-agenda-mode-map)))
-  #+END_SRC
-
 * Basic defaults
   Some basic defaults and customizations 
 
@@ -1333,8 +1338,10 @@
      (use-package smartparens-config
          :ensure smartparens
          :config
-         (show-smartparens-global-mode t)
-         (sp-use-smartparens-bindings)
+         (progn
+           (sp-use-smartparens-bindings)
+           (smartparens-global-mode)
+           (show-smartparens-global-mode))
          (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
          (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
 
