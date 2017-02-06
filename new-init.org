@@ -228,8 +228,7 @@
                 org-enforce-todo-dependencies t
                 org-export-backends '(ascii beamer html
                                             icalendar latex texinfo
-                                            md odt org koma-letter
-                                            taskjuggler)
+                                            md odt org koma-letter)
                 org-export-with-sub-superscripts nil
                 org-export-with-tags nil
                 org-hide-block-startup t
@@ -371,7 +370,7 @@
           (bind-key "C-c l" 'org-store-link)
           (bind-key "C-c a" 'org-agenda)
           (bind-key "C-c b" 'org-switchb)
-          (bind-key "C-c r" 'org))
+          (bind-key "C-c r" 'org-capture))
 
 
 
@@ -741,7 +740,7 @@
     (if *is-a-mac*
         (set-face-attribute 'default nil
                             :foundry nil
-                            :family "Source Code Pro"
+                            :family "Inconsolata"
                             :height 280)
       (set-face-attribute 'default nil
                           :foundry "adobe"
