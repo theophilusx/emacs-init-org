@@ -85,6 +85,14 @@
   correctly. 
 ** hydra
   #+BEGIN_SRC emacs-lisp
+    (use-package winner
+      :config
+      (winner-mode 1))
+
+    (use-package windmove
+      :config
+      (windmove-default-keybindings))
+
     (use-package hydra
       :ensure t
       :config
@@ -120,12 +128,6 @@
             (shrink-window arg)
           (enlarge-window arg)))
 
-      (use-package winner
-        :config
-        (winner-mode 1))
-      (use-package windmove
-        :config
-        (windmove-default-keybindings))
       (defhydra my-hydra-zoom ()
         "zoom"
         ("-" text-scale-decrease "out")
@@ -199,7 +201,7 @@
 
   #+BEGIN_SRC emacs-lisp 
         (use-package org
-          :ensure org-plus-contrib
+          ;;:ensure org-plus-contrib
           :demand t
           :mode ("\\.org\\'" . org-mode)
           :init
@@ -513,7 +515,6 @@
            emacspeak-play-emacspeak-startup-icon nil
            emacspeak-play-program "/home/tcross/bin/play"
            emacspeak-play-args nil
-           emacspeak-speak-tooltips t
            emacspeak-wizards-available-browsers (if *is-a-mac*
                                                     '(eww-browse-url browse-url-default-macosx-browser)
                                                   '(eww-browse-url browse-url-default-browser))
@@ -743,9 +744,9 @@
                             :family "Inconsolata"
                             :height 320)
       (set-face-attribute 'default nil
-                          :foundry "adobe"
-                          :family "Source Code Pro"
-                          :height 138))
+                          :foundry nil
+                          :family "Inconsolata"
+                          :height 160))
   #+END_SRC
 
   #+BEGIN_SRC emacs-lisp
@@ -1971,6 +1972,16 @@
          (setq elpy-rpc-backend "jedi")
          :config
          (elpy-enable)))
+
+
+   #+END_SRC
+** Scheme
+   #+BEGIN_SRC emacs-lisp
+     (use-package geiser
+       :ensure t)
+
+     (use-package sicp
+       :ensure t)
 
 
    #+END_SRC
