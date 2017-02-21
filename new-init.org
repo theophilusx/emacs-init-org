@@ -741,7 +741,7 @@
         (set-face-attribute 'default nil
                             :foundry nil
                             :family "Inconsolata"
-                            :height 320)
+                            :height 300)
       (set-face-attribute 'default nil
                           :foundry "adobe"
                           :family "Source Code Pro"
