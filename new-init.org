@@ -6,16 +6,16 @@
   The following adds additional directories to the emacs load-path so that
   emacs can find various additional libraries etc
 
-  #+BEGIN_SRC emacs-lisp
-    (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-  #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+#+END_SRC
 
   Any small third party libraries I use which are not packaged in an ELPA
   repository go in the ~.emacs.d/lib~  subdirectory.
 
-  #+BEGIN_SRC emacs-lisp
-    (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
-  #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
+#+END_SRC
 
 * Set Some Constants
   I set a couple of constants which can then be used to control configuration
@@ -57,8 +57,8 @@
      (require 'package)
 
      (setq package-enable-at-startup nil)
-     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
      (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
+     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
      (package-initialize)
 
    #+END_SRC
@@ -83,108 +83,7 @@
 
   Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
   correctly. 
-** hydra
-  #+BEGIN_SRC emacs-lisp
-    (use-package winner
-      :config
-      (winner-mode 1))
 
-    (use-package windmove
-      :config
-      (windmove-default-keybindings))
-
-    (use-package hydra
-      :ensure t
-      :config
-      (defun hydra-move-splitter-left (arg)
-        "Move window splitter left."
-        (interactive "p")
-        (if (let ((windmove-wrap-around))
-              (windmove-find-other-window 'right))
-            (shrink-window-horizontally arg)
-          (enlarge-window-horizontally arg)))
-
-      (defun hydra-move-splitter-right (arg)
-        "Move window splitter right."
-        (interactive "p")
-        (if (let ((windmove-wrap-around))
-              (windmove-find-other-window 'right))
-            (enlarge-window-horizontally arg)
-          (shrink-window-horizontally arg)))
-
-      (defun hydra-move-splitter-up (arg)
-        "Move window splitter up."
-        (interactive "p")
-        (if (let ((windmove-wrap-around))
-              (windmove-find-other-window 'up))
-            (enlarge-window arg)
-          (shrink-window arg)))
-
-      (defun hydra-move-splitter-down (arg)
-        "Move window splitter down."
-        (interactive "p")
-        (if (let ((windmove-wrap-around))
-              (windmove-find-other-window 'up))
-            (shrink-window arg)
-          (enlarge-window arg)))
-
-      (defhydra my-hydra-zoom ()
-        "zoom"
-        ("-" text-scale-decrease "out")
-        ("+" text-scale-increase "in")
-        ("0" (text-scale-adjust 0) "reset")
-        ("q" nil "quit" :color blue))
-      (defhydra my-hydra-error ()
-        "goto-error"
-        ("h" first-error "first")
-        ("j" next-error "next")
-        ("k" previous-error "prev")
-        ("v" recenter-top-bottom "recenter")
-        ("q" nil "quit"))
-      (require 'winner)
-      (defhydra my-hydra-window (:color red :hint nil)
-        "
-     Split: _v_ert _x_:horz
-    Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
-      Move: _s_wap
-    Frames: _f_rame new  _df_ delete
-      Misc: _m_ark _a_ce  _u_ndo  _r_edo"
-        ("h" windmove-left)
-        ("j" windmove-down)
-        ("k" windmove-up)
-        ("l" windmove-right)
-        ("H" hydra-move-splitter-left)
-        ("J" hydra-move-splitter-down)
-        ("K" hydra-move-splitter-up)
-        ("L" hydra-move-splitter-right)
-        ("|" (lambda ()
-               (interactive)
-               (split-window-right)
-               (windmove-right)))
-        ("_" (lambda ()
-               (interactive)
-               (split-window-below)
-               (windmove-down)))
-        ("v" split-window-right)
-        ("x" split-window-below)
-        ;;("t" transpose-frame "'")
-        ;; winner-mode must be enabled
-        ("u" winner-undo)
-        ("r" winner-redo) ;;Fixme, not working?
-        ("o" delete-other-windows :exit t)
-        ("a" ace-window :exit t)
-        ("f" new-frame :exit t)
-        ("s" ace-swap-window)
-        ("da" ace-delete-window)
-        ("dw" delete-window)
-        ("db" kill-this-buffer)
-        ("df" delete-frame :exit t)
-        ("q" nil)
-        ;;("i" ace-maximize-window "ace-one" :color blue)
-        ;;("b" ido-switch-buffer "buf")
-        ("m" headlong-bookmark-jump)))
-
-  #+END_SRC
 * Org Mode
   Start by getting required package. I'm using the org-plus-contrib
   package from the org repository.
@@ -199,265 +98,383 @@
   Then remove the repo package version (in my case, this is org-plus-congtrib)
   and re-install. This will normally ensure a 'stable' environment. 
 
-  #+BEGIN_SRC emacs-lisp 
-        (use-package org
-          ;;:ensure org-plus-contrib
-          :demand t
-          :mode ("\\.org\\'" . org-mode)
-          :init
-          (setq org-agenda-files '("~/Dropbox/org/personal.org"
-                                   "~/Dropbox/org/planner.org"
-                                   "~/Dropbox/org/policy.org"
-                                   "~/Dropbox/org/projects.org"
-                                   "~/Dropbox/org/refile.org"
-                                   "~/Dropbox/org/security.org"
-                                   "~/Dropbox/org/urs.org"
-                                   "~/Dropbox/org/storage.org"
-                                   "~/Dropbox/org/iam.org")
-                org-agenda-remove-tags t
-                org-agenda-skip-unavailable-files t
-                org-agenda-span 14
-                org-catch-invisible-edits 'smart
-                org-clock-in-resume t
-                org-clock-out-remove-zero-time-clocks t
-                org-clock-persist t
-                org-time-clocksum-format '(:hours "%d" :require-hours t
-                                                  :minutes ":%02d" :require-minutes t)
-                org-ctrl-k-protect-subtree t
-                org-default-notes-file "~/Dropbox/org/notes.org"
-                org-directory "~/Dropbox/org"
-                org-enforce-todo-checkbox-dependencies t
-                org-enforce-todo-dependencies t
-                org-export-backends '(ascii beamer html
-                                            icalendar latex texinfo
-                                            md odt org koma-letter)
-                org-export-with-sub-superscripts nil
-                org-export-with-tags nil
-                org-hide-block-startup t
-                org-html-validation-link nil
-                org-list-allow-alphabetical t
-                org-list-description-max-indent 5
-                org-list-indent-offset 2
-                org-log-done 'time
-                org-log-into-drawer t
-                org-log-refile 'time
-                org-outline-path-complete-in-steps t
-                org-pretty-entities t
-                org-refile-allow-creating-parent-nodes 'confirm
-                org-refile-targets (quote ((nil :maxlevel . 5)
-                                           (org-agenda-files :maxlevel . 5)))
-                org-refile-use-outline-path (quote file)
-                org-startup-align-all-tables t
-                org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
-          (setq org-capture-templates
-                (quote
-                 (("t" "todo" entry
-                   (file "~/Dropbox/org/refile.org")
-                   "* TODO %?
-                                    %U
-                                    %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-                  ("r" "respond" entry
-                   (file "~/Dropbox/org/refile.org")
-                   "* NEXT Respond to %:from on %:subject
-                                    SCHEDULED: %t
-                                    %U
-                                    %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-                  ("n" "note" entry
-                   (file "~/Dropbox/org/refile.org")
-                   "* %? :NOTE:
-                                    %U
-                                    %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-                  ("j" "journal" entry
-                   (file+datetree "~/Dropbox/org/journal.org")
-                   "* %?
-                                    %U" :empty-lines-after 1 :clock-in t :clock-resume t)
-                  ("p" "phone" entry
-                   (file "~/Dropbox/org/refile.org")
-                   "* PHONE %? :PHONE:
-                                    %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
-          (setq org-todo-keywords
-                (quote
-                 ((sequence "TODO(t)"
-                            "NEXT(n)"
-                            "STARTED(s!)"
-                            "DELEGATED(w@/!)"
-                            "HOLD(h@/!)"
-                            "|"
-                            "CANCELLED(c@)"
-                            "DONE(d!)"))))
-          (setq org-agenda-custom-commands
-                (quote
-                 (("n" "Agenda and all TODO's"
-                   ((agenda "" nil)
-                    (alltodo "" nil))
-                   nil)
-                  ("wr" "Weekly Report"
-                   ((todo "DONE|CANCELLED"
-                          ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-                    (todo "STARTED|NEXT"
-                          ((org-agenda-overriding-header "WIP")))
-                    (todo "HOLD|DELEGATED"
-                          ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-                    (todo "TODO"
-                          ((org-agenda-overriding-header "Task Backlog"))))
-                   nil nil))))
-          (setq org-latex-classes
-                '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
-                   ("\\section{%s}" . "\\section*{%s}")
-                   ("\\subsection{%s}" . "\\subsection*{%s}")
-                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-                  ("article" "\\documentclass[a4paper,12pt]{hitec}"
-                   ("\\section{%s}" . "\\section*{%s}")
-                   ("\\subsection{%s}" . "\\subsection*{%s}")
-                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-                   ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-                  ("une-article" "\\documentclass[a4paper,12pt]{article}"
-                   ("\\section{%s}" . "\\section*{%s}")
-                   ("\\subsection{%s}" . "\\subsection*{%s}")
-                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-                   ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-                  ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
-                   ("\\part{%s}" . "\\part*{%s}")
-                   ("\\chapter{%s}" . "\\chapter*{%s}")
-                   ("\\section{%s}" . "\\section*{%s}")
-                   ("\\subsection{%s}" . "\\subsection*{%s}")
-                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-                  ("book" "\\documentclass[a4paper,12pt]{scrbook}"
-                   ("\\part{%s}" . "\\part*{%s}")
-                   ("\\chapter{%s}" . "\\chapter*{%s}")
-                   ("\\section{%s}" . "\\section*{%s}")
-                   ("\\subsection{%s}" . "\\subsection*{%s}")
-                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-                  ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
-          (setq org-latex-pdf-process
-                '("lualatex -interaction nonstopmode -output-directory %o %f"
-                  "lualatex -interaction nonstopmode -output-directory %o %f"
-                  "lualatex -interaction nonstopmode -output-directory %o %f"))
-          :config
-          (org-babel-do-load-languages
-           'org-babel-load-languages
-           '(
-             (R . nil)
-             (C . t)
-             (clojure . t)
-             (css . t)
-             (java . t)
-             (js . t)
-             (makefile . t)
-             (perl . t)
-             (ditaa . t)
-             (dot . t)
-             (emacs-lisp . t)
-             (gnuplot . nil)
-             (haskell . nil)
-             (latex . t)
-             (ledger . t)
-             (ocaml . nil)
-             (octave . nil)
-             (python . t)
-             (ruby . t)
-             (screen . nil)
-             (sh . t)
-             (sql . nil)
-             (sqlite . t)))
-          (add-to-list 'org-structure-template-alist
-                       '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-                         "<src lang=\"python\">\n?\n</src>"))
-          ;; add <el for emacs-lisp expansion
-          (add-to-list 'org-structure-template-alist
-                       '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-                         "<src lang=\"emacs-lisp\">\n?\n</src>"))
-          (bind-key "C-c l" 'org-store-link)
-          (bind-key "C-c a" 'org-agenda)
-          (bind-key "C-c b" 'org-switchb)
-          (bind-key "C-c r" 'org-capture))
-
-
-
-   #+END_SRC
-
-** Task Juggler
-  I use org-taskjuggler for producing project gant charts etc
+  I have had problems loading org-plus-contrib with use-package, so now I do it
+  the old fashioned way!
 
   #+BEGIN_SRC emacs-lisp
-    ;; (use-package org-taskjuggler
-    ;;   :disabled t
-    ;;   :ensure t
-    ;;   :init
-    ;;   (setq org-taskjuggler-default-global-header
-    ;;       " timingresolution 60min
-    ;;             timezone \"Australia/Sydney\"
-    ;;             dailyworkinghours 7
-    ;;             workinghours mon - fri 9:00 - 13:00, 14:00 - 17:00
-    ;;             workinghours sat, sun off
-    ;;           "
-    ;;       org-taskjuggler-default-project-duration 365)
-    ;;   (setq org-taskjuggler-default-reports
-    ;;       '("textreport report \"Plan\" {
-    ;;             formats html
-    ;;             header '== %title =='
+    (unless (package-installed-p 'org-plus-contrib)
+      (package-refresh-contents)
+      (package-install 'org-plus-contrib))
 
-    ;;             center -8<-
-    ;;               [#Plan Plan] | [#Resource_Allocation Resource Allocation]
-    ;;               ----
-    ;;               === Plan ===
-    ;;               <[report id=\"plan\"]>
-    ;;               ----
-    ;;               === Resource Allocation ===
-    ;;               <[report id=\"resourceGraph\"]>
-    ;;             ->8-
-    ;;           }
+  #+END_SRC
 
-    ;;           # A traditional Gantt chart with a project overview.
-    ;;           taskreport plan \"\" {
-    ;;             headline \"Project Plan\"
-    ;;             columns bsi, name, start, end, effort, chart { width 1500 }
-    ;;             loadunit shortauto
-    ;;             hideresource 1
-    ;;           }
+** Org Basic Settings
 
-    ;;           # A graph showing resource allocation. It identifies whether each
-    ;;           # resource is under- or over-allocated for.
-    ;;           resourcereport resourceGraph \"\" {
-    ;;             headline \"Resource Allocation Graph\"
-    ;;             columns no, name, effort, weekly { width 1500 }
-    ;;             loadunit shortauto
-    ;;             hidetask ~(isleaf() & isleaf_())
-    ;;             sorttasks plan.start.up
-    ;;           }")))
+  #+BEGIN_SRC emacs-lisp
+    (require 'org)
 
+    (setq org-catch-invisible-edits 'smart
+          org-ctrl-k-protect-subtree t
+          org-default-notes-file "~/Dropbox/org/notes.org"
+          org-directory "~/Dropbox/org"
+          org-ellipsis "…"
+          ;; org-html-validation-link nil
+          org-list-allow-alphabetical t
+          org-list-indent-offset 2
+          org-pretty-entities t
+          org-startup-align-all-tables t
+          org-startup-with-inline-images (display-graphic-p)
+          org-support-shift-select t)
+
+  #+END_SRC
+
+** Org Capture
+
+  #+BEGIN_SRC emacs-lisp
+    (require 'org-capture)
+
+    (setq org-capture-templates
+          (quote
+           (("t" "todo" entry
+             (file "~/Dropbox/org/refile.org")
+             "* TODO %?
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("r" "respond" entry
+             (file "~/Dropbox/org/refile.org")
+             "* NEXT Respond to %:from on %:subject
+                            SCHEDULED: %t
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("n" "note" entry
+             (file "~/Dropbox/org/refile.org")
+             "* %? :NOTE:
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("j" "journal" entry
+             (file+datetree "~/Dropbox/org/journal.org")
+             "* %?
+                            %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("p" "phone" entry
+             (file "~/Dropbox/org/refile.org")
+             "* PHONE %? :PHONE:
+                            %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+
+  #+END_SRC
+
+** Org TODO 
+
+  #+BEGIN_SRC emacs-lisp
+    (setq org-enforce-todo-checkbox-dependencies t
+          org-enforce-todo-dependencies t
+          org-log-done 'time
+          org-log-into-drawer t)
+    (setq org-todo-keywords
+          (quote
+           ((sequence "TODO(t)"
+                      "NEXT(n)"
+                      "STARTED(s!)"
+                      "DELEGATED(w@/!)"
+                      "HOLD(h@/!)"
+                      "|"
+                      "CANCELLED(c@)"
+                      "DONE(d!)"))))
+
+  #+END_SRC
+
+** Org Refile
+
+   #+BEGIN_SRC emacs-lisp
+     (setq org-log-refile 'time
+           org-refile-allow-creating-parent-nodes 'confirm
+           org-refile-targets (quote ((nil :maxlevel . 5)
+                                      (org-agenda-files :maxlevel . 5)))
+           org-refile-use-outline-path (quote file)
+           org-outline-path-complete-in-steps t)
    #+END_SRC
 
-** Some OS X packages
-   If running under OS X, there are a couple of additional packages we need
+** Org Time Clocking 
 
-   #+BEGIN_SRC emacs-lisp 
-   (when *is-a-mac*
-      (use-package org-mac-link
-        :disabled t
-        :ensure t
-        :config
-        (bind-key "C-c g" 'org-mac-grb-link org-mode-map)
-        (unbind-key "M-h")))
+  #+BEGIN_SRC emacs-lisp
+    (setq org-clock-in-resume t
+          org-clock-out-remove-zero-time-clocks t
+          org-clock-persist 'clock
+          org-time-clocksum-format '(:hours "%d" :require-hours t
+                                            :minutes ":%02d" :require-minutes t))
+
   #+END_SRC
 
-** Org pomadoro
-  I like to use the pomadoro technique for getting work done.
-  See [[https://en.wikipedia.org/wiki/Pomodoro_Technique][Pomadoro Technique]] for details. There is an org package to help with applying
-  this technique using org-mode
+** Org Agenda 
+
+  #+BEGIN_SRC emacs-lisp
+    (require 'org-agenda)
+
+    (setq org-agenda-files '("~/Dropbox/org")
+          org-agenda-remove-tags t
+          org-agenda-skip-unavailable-files t
+          org-agenda-span 14)
+    (setq org-agenda-custom-commands
+          (quote
+           (("n" "Agenda and all TODO's"
+             ((agenda "" nil)
+              (alltodo "" nil))
+             nil)
+            ("wr" "Weekly Report"
+             ((todo "DONE|CANCELLED"
+                    ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+              (todo "STARTED|NEXT"
+                    ((org-agenda-overriding-header "WIP")))
+              (todo "HOLD|DELEGATED"
+                    ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+              (todo "TODO"
+                    ((org-agenda-overriding-header "Task Backlog"))))
+             nil nil))))
+    (require 'org-agenda)
+
+
+  #+END_SRC
+
+** Org Blocks
+
+  #+BEGIN_SRC emacs-lisp
+    (require 'org-src)
+
+    (add-to-list 'org-structure-template-alist
+                 '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+                   "<src lang=\"python\">\n?\n</src>"))
+    (add-to-list 'org-structure-template-alist
+                 '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+                   "<src lang=\"emacs-lisp\">\n?\n</src>"))
+    (add-to-list 'org-structure-template-alist
+                 '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+                   "<src lang=\"clojure-mode\">\n?\n</src>"))
+    (setq org-src-fontify-natively t
+          org-src-tab-acts-natively t
+          org-src-window-setup 'current-window
+          org-hide-block-startup t)
+  #+END_SRC
+
+** Org Babel
+
+   Some Babel defaults
+
+   #+BEGIN_SRC emacs-lisp
+     (require 'ob-core)
+     (require 'ob-clojure)
+
+     (setq org-babel-clojure-backend 'cider
+           org-babel-noweb-wrap-start "«"
+           org-babel-noweb-wrap-end "»")
+   #+END_SRC
+
+   Supported Languages 
+
+   #+BEGIN_SRC emacs-lisp
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((R . nil)
+       (C . t)
+       (clojure . t)
+       (css . t)
+       (java . t)
+       (js . t)
+       (makefile . t)
+       (perl . t)
+       (ditaa . nil)
+       (dot . nil)
+       (emacs-lisp . t)
+       (gnuplot . nil)
+       (haskell . nil)
+       (latex . t)
+       (ledger . t)
+       (ocaml . nil)
+       (octave . nil)
+       (python . t)
+       (ruby . t)
+       (screen . nil)
+       (sh . t)
+       (sql . nil)
+       (sqlite . t)))
+
+   #+END_SRC
+** Org Export
+
+   #+BEGIN_SRC emacs-lisp
+     (require 'ox)
+     (require 'ox-latex)
+
+     (setq org-export-backends '(ascii beamer html
+                                       icalendar latex texinfo
+                                       md odt org koma-letter)
+           org-export-coding-system 'utf-8
+           org-export-copy-to-kill-ring nil
+           org-export-preserve-breaks nil
+           org-export-with-sub-superscripts nil
+           org-export-with-tags nil
+           org-export-with-toc nil)
+
+   #+END_SRC
+*** Org Latex
+
+  #+BEGIN_SRC emacs-lisp
+    (setq org-latex-classes
+          '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("article" "\\documentclass[a4paper,12pt]{hitec}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("une-article" "\\documentclass[a4paper,12pt]{article}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("book" "\\documentclass[a4paper,12pt]{scrbook}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
+
+    (setq org-latex-pdf-process
+          '("lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"))
+
+  #+END_SRC
+
+** Org Key Bindings
 
   #+BEGIN_SRC emacs-lisp 
-    (use-package org-pomodoro
-      :ensure t
-      :disabled t
-      :config
-      (after-load 'org-agenda
-        (bind-key "P" 'org-pomodoro org-agenda-mode-map)))
+    (bind-key "C-c l" 'org-store-link)
+    (bind-key "C-c a" 'org-agenda)
+    (bind-key "C-c b" 'org-switchb)
+    (bind-key "C-c r" 'org-capture)
+
   #+END_SRC
 
+** Finally
+   Setup clock persistence 
+
+   #+BEGIN_SRC emacs-lisp
+     (org-clock-persistence-insinuate)
+   #+END_SRC
+* Hydra
+ #+BEGIN_SRC emacs-lisp
+   (use-package winner
+     :config
+     (winner-mode 1))
+
+   (use-package windmove
+     :config
+     (windmove-default-keybindings))
+
+   (use-package hydra
+     :ensure t
+     :config
+     (defun hydra-move-splitter-left (arg)
+       "Move window splitter left."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'right))
+           (shrink-window-horizontally arg)
+         (enlarge-window-horizontally arg)))
+
+     (defun hydra-move-splitter-right (arg)
+       "Move window splitter right."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'right))
+           (enlarge-window-horizontally arg)
+         (shrink-window-horizontally arg)))
+
+     (defun hydra-move-splitter-up (arg)
+       "Move window splitter up."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'up))
+           (enlarge-window arg)
+         (shrink-window arg)))
+
+     (defun hydra-move-splitter-down (arg)
+       "Move window splitter down."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'up))
+           (shrink-window arg)
+         (enlarge-window arg)))
+
+     (defhydra my-hydra-zoom ()
+       "zoom"
+       ("-" text-scale-decrease "out")
+       ("+" text-scale-increase "in")
+       ("0" (text-scale-adjust 0) "reset")
+       ("q" nil "quit" :color blue))
+     (defhydra my-hydra-error ()
+       "goto-error"
+       ("h" first-error "first")
+       ("j" next-error "next")
+       ("k" previous-error "prev")
+       ("v" recenter-top-bottom "recenter")
+       ("q" nil "quit"))
+     (require 'winner)
+     (defhydra my-hydra-window (:color red :hint nil)
+       "
+    Split: _v_ert _x_:horz
+   Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
+     Move: _s_wap
+   Frames: _f_rame new  _df_ delete
+     Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+       ("h" windmove-left)
+       ("j" windmove-down)
+       ("k" windmove-up)
+       ("l" windmove-right)
+       ("H" hydra-move-splitter-left)
+       ("J" hydra-move-splitter-down)
+       ("K" hydra-move-splitter-up)
+       ("L" hydra-move-splitter-right)
+       ("|" (lambda ()
+              (interactive)
+              (split-window-right)
+              (windmove-right)))
+       ("_" (lambda ()
+              (interactive)
+              (split-window-below)
+              (windmove-down)))
+       ("v" split-window-right)
+       ("x" split-window-below)
+       ;;("t" transpose-frame "'")
+       ;; winner-mode must be enabled
+       ("u" winner-undo)
+       ("r" winner-redo) ;;Fixme, not working?
+       ("o" delete-other-windows :exit t)
+       ("a" ace-window :exit t)
+       ("f" new-frame :exit t)
+       ("s" ace-swap-window)
+       ("da" ace-delete-window)
+       ("dw" delete-window)
+       ("db" kill-this-buffer)
+       ("df" delete-frame :exit t)
+       ("q" nil)
+       ;;("i" ace-maximize-window "ace-one" :color blue)
+       ;;("b" ido-switch-buffer "buf")
+       ("m" headlong-bookmark-jump)))
+
+ #+END_SRC
 * Emacspeak
+
  Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
  facility, it is important that it is loaded as early as possible in the Emacs boot
  process.
@@ -687,26 +704,29 @@
 
 ** Set some setq defaults
   #+BEGIN_SRC emacs-lisp
-    (setq apropos-do-all t
-          auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
-          backup-directory-alist `(("." . ,(concat user-emacs-directory
-                                                   "backups")))
-          default-frame-alist '((top . 1) (left . 1) (width . 81) (height . 29))
-          delete-by-moving-to-trash t
-          ediff-window-setup-function 'ediff-setup-windows-plain
-          eldoc-idle-delay 1.5
-          inhibit-startup-message t
-          initial-fram-alist '((top . 1) (left . 1) (width . 81) (height . 29))
-          line-move-visual nil
-          load-prefer-newer t
-          max-mini-window-height 0.50
-          message-log-max 2048
-          mouse-yank-at-point t
-          require-final-newline t
-          save-interprogram-paste-before-kill t
-          visible-bell t
-          x-select-enable-clipboard t
-          x-select-enable-primary t)
+  (setq apropos-do-all t
+        auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
+        backup-directory-alist `(("." . ,(concat user-emacs-directory
+                                                 "backups")))
+        blink-matching-paren nil
+        default-frame-alist '((top . 1) (left . 1) (width . 81) (height . 29))
+        delete-by-moving-to-trash t
+        ediff-window-setup-function 'ediff-setup-windows-plain
+        eldoc-idle-delay 1.5
+        inhibit-startup-message t
+        initial-fram-alist '((top . 1) (left . 1) (width . 81) (height . 29))
+        line-move-visual nil
+        load-prefer-newer t
+        max-mini-window-height 0.50
+        message-log-max 2048
+        mouse-yank-at-point t
+        require-final-newline t
+        save-interprogram-paste-before-kill t
+        show-paren-delay 0
+        show-paren-style 'expression
+        visible-bell t
+        x-select-enable-clipboard t
+        x-select-enable-primary t)
   #+END_SRC
 
 ** Set some setq-defaults
@@ -746,7 +766,7 @@
       (set-face-attribute 'default nil
                           :foundry nil
                           :family "Inconsolata"
-                          :height 160))
+                          :height 180))
   #+END_SRC
 
   #+BEGIN_SRC emacs-lisp
@@ -913,24 +933,6 @@
        :commands (free-keys))
    #+END_SRC 
 
-** Guide Key
-   #+BEGIN_SRC emacs-lisp
-     ;; (use-package guide-key
-     ;;   :ensure t
-     ;;   :diminish guide-key
-     ;;   :init
-     ;;   (setq guide-key/guide-key-sequence '("C-x r" "C-c" "C-c p" "C-x 8" 
-     ;;                                        "C-h" "C-c C-t" "C-c ," "C-c C-r" 
-     ;;                                        "C-c M-t" "C-c @" "C-c &"))
-     ;;   :config
-     ;;   (guide-key-mode 1))
-   #+END_SRC
-** Dropdown List
-   #+BEGIN_SRC emacs-lisp
-     ;; (use-package dropdown-list
-     ;;   :ensure t)
-
-   #+END_SRC
 * Editing 
   Text editing stuff
 
@@ -1057,6 +1059,11 @@
          (add-hook 'text-mode-hook 'fci-mode)
          (add-hook 'org-mode-hook 'fci-mode)))
     #+END_SRC
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package adaptive-wrap
+       :ensure t)
+   #+END_SRC
 
 ** Whitespace Cleanup
    Cleanup whitespace
@@ -1227,11 +1234,13 @@
   Lets make addresses action buttons when we find them in comments in
   programming buffers
 
+  Seems to be a problem with this mode and newest org-plus-contrib. Disabling for now.
+
   #+BEGIN_SRC emacs-lisp
-    (dolist (hook (if (fboundp 'prog-mode)
-                      '(prog-mode-hook ruby-mode-hook)
-                    '(find-file-hooks)))
-      (add-hook hook 'goto-address-prog-mode))
+    ;; (dolist (hook (if (fboundp 'prog-mode)
+    ;;                   '(prog-mode-hook ruby-mode-hook)
+    ;;                 '(find-file-hooks)))
+    ;;   (add-hook hook 'goto-address-prog-mode))
   #+END_SRC
 ** Make Scripts Executable
   When we create a script, we want the saved file to be made executable
@@ -1243,17 +1252,17 @@
 
 ** Hide and Show 
   #+BEGIN_SRC emacs-lisp
-    (use-package hideshowvis
-      :ensure t
-      :config
-      (progn
-        (dolist (hook '(emacs-lisp-mode-hook
-                        prog-mode-hook
-                        clojure-mode-hook))
-          (add-hook hook 'hideshowvis-enable))
-        ;; graphical +/- fold buttons
-        ;; (hideshowvis-symbols)
-        (bind-key "M-[" 'hs-toggle-hiding)))
+  ;; (use-package hideshowvis
+  ;;   :ensure t
+  ;;   :config
+  ;;   (progn
+  ;;     (dolist (hook '(emacs-lisp-mode-hook
+  ;;                     prog-mode-hook
+  ;;                     clojure-mode-hook))
+  ;;       (add-hook hook 'hideshowvis-enable))
+  ;;     ;; graphical +/- fold buttons
+  ;;     ;; (hideshowvis-symbols)
+  ;;     (bind-key "M-[" 'hs-toggle-hiding)))
   #+END_SRC
 ** Rainbow Mode
    #+BEGIN_SRC emacs-lisp
@@ -1372,25 +1381,34 @@
       and /default.dic/
 
     #+BEGIN_SRC emacs-lisp 
-      (when *spell-check-support-enabled*
-        (use-package ispell
-          :init
-          (if *is-a-mac*
-              (setq ispell-dictionary "british")
-            (setq ispell-dictionary "british-ise"))
-          :config
-          (when (executable-find ispell-program-name)
-            (use-package flyspell
-              :diminish flyspell-mode
-              :init
-              (setq flyspell-use-meta-tab nil)
-              (defun try-flyspell (arg)
-                (if (nth 4 (syntax-ppss))
-                    (call-interactively 'flyspell-correct-word-before-point)
-                  nil))
-              :config
-              (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-              (add-hook 'text-mode-hook 'flyspell-mode)))))
+    (when *spell-check-support-enabled*
+      (use-package ispell
+        :init
+        (if *is-a-mac*
+            (setq ispell-dictionary "british")
+          (setq ispell-dictionary "british-ise"))
+        :config
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC ". "#\\+END_SRC$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_example ". "#\\+end_example$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_EXAMPLE ". "#\\+END_EXAMPLE$"))
+        (add-to-list 'ispell-skip-region-alist '("\:PROPERTIES\:$" . "\:END\:$"))
+        (add-to-list 'ispell-skip-region-alist '("\\[fn:.+:" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("^http" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("=.*" . ".*="))
+        (add-to-list 'ispell-skip-region-alist '("- \\*.+" . ".*\\*: "))
+        (when (executable-find ispell-program-name)
+          (use-package flyspell
+            :diminish flyspell-mode
+            :init
+            (setq flyspell-use-meta-tab nil)
+            (defun try-flyspell (arg)
+              (if (nth 4 (syntax-ppss))
+                  (call-interactively 'flyspell-correct-word-before-point)
+                nil))
+            :config
+            (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+            (add-hook 'text-mode-hook 'flyspell-mode)))))
     #+END_SRC
 
 ** Timestamps
@@ -1488,6 +1506,22 @@
      (use-package restclient
        :ensure t)
 
+   #+END_SRC
+** Alert
+
+   #+BEGIN_SRC emacs-lisp
+   (use-package alert
+     :ensure t
+     :config
+     (setq alert-fade-time 10)
+     (when *is-a-mac*
+       (setq alert-default-style 'growl))
+     (setq alert-reveal-idle-time 120))
+   #+END_SRC
+** Write Good
+   #+BEGIN_SRC emacs-lisp
+   (use-package writegood-mode
+     :ensure t)
    #+END_SRC
 * Application Modes 
   Modes relating to emacs applications 
@@ -1987,21 +2021,21 @@
    #+END_SRC
 * Theme 
   #+BEGIN_SRC emacs-lisp
-    (use-package solarized-theme
-      :ensure t
-      :init 
-      (setq-default custom-enabled-themes '(solarized-dark))
-      :config
-      (setq fci-rule-color "Yellow"
-            fci-rule-width 2)
-      (defun reapply-themes ()
-        "Forcibly load the themes listed in `custom-enabled-themes'."
-        (dolist (theme custom-enabled-themes)
-          (unless (custom-theme-p theme)
-            (load-theme theme)))
-        (custom-set-variables `(custom-enabled-themes
-                                (quote ,custom-enabled-themes))))
-      (add-hook 'after-init-hook 'reapply-themes))
+  (use-package solarized-theme
+    :ensure t
+    :init 
+    (setq-default custom-enabled-themes '(solarized-dark))
+    (setq solarized-distinct-fringe-background +1)
+    (setq solarized-use-more-italic nil)
+    :config
+    (defun reapply-themes ()
+      "Forcibly load the themes listed in `custom-enabled-themes'."
+      (dolist (theme custom-enabled-themes)
+        (unless (custom-theme-p theme)
+          (load-theme theme)))
+      (custom-set-variables `(custom-enabled-themes
+                              (quote ,custom-enabled-themes))))
+    (add-hook 'after-init-hook 'reapply-themes))
 
    #+END_SRC
 ** Diminish Mode

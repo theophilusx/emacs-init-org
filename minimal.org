@@ -2,42 +2,6 @@
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
-* Load Path
-  The following adds additional directories to the emacs load-path so that
-  emacs can find various additional libraries etc
-
-  #+BEGIN_SRC emacs-lisp
-    (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-  #+END_SRC
-
-  Any small third party libraries I use which are not packaged in an ELPA
-  repository go in the ~.emacs.d/lib~  subdirectory.
-
-  #+BEGIN_SRC emacs-lisp
-    (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
-  #+END_SRC
-
-* Set Some Constants
-  I set a couple of constants which can then be used to control configuration
-  settings in my init file.
-
-  I run emacs on both OSX and Linux. To handle differences in configuration
-  settings for the two platforms, I set a constant which determines if emacs is
-  running on OSX or not. 
-
-  #+BEGIN_SRC emacs-lisp
-    (defconst *is-a-mac* (eq system-type 'darwin)
-      "T if emacs is running under OSX, nil otherwise.")
-  #+END_SRC
-
-  Set a constant to determine if spell checking is to be enabled. Not sure if I
-  really need this, but leaving it in place for now.
-
-  #+BEGIN_SRC emacs-lisp
-    (defconst *spell-check-support-enabled* t
-      "T if we want spell checking support enabled, nil otherwise.")
-  #+END_SRC
-
 * ELPA
   ELPA has made managing add-on elisp packages *much* easier than it use to
   be. The trick is to only load packages you really want/need and not get
@@ -58,125 +22,304 @@
 
      (setq package-enable-at-startup nil)
      (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-     (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
      (package-initialize)
 
    #+END_SRC
 
-   We have a slight bootstrap or /chicken and egg/ problem, we need the
-   use-package package from ELPA before we can use it, but it is what we want
-   to use to install the package. Therefore, need a simple light weight way to
-   get that package. Lets do the simple way
+* Org Mode
+  Start by getting required package. I'm using the org-plus-contrib
+  package from the org repository.
 
-   #+BEGIN_SRC emacs-lisp
-     (unless (package-installed-p 'use-package)
-       (package-refresh-contents)
-       (package-install 'use-package))
-     ;;(setq use-package-verbose t)
-     (eval-when-compile
-       (require 'use-package))
-     (require 'diminish)
-     (require 'bind-key)
-   #+END_SRC
+  *Note*: Occasionally, you may run into problems when installing org from a
+  repository. Essentially the problem can occur if you have some of the bundled
+  org files loaded when you try to install a repo version. The easiest way to
+  fix this is to reload org mode using the command
 
-* Emacspeak
- Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
- facility, it is important that it is loaded as early as possible in the Emacs boot
- process.
+  : C-u M-x org-reload
 
- First, setup a constant which tells emacs where to look for the
- emacspeak distro
+  Then remove the repo package version (in my case, this is org-plus-congtrib)
+  and re-install. This will normally ensure a 'stable' environment. 
 
- #+BEGIN_SRC emacs-lisp 
-     (defconst *emacspeak-src-dir* "~/git/emacspeak/trunk"
-       "Where emacs will find the emacspeak distro")
-   #+END_SRC
-
- Need to load different speech servers depending on the platform
-
- #+BEGIN_SRC emacs-lisp 
-     (if *is-a-mac*
-         (defconst *emacspeak-server* "mac")
-       (defconst *emacspeak-server* "outloud"))
-   #+END_SRC
-
- Add the EmacsSpeak info documentation to the info search path. From
- within Info, you can hit ~g~ and then enter ~(emacspeak)~ at the
- prompt to open the Emacspeak info documentation
-
- #+BEGIN_SRC emacs-lisp 
-   (add-to-list 'Info-default-directory-list (concat *emacspeak-src-dir* "/info"))
- #+END_SRC
-
- Seems to be a couple of references to free variables which throw up 
-bytecomp warnings. Put some defvars in place to silence them.
-
- #+BEGIN_SRC emacs-lisp
-   (defvar emacspeak-we-url-executor nil)
-   (defvar org-ans2 nil)
-   (defvar ido-process-ignore-lists nil)
- #+END_SRC
-
-
- When emacs is not being run in batch mode and when emacspeak is not
- yet loaded, then load it
-
- #+BEGIN_SRC emacs-lisp 
-   (when (and (not noninteractive)
-              (not (featurep 'emacspeak)))
-     (add-to-list 'load-path *emacspeak-src-dir*)
-     (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
-     (setenv "DTK_PROGRAM" *emacspeak-server*)
-     (if *is-a-mac*
-         (setq emacspeak-wizards-available-browsers
-               '(eww-browse-url browse-url-default-macosx-browser))
-       (setq emacspeak-wizards-available-browsers
-             '(eww-browse-url browse-url-default-browser)))
-     (setq dtk-program *emacspeak-server*
-           dtk-use-tones nil
-           emacspeak-mail-alert nil
-           tts-default-speech-rate 90
-           outloud-default-speech-rate 90
-           emacspeak-vm-use-raman-settings nil
-           mac-default-speech-rate 400
-           emacspeak-erc-my-nick "theophilusx"
-           emacspeak-erc-speak-all-participants t
-           emacspeak-play-emacspeak-startup-icon nil
-           emacspeak-play-program "/home/tcross/bin/play"
-           emacspeak-play-args nil
-           emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
-           emacspeak-speak-tooltips t)
-     (if *is-a-mac*
-         (progn
-           (setq emacspeak-soxplay-command "/usr/local/bin/play -v 1.2 %s earwax &")
-           (setq sox-play "/usr/local/bin/play"))
-       (setq emacspeak-soxplay-command "/usr/bin/play -v 1.2 %s earwax &")
-       (setq sox-play "/usr/bin/play"))
-     (add-hook 'emacspeak-startup-hook
-               (lambda ()
-                 (dtk-set-rate tts-default-speech-rate 1)
-                 (dtk-interp-sync)
-                 (emacspeak-sounds-select-theme "3d/")))
-     (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
- #+END_SRC
-
-* OSX Tweaks
-  Some tweaks to make emacs and OSX get on better 
+  I have had problems loading org-plus-contrib with use-package, so now I do it
+  the old fashioned way!
 
   #+BEGIN_SRC emacs-lisp
-    (when *is-a-mac*
-      (setq mac-command-modifier 'meta)
-      (setq mac-option-modifier 'none)
-      (setq default-input-method "MacOSX")
-      ;; Make mouse wheel / trackpad scrolling less jerky
-      (setq mouse-wheel-scroll-amount '(1 ((shift) . 5)
-                                          ((control))))
-      (dolist (multiple '("" "double-" "triple-"))
-        (dolist (direction '("right" "left"))
-          (global-set-key (read-kbd-macro
-                           (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-      (bind-key "M='" 'ns-next-frame)
-      (bind-key "M-h" 'ns-do-hide-emacs)
-      (bind-key "M-`" 'ms-do-hide-others))
+    (unless (package-installed-p 'org-plus-contrib)
+      (package-refresh-contents)
+      (package-install 'org-plus-contrib))
 
+  #+END_SRC
+
+** Org Basic Settings
+
+  #+BEGIN_SRC emacs-lisp
+    (require 'org)
+
+    ;; (setq org-catch-invisible-edits 'smart
+    ;;       org-ctrl-k-protect-subtree t
+    ;;       org-default-notes-file "~/Dropbox/org/notes.org"
+    ;;       org-directory "~/Dropbox/org"
+    ;;       org-ellipsis "…"
+    ;;       ;; org-html-validation-link nil
+    ;;       org-list-allow-alphabetical t
+    ;;       org-list-indent-offset 2
+    ;;       org-pretty-entities t
+    ;;       org-startup-align-all-tables t
+    ;;       org-startup-with-inline-images (display-graphic-p)
+    ;;       org-support-shift-select t)
+
+  #+END_SRC
+
+** Org Capture
+
+  #+BEGIN_SRC emacs-lisp
+    ;; (require 'org-capture)
+
+    ;; (setq org-capture-templates
+    ;;       (quote
+    ;;        (("t" "todo" entry
+    ;;          (file "~/Dropbox/org/refile.org")
+    ;;          "* TODO %?
+    ;;                         %U
+    ;;                         %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+    ;;         ("r" "respond" entry
+    ;;          (file "~/Dropbox/org/refile.org")
+    ;;          "* NEXT Respond to %:from on %:subject
+    ;;                         SCHEDULED: %t
+    ;;                         %U
+    ;;                         %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+    ;;         ("n" "note" entry
+    ;;          (file "~/Dropbox/org/refile.org")
+    ;;          "* %? :NOTE:
+    ;;                         %U
+    ;;                         %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+    ;;         ("j" "journal" entry
+    ;;          (file+datetree "~/Dropbox/org/journal.org")
+    ;;          "* %?
+    ;;                         %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+    ;;         ("p" "phone" entry
+    ;;          (file "~/Dropbox/org/refile.org")
+    ;;          "* PHONE %? :PHONE:
+    ;;                         %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+
+  #+END_SRC
+
+** Org TODO 
+
+  #+BEGIN_SRC emacs-lisp
+    ;; (setq org-enforce-todo-checkbox-dependencies t
+    ;;       org-enforce-todo-dependencies t
+    ;;       org-log-done 'time
+    ;;       org-log-into-drawer t)
+    ;; (setq org-todo-keywords
+    ;;       (quote
+    ;;        ((sequence "TODO(t)"
+    ;;                   "NEXT(n)"
+    ;;                   "STARTED(s!)"
+    ;;                   "DELEGATED(w@/!)"
+    ;;                   "HOLD(h@/!)"
+    ;;                   "|"
+    ;;                   "CANCELLED(c@)"
+    ;;                   "DONE(d!)"))))
+
+  #+END_SRC
+
+** Org Refile
+
+   #+BEGIN_SRC emacs-lisp
+     ;; (setq org-log-refile 'time
+     ;;       org-refile-allow-creating-parent-nodes 'confirm
+     ;;       org-refile-targets (quote ((nil :maxlevel . 5)
+     ;;                                  (org-agenda-files :maxlevel . 5)))
+     ;;       org-refile-use-outline-path (quote file)
+     ;;       org-outline-path-complete-in-steps t)
+   #+END_SRC
+
+** Org Time Clocking 
+
+  #+BEGIN_SRC emacs-lisp
+    ;; (setq org-clock-in-resume t
+    ;;       org-clock-out-remove-zero-time-clocks t
+    ;;       org-clock-persist 'clock
+    ;;       org-time-clocksum-format '(:hours "%d" :require-hours t
+    ;;                                         :minutes ":%02d" :require-minutes t))
+
+  #+END_SRC
+
+** Org Agenda 
+
+  #+BEGIN_SRC emacs-lisp
+    ;; (require 'org-agenda)
+
+    ;; (setq org-agenda-files '("~/Dropbox/org")
+    ;;       org-agenda-remove-tags t
+    ;;       org-agenda-skip-unavailable-files t
+    ;;       org-agenda-span 14)
+    ;; (setq org-agenda-custom-commands
+    ;;       (quote
+    ;;        (("n" "Agenda and all TODO's"
+    ;;          ((agenda "" nil)
+    ;;           (alltodo "" nil))
+    ;;          nil)
+    ;;         ("wr" "Weekly Report"
+    ;;          ((todo "DONE|CANCELLED"
+    ;;                 ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+    ;;           (todo "STARTED|NEXT"
+    ;;                 ((org-agenda-overriding-header "WIP")))
+    ;;           (todo "HOLD|DELEGATED"
+    ;;                 ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+    ;;           (todo "TODO"
+    ;;                 ((org-agenda-overriding-header "Task Backlog"))))
+    ;;          nil nil))))
+    ;; (require 'org-agenda)
+
+
+  #+END_SRC
+
+** Org Blocks
+
+  #+BEGIN_SRC emacs-lisp
+    (require 'org-src)
+
+    (add-to-list 'org-structure-template-alist
+                 '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+                   "<src lang=\"python\">\n?\n</src>"))
+    (add-to-list 'org-structure-template-alist
+                 '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+                   "<src lang=\"emacs-lisp\">\n?\n</src>"))
+    (add-to-list 'org-structure-template-alist
+                 '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+                   "<src lang=\"clojure-mode\">\n?\n</src>"))
+    (setq org-src-fontify-natively t
+          org-src-tab-acts-natively t
+          org-src-window-setup 'current-window
+          org-hide-block-startup t)
+  #+END_SRC
+
+** Org Babel
+
+   Some Babel defaults
+
+   #+BEGIN_SRC emacs-lisp
+     ;; (require 'ob-core)
+     ;; (require 'ob-clojure)
+
+     ;; (setq org-babel-clojure-backend 'cider
+     ;;       org-babel-noweb-wrap-start "«"
+     ;;       org-babel-noweb-wrap-end "»")
+   #+END_SRC
+
+   Supported Languages 
+
+   #+BEGIN_SRC emacs-lisp
+     ;; (org-babel-do-load-languages
+     ;;  'org-babel-load-languages
+     ;;  '((R . nil)
+     ;;    (C . t)
+     ;;    (clojure . t)
+     ;;    (css . t)
+     ;;    (java . t)
+     ;;    (js . t)
+     ;;    (makefile . t)
+     ;;    (perl . t)
+     ;;    (ditaa . nil)
+     ;;    (dot . nil)
+     ;;    (emacs-lisp . t)
+     ;;    (gnuplot . nil)
+     ;;    (haskell . nil)
+     ;;    (latex . t)
+     ;;    (ledger . t)
+     ;;    (ocaml . nil)
+     ;;    (octave . nil)
+     ;;    (python . t)
+     ;;    (ruby . t)
+     ;;    (screen . nil)
+     ;;    (sh . t)
+     ;;    (sql . nil)
+     ;;    (sqlite . t)))
+
+   #+END_SRC
+** Org Export
+
+   #+BEGIN_SRC emacs-lisp
+     ;; (require 'ox)
+     ;; (require 'ox-latex)
+
+     ;; (setq org-export-backends '(ascii beamer html
+     ;;                                   icalendar latex texinfo
+     ;;                                   md odt org koma-letter)
+     ;;       org-export-coding-system 'utf-8
+     ;;       org-export-copy-to-kill-ring nil
+     ;;       org-export-preserve-breaks nil
+     ;;       org-export-with-sub-superscripts nil
+     ;;       org-export-with-tags nil
+     ;;       org-export-with-toc nil)
+
+   #+END_SRC
+*** Org Latex
+
+  #+BEGIN_SRC emacs-lisp
+    ;; (setq org-latex-classes
+    ;;       '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
+    ;;          ("\\section{%s}" . "\\section*{%s}")
+    ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+    ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+    ;;         ("article" "\\documentclass[a4paper,12pt]{hitec}"
+    ;;          ("\\section{%s}" . "\\section*{%s}")
+    ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+    ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+    ;;          ("\\paragraph{%s}" . "\\paragraph*{%s}")
+    ;;          ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+    ;;         ("une-article" "\\documentclass[a4paper,12pt]{article}"
+    ;;          ("\\section{%s}" . "\\section*{%s}")
+    ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+    ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+    ;;          ("\\paragraph{%s}" . "\\paragraph*{%s}")
+    ;;          ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+    ;;         ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
+    ;;          ("\\part{%s}" . "\\part*{%s}")
+    ;;          ("\\chapter{%s}" . "\\chapter*{%s}")
+    ;;          ("\\section{%s}" . "\\section*{%s}")
+    ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+    ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+    ;;         ("book" "\\documentclass[a4paper,12pt]{scrbook}"
+    ;;          ("\\part{%s}" . "\\part*{%s}")
+    ;;          ("\\chapter{%s}" . "\\chapter*{%s}")
+    ;;          ("\\section{%s}" . "\\section*{%s}")
+    ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+    ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+    ;;         ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
+
+    ;; (setq org-latex-pdf-process
+    ;;       '("lualatex -interaction nonstopmode -output-directory %o %f"
+    ;;         "lualatex -interaction nonstopmode -output-directory %o %f"
+    ;;         "lualatex -interaction nonstopmode -output-directory %o %f"))
+
+  #+END_SRC
+
+** Org Key Bindings
+
+  #+BEGIN_SRC emacs-lisp 
+    ;; (bind-key "C-c l" 'org-store-link)
+    ;; (bind-key "C-c a" 'org-agenda)
+    ;; (bind-key "C-c b" 'org-switchb)
+    ;; (bind-key "C-c r" 'org-capture)
+
+  #+END_SRC
+
+** Finally
+   Setup clock persistence 
+
+   #+BEGIN_SRC emacs-lisp
+     ;; (org-clock-persistence-insinuate)
+   #+END_SRC
+** Goto Address
+  Lets make addresses action buttons when we find them in comments in
+  programming buffers
+
+  #+BEGIN_SRC emacs-lisp
+    (dolist (hook (if (fboundp 'prog-mode)
+                      '(prog-mode-hook ruby-mode-hook)
+                    '(find-file-hooks)))
+      (add-hook hook 'goto-address-prog-mode))
   #+END_SRC
