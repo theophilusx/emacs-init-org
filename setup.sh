@@ -8,4 +8,4 @@
 
 cd ~/.emacs.d
 
-emacs -batch -l setup.el --eval "(tangle-my-init \"$*\")"
+/usr/local/bin/emacs -batch -l setup.el --eval "(tangle-my-init \"$*\")"
