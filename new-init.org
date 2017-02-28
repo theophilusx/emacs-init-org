@@ -718,13 +718,14 @@ Some basic defaults and customizations
         initial-fram-alist '((top . 1) (left . 1) (width . 81) (height . 29))
         line-move-visual nil
         load-prefer-newer t
-        max-mini-window-height 0.50
+       ;; max-mini-window-height 0.50
         message-log-max 2048
         mouse-yank-at-point t
         require-final-newline t
         save-interprogram-paste-before-kill t
         show-paren-delay 0
         show-paren-style 'expression
+        truncate-lines t
         visible-bell t
         select-enable-clipboard t
         select-enable-primary t)
@@ -1050,11 +1051,13 @@ defined.
   (use-package fill-column-indicator
     :ensure t
     :diminish fci-mode
+    :init
+    (setq fci-rule-width 3)
     :config
     (progn
-      (add-hook 'prog-mode-hook 'fci-mode)
-      (add-hook 'text-mode-hook 'fci-mode)
-      (add-hook 'org-mode-hook 'fci-mode)))
+      (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
+      (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
+      (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
 #+END_SRC
 
 ** Whitespace Cleanup
