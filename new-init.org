@@ -248,42 +248,61 @@ Supported Languages
 
 *** Org Latex
 #+BEGIN_SRC emacs-lisp
-  (setq org-latex-classes
-        '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-          ("article" "\\documentclass[a4paper,12pt]{hitec}"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-          ("une-article" "\\documentclass[a4paper,12pt]{article}"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-          ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
-           ("\\part{%s}" . "\\part*{%s}")
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-          ("book" "\\documentclass[a4paper,12pt]{scrbook}"
-           ("\\part{%s}" . "\\part*{%s}")
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-          ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
+  ;; (setq org-latex-classes
+  ;;       '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
+  ;;          ("\\section{%s}" . "\\section*{%s}")
+  ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+  ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+  ;;         ("article" "\\documentclass[a4paper,12pt]{hitec}"
+  ;;          ("\\section{%s}" . "\\section*{%s}")
+  ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+  ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+  ;;          ("\\paragraph{%s}" . "\\paragraph*{%s}")
+  ;;          ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+  ;;         ("une-article" "\\documentclass[a4paper,12pt]{article}"
+  ;;          ("\\section{%s}" . "\\section*{%s}")
+  ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+  ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+  ;;          ("\\paragraph{%s}" . "\\paragraph*{%s}")
+  ;;          ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+  ;;         ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
+  ;;          ("\\part{%s}" . "\\part*{%s}")
+  ;;          ("\\chapter{%s}" . "\\chapter*{%s}")
+  ;;          ("\\section{%s}" . "\\section*{%s}")
+  ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+  ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+  ;;         ("book" "\\documentclass[a4paper,12pt]{scrbook}"
+  ;;          ("\\part{%s}" . "\\part*{%s}")
+  ;;          ("\\chapter{%s}" . "\\chapter*{%s}")
+  ;;          ("\\section{%s}" . "\\section*{%s}")
+  ;;          ("\\subsection{%s}" . "\\subsection*{%s}")
+  ;;          ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+  ;;         ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
 
-  ;; (setq org-latex-pdf-process
-  ;;       '("lualatex -interaction nonstopmode -output-directory %o %f"
-  ;;         "lualatex -interaction nonstopmode -output-directory %o %f"
-  ;;         "lualatex -interaction nonstopmode -output-directory %o %f"))
+  (setq org-latex-pdf-process
+        '("lualatex -interaction nonstopmode -output-directory %o %f"
+          "lualatex -interaction nonstopmode -output-directory %o %f"
+          "lualatex -interaction nonstopmode -output-directory %o %f"))
 
+  (setq org-latex-hyperref-template
+        "\\hypersetup{pdfauthor={%a},
+                      pdftitle={%t},
+                      pdfkeywords={%k},
+                      pdfsubject={%d},
+                      pdfcreator={%c},
+                      pdflang={%L},
+                      colorlinks=true,
+                      linkcolor=blue}")
+
+  (setq org-latex-listings t
+        org-latex-listings-options '(("basicstyle" "\\tiny")
+                                     ("frame" "single")
+                                     ("stringstyle" "\\color{orange}")
+                                     ("commentstyle" "\\color{cyan}")
+                                     ("keywordstyle" "\\color{blue}")
+                                     ("showstringspaces" "false")
+                                     ("breakatwhitespace" "false")
+                                     ("breaklines" "true")))
 #+END_SRC
 
 ** Finally
@@ -298,22 +317,25 @@ loaded.
   (require 'org-agenda)
   (require 'ob-core)
   (require 'ob-clojure)
+  (require 'ox-latex)
 
   (org-element-update-syntax)
   (org-clock-persistence-insinuate)
 
   (add-to-list 'org-structure-template-alist
                '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-		 "<src lang=\"python\">\n?\n</src>"))
+	         "<src lang=\"python\">\n?\n</src>"))
 
   (add-to-list 'org-structure-template-alist
                '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-		 "<src lang=\"emacs-lisp\">\n?\n</src>"))
+	         "<src lang=\"emacs-lisp\">\n?\n</src>"))
 
   (add-to-list 'org-structure-template-alist
                '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-		 "<src lang=\"clojure-mode\">\n?\n</src>"))
+	         "<src lang=\"clojure-mode\">\n?\n</src>"))
 
+  (add-to-list 'org-latex-packages-alist '("" "listings"))
+  (add-to-list 'org-latex-packages-alist '("" "xcolor"))
 #+END_SRC
 
 * Use Package
