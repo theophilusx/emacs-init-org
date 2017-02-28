@@ -57,284 +57,259 @@ package repositories. I add
 #+END_SRC
 
 * Org Mode
-  Start by getting required package. I'm using the org-plus-contrib
-  package from the org repository.
+Start by getting required package. I'm using the org-plus-contrib package from
+the org repository.
 
-  *Note*: Occasionally, you may run into problems when installing org from a
-  repository. Essentially the problem can occur if you have some of the bundled
-  org files loaded when you try to install a repo version. The easiest way to
-  fix this is to reload org mode using the command
+*Note*: Occasionally, you may run into problems when installing org from a
+repository. Essentially the problem can occur if you have some of the bundled
+org files loaded when you try to install a repo version. The easiest way to fix
+this is to reload org mode using the command
 
   : C-u M-x org-reload
 
-  Then remove the repo package version (in my case, this is org-plus-congtrib)
-  and re-install. This will normally ensure a 'stable' environment. 
+Then remove the repo package version (in my case, this is org-plus-congtrib) and
+re-install. This will normally ensure a 'stable' environment.
 
-  I have had problems loading org-plus-contrib with use-package, so now I do it
-  the old fashioned way!
+I have had problems loading org-plus-contrib with use-package, so now I do it
+the old fashioned way!
 
-  #+BEGIN_SRC emacs-lisp
-    (unless (package-installed-p 'org-plus-contrib)
-      (package-refresh-contents)
-      (package-install 'org-plus-contrib))
+#+BEGIN_SRC emacs-lisp
+  (unless (package-installed-p 'org-plus-contrib)
+    (package-refresh-contents)
+    (package-install 'org-plus-contrib))
 
-  #+END_SRC
+#+END_SRC
 
 ** Org Basic Settings
-
-  #+BEGIN_SRC emacs-lisp
-    (require 'org)
-    (require 'org-mime)
-
-    (setq org-catch-invisible-edits 'smart
-          org-ctrl-k-protect-subtree t
-          org-default-notes-file "~/Dropbox/org/notes.org"
-          org-directory "~/Dropbox/org"
-          org-ellipsis "…"
-          ;; org-html-validation-link nil
-          org-list-allow-alphabetical t
-          org-list-indent-offset 2
-          org-pretty-entities t
-          org-startup-align-all-tables t
-          org-startup-with-inline-images (display-graphic-p)
-          org-support-shift-select t)
-
-  #+END_SRC
+#+BEGIN_SRC emacs-lisp
+  (setq org-catch-invisible-edits 'smart
+        org-ctrl-k-protect-subtree t
+        org-default-notes-file "~/Dropbox/org/notes.org"
+        org-directory "~/Dropbox/org"
+        org-ellipsis "…"
+        org-list-allow-alphabetical t
+        org-list-indent-offset 2
+        org-pretty-entities t
+        org-startup-align-all-tables t
+        org-startup-with-inline-images (display-graphic-p)
+        org-support-shift-select t)
+#+END_SRC
 
 ** Org Capture
+#+BEGIN_SRC emacs-lisp
+  (setq org-capture-templates
+        (quote
+         (("t" "todo" entry
+           (file "~/Dropbox/org/refile.org")
+           "* TODO %?
+                          %U
+                          %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+          ("r" "respond" entry
+           (file "~/Dropbox/org/refile.org")
+           "* NEXT Respond to %:from on %:subject
+                          SCHEDULED: %t
+                          %U
+                          %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+          ("n" "note" entry
+           (file "~/Dropbox/org/refile.org")
+           "* %? :NOTE:
+                          %U
+                          %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+          ("j" "journal" entry
+           (file+datetree "~/Dropbox/org/journal.org")
+           "* %?
+                          %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+          ("p" "phone" entry
+           (file "~/Dropbox/org/refile.org")
+           "* PHONE %? :PHONE:
+                          %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
 
-  #+BEGIN_SRC emacs-lisp
-    (require 'org-capture)
-
-    (setq org-capture-templates
-          (quote
-           (("t" "todo" entry
-             (file "~/Dropbox/org/refile.org")
-             "* TODO %?
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("r" "respond" entry
-             (file "~/Dropbox/org/refile.org")
-             "* NEXT Respond to %:from on %:subject
-                            SCHEDULED: %t
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("n" "note" entry
-             (file "~/Dropbox/org/refile.org")
-             "* %? :NOTE:
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("j" "journal" entry
-             (file+datetree "~/Dropbox/org/journal.org")
-             "* %?
-                            %U" :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("p" "phone" entry
-             (file "~/Dropbox/org/refile.org")
-             "* PHONE %? :PHONE:
-                            %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
-
-  #+END_SRC
+#+END_SRC
 
 ** Org TODO 
+#+BEGIN_SRC emacs-lisp
+  (setq org-enforce-todo-checkbox-dependencies t
+        org-enforce-todo-dependencies t
+        org-log-done 'time
+        org-log-into-drawer t)
+  (setq org-todo-keywords
+        (quote
+         ((sequence "TODO(t)"
+                    "NEXT(n)"
+                    "STARTED(s!)"
+                    "DELEGATED(w@/!)"
+                    "HOLD(h@/!)"
+                    "|"
+                    "CANCELLED(c@)"
+                    "DONE(d!)"))))
 
-  #+BEGIN_SRC emacs-lisp
-    (setq org-enforce-todo-checkbox-dependencies t
-          org-enforce-todo-dependencies t
-          org-log-done 'time
-          org-log-into-drawer t)
-    (setq org-todo-keywords
-          (quote
-           ((sequence "TODO(t)"
-                      "NEXT(n)"
-                      "STARTED(s!)"
-                      "DELEGATED(w@/!)"
-                      "HOLD(h@/!)"
-                      "|"
-                      "CANCELLED(c@)"
-                      "DONE(d!)"))))
-
-  #+END_SRC
+#+END_SRC
 
 ** Org Refile
-
-   #+BEGIN_SRC emacs-lisp
-     (setq org-log-refile 'time
-           org-refile-allow-creating-parent-nodes 'confirm
-           org-refile-targets (quote ((nil :maxlevel . 5)
-                                      (org-agenda-files :maxlevel . 5)))
-           org-refile-use-outline-path (quote file)
-           org-outline-path-complete-in-steps t)
-   #+END_SRC
+#+BEGIN_SRC emacs-lisp
+  (setq org-log-refile 'time
+        org-refile-allow-creating-parent-nodes 'confirm
+        org-refile-targets (quote ((nil :maxlevel . 5)
+                                   (org-agenda-files :maxlevel . 5)))
+        org-refile-use-outline-path (quote file))
+#+END_SRC
 
 ** Org Time Clocking 
+#+BEGIN_SRC emacs-lisp
+  (setq org-clock-in-resume t
+        org-clock-out-remove-zero-time-clocks t
+        org-clock-persist 'clock
+        org-time-clocksum-format '(:hours "%d" :require-hours t
+                                          :minutes ":%02d" :require-minutes t))
 
-  #+BEGIN_SRC emacs-lisp
-    (setq org-clock-in-resume t
-          org-clock-out-remove-zero-time-clocks t
-          org-clock-persist 'clock
-          org-time-clocksum-format '(:hours "%d" :require-hours t
-                                            :minutes ":%02d" :require-minutes t))
-
-  #+END_SRC
+#+END_SRC
 
 ** Org Agenda 
+#+BEGIN_SRC emacs-lisp
+  (setq org-agenda-files '("~/Dropbox/org")
+        org-agenda-remove-tags t)
 
-  #+BEGIN_SRC emacs-lisp
-    (require 'org-agenda)
+  (setq org-agenda-custom-commands
+        (quote
+         (("n" "Agenda and all TODO's"
+           ((agenda "" nil)
+            (alltodo "" nil))
+           nil)
+          ("wr" "Weekly Report"
+           ((todo "DONE|CANCELLED"
+                  ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+            (todo "STARTED|NEXT"
+                  ((org-agenda-overriding-header "WIP")))
+            (todo "HOLD|DELEGATED"
+                  ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+            (todo "TODO"
+                  ((org-agenda-overriding-header "Task Backlog"))))
+           nil nil))))
 
-    (setq org-agenda-files '("~/Dropbox/org")
-          org-agenda-remove-tags t
-          org-agenda-skip-unavailable-files t
-          org-agenda-span 14)
-    (setq org-agenda-custom-commands
-          (quote
-           (("n" "Agenda and all TODO's"
-             ((agenda "" nil)
-              (alltodo "" nil))
-             nil)
-            ("wr" "Weekly Report"
-             ((todo "DONE|CANCELLED"
-                    ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-              (todo "STARTED|NEXT"
-                    ((org-agenda-overriding-header "WIP")))
-              (todo "HOLD|DELEGATED"
-                    ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-              (todo "TODO"
-                    ((org-agenda-overriding-header "Task Backlog"))))
-             nil nil))))
-    (require 'org-agenda)
-
-
-  #+END_SRC
+#+END_SRC
 
 ** Org Blocks
+#+BEGIN_SRC emacs-lisp
+  (setq org-src-tab-acts-natively t
+	org-hide-block-startup t)
 
-  #+BEGIN_SRC emacs-lisp
-    (require 'org-src)
-
-    (add-to-list 'org-structure-template-alist
-                 '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-                   "<src lang=\"python\">\n?\n</src>"))
-    (add-to-list 'org-structure-template-alist
-                 '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-                   "<src lang=\"emacs-lisp\">\n?\n</src>"))
-    (add-to-list 'org-structure-template-alist
-                 '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-                   "<src lang=\"clojure-mode\">\n?\n</src>"))
-    (setq org-src-fontify-natively t
-          org-src-tab-acts-natively t
-          ;; org-src-window-setup 'current-window
-          org-hide-block-startup t)
-  #+END_SRC
+#+END_SRC
 
 ** Org Babel
+Some Babel defaults
 
-   Some Babel defaults
+#+BEGIN_SRC emacs-lisp
+  (setq org-babel-clojure-backend 'cider
+        org-babel-noweb-wrap-start "«"
+        org-babel-noweb-wrap-end "»")
 
-   #+BEGIN_SRC emacs-lisp
-     (require 'ob-core)
-     (require 'ob-clojure)
+#+END_SRC
 
-     (setq org-babel-clojure-backend 'cider
-           org-babel-noweb-wrap-start "«"
-           org-babel-noweb-wrap-end "»")
-   #+END_SRC
+Supported Languages 
 
-   Supported Languages 
+#+BEGIN_SRC emacs-lisp
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (clojure . t)
+     (css . t)
+     (dot . t)
+     (java . t)
+     (js . t)
+     (latex . t)
+     (ledger . t)
+     (makefile . t)
+     (org . t)
+     (perl . t)
+     (python . t)
+     (ruby . t)
+     (scheme . t)
+     (shell . t)
+     (sql . t)
+     (C . t)))
 
-   #+BEGIN_SRC emacs-lisp
-     (org-babel-do-load-languages
-      'org-babel-load-languages
-      '((R . nil)
-        (C . t)
-        (clojure . t)
-        (css . t)
-        (java . t)
-        (js . t)
-        (makefile . t)
-        (perl . t)
-        (ditaa . nil)
-        (dot . nil)
-        (emacs-lisp . t)
-        (gnuplot . nil)
-        (haskell . nil)
-        (latex . t)
-        (ledger . t)
-        (ocaml . nil)
-        (octave . nil)
-        (python . t)
-        (ruby . t)
-        (screen . nil)
-        (sh . t)
-        (sql . nil)
-        (sqlite . t)))
+#+END_SRC
 
-   #+END_SRC
 ** Org Export
+#+BEGIN_SRC emacs-lisp
+  (setq org-export-backends '(ascii beamer html
+                                    latex texinfo
+                                    md odt org)
+        ;; org-export-coding-system 'utf-8
+        )
 
-   #+BEGIN_SRC emacs-lisp
-     (require 'ox)
-     (require 'ox-latex)
+#+END_SRC
 
-     (setq org-export-backends '(ascii beamer html
-                                       icalendar latex texinfo
-                                       md odt org koma-letter)
-           org-export-coding-system 'utf-8
-           org-export-copy-to-kill-ring nil
-           org-export-preserve-breaks nil
-           org-export-with-sub-superscripts nil
-           org-export-with-tags nil
-           org-export-with-toc nil)
-
-   #+END_SRC
 *** Org Latex
+#+BEGIN_SRC emacs-lisp
+  (setq org-latex-classes
+        '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+          ("article" "\\documentclass[a4paper,12pt]{hitec}"
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+           ("\\paragraph{%s}" . "\\paragraph*{%s}")
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+          ("une-article" "\\documentclass[a4paper,12pt]{article}"
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+           ("\\paragraph{%s}" . "\\paragraph*{%s}")
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+          ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
+           ("\\part{%s}" . "\\part*{%s}")
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+          ("book" "\\documentclass[a4paper,12pt]{scrbook}"
+           ("\\part{%s}" . "\\part*{%s}")
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+          ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
 
-  #+BEGIN_SRC emacs-lisp
-    (setq org-latex-classes
-          '(("beamer" "\\documentclass[presentation]{beamer}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n[EXTRA]"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-            ("article" "\\documentclass[a4paper,12pt]{hitec}"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-             ("\\paragraph{%s}" . "\\paragraph*{%s}")
-             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-            ("une-article" "\\documentclass[a4paper,12pt]{article}"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-             ("\\paragraph{%s}" . "\\paragraph*{%s}")
-             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-            ("report" "\\documentclass[a4paper,12pt]{scrreprt}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-            ("book" "\\documentclass[a4paper,12pt]{scrbook}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-            ("my-letter" "\\documentclass[DIV=14,fontsize=12pt,subject=titled,backaddress=true,fromalign=right,fromemail=true,fromphone=true]{scrlttr2}")))
+  ;; (setq org-latex-pdf-process
+  ;;       '("lualatex -interaction nonstopmode -output-directory %o %f"
+  ;;         "lualatex -interaction nonstopmode -output-directory %o %f"
+  ;;         "lualatex -interaction nonstopmode -output-directory %o %f"))
 
-    (setq org-latex-pdf-process
-          '("lualatex -interaction nonstopmode -output-directory %o %f"
-            "lualatex -interaction nonstopmode -output-directory %o %f"
-            "lualatex -interaction nonstopmode -output-directory %o %f"))
-
-  #+END_SRC
-
+#+END_SRC
 
 ** Finally
-   Setup clock persistence 
+Add require statements and do some things which need to be done after org is
+loaded. 
 
-   #+BEGIN_SRC emacs-lisp
-     (org-clock-persistence-insinuate)
-   #+END_SRC
+#+BEGIN_SRC emacs-lisp
+  (require 'org)
+  (require 'org-capture)
+  (require 'org-mime)
+  (require 'org-clock)
+  (require 'org-agenda)
+  (require 'ob-core)
+  (require 'ob-clojure)
+
+  (org-element-update-syntax)
+  (org-clock-persistence-insinuate)
+
+  (add-to-list 'org-structure-template-alist
+               '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+		 "<src lang=\"python\">\n?\n</src>"))
+
+  (add-to-list 'org-structure-template-alist
+               '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+		 "<src lang=\"emacs-lisp\">\n?\n</src>"))
+
+  (add-to-list 'org-structure-template-alist
+               '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+		 "<src lang=\"clojure-mode\">\n?\n</src>"))
+
+#+END_SRC
+
 * Use Package
 I just found John Wiegley's use-package macro, which I think is a really
 convenient way to manage the installation and configuration of ELPA
