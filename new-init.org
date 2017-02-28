@@ -95,6 +95,13 @@ the old fashioned way!
         org-support-shift-select t)
 #+END_SRC
 
+** Org Modules
+#+BEGIN_SRC emacs-lisp
+  (setq org-modules '(org-bibtex org-docview org-eww org-info org-irc
+                                 org-bookmark org-drill org-git-link
+                                 org-secretary))
+
+#+END_SRC
 ** Org Capture
 #+BEGIN_SRC emacs-lisp
   (setq org-capture-templates
@@ -235,8 +242,7 @@ Supported Languages
   (setq org-export-backends '(ascii beamer html
                                     latex texinfo
                                     md odt org)
-        ;; org-export-coding-system 'utf-8
-        )
+        org-export-coding-system 'utf-8)
 
 #+END_SRC
 
@@ -575,7 +581,7 @@ them.
   ;;   (require 'emacspeak-smartparens))
 #+END_SRC
 
-* OSX Tweaks
+* OSX Tweaks 
 Some tweaks to make emacs and OSX get on better. Note that I also install the
 coreutils package from homebrew to get some GNU flavoured utilities. These tend
 to start with 'g', so we need to do some additional variable settings.
@@ -609,7 +615,7 @@ to start with 'g', so we need to do some additional variable settings.
 
 #+END_SRC
 
-* Basic defaults
+* Basic defaults 
 Some basic defaults and customizations 
 
 ** Disabled Features 
@@ -754,7 +760,7 @@ Setup some font scaling support
     (bind-key "C-M--" 'default-text-scale-decrease))
 #+END_SRC
 
-* Commands et. al.
+* Commands et. al 
 Some basic configuration relating to commands 
 
 ** Exec Path
@@ -1023,16 +1029,16 @@ defined.
     :ensure t
     :commands (unfill-paragraph unfill-region unfill-toggle))
 
-  (use-package fill-column-indicator
-    :ensure t
-    :diminish fci-mode
-    :init
-    (setq fci-rule-width 3)
-    :config
-    (progn
-      (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
-      (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
-      (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
+  ;; (use-package fill-column-indicator
+  ;;   :ensure t
+  ;;   :diminish fci-mode
+  ;;   :init
+  ;;   (setq fci-rule-width 3)
+  ;;   :config
+  ;;   (progn
+  ;;     (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
+  ;;     (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
+  ;;     (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
 #+END_SRC
 
 ** Whitespace Cleanup
@@ -1042,8 +1048,13 @@ Cleanup whitespace
   (use-package whitespace-cleanup-mode
     :ensure t
     :diminish whitespace-cleanup-mode
+    :init
+    (setq whitespace-cleanup-mode-only-if-initially-clean nil
+          whitespace-line-column 80
+          whitespace-style '(face lines-tail))
     :config
-    (global-whitespace-cleanup-mode t))
+    (global-whitespace-mode)
+    (global-whitespace-cleanup-mode))
 #+END_SRC
 
 ** Fix the mark
