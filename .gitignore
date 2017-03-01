@@ -8,3 +8,5 @@ elpa/
 ido.last
 projectile-bookmarks.eld
 recentf
+history
+repl-history

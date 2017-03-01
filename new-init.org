@@ -1202,6 +1202,7 @@ Cleanup whitespace
     :config
     (global-whitespace-mode)
     (global-whitespace-cleanup-mode))
+
 #+END_SRC
 
 ** Fix the mark
