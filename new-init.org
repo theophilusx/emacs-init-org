@@ -246,7 +246,7 @@ Supported Languages
 
 #+END_SRC
 
-*** Org Latex
+*** Latex Export
 
 I like to tweak the look of exported latex documents from the default by using
 the ~hitec~ class as most of my documents are technical in nature. I also define
@@ -342,15 +342,10 @@ a couple of new document classes
         )
 #+END_SRC 
 
-#+BEGIN_SRC emacs-lisp
+I don't like the default /box/ link style used by the hyperref package. Looks a
+little ugly to me. Prefer instead to use coloured links to indicate hyper refs.
 
-#+END_SRC
 #+BEGIN_SRC emacs-lisp
-  (setq org-latex-pdf-process
-        '("lualatex -interaction nonstopmode -output-directory %o %f"
-          "lualatex -interaction nonstopmode -output-directory %o %f"
-          "lualatex -interaction nonstopmode -output-directory %o %f"))
-
   (setq org-latex-hyperref-template
         "\\hypersetup{pdfauthor={%a},
                       pdftitle={%t},
@@ -361,6 +356,13 @@ a couple of new document classes
                       colorlinks=true,
                       linkcolor=blue}")
 
+#+END_SRC
+
+By default, org uses the verbatim environment for code blocks. I prefer to use
+the listings package and add a little colour. At some point, need to investigate
+the ~minted~ package as an alternative.
+
+#+BEGIN_SRC emacs-lisp
   (setq org-latex-listings t
         org-latex-listings-options '(("basicstyle" "\\tiny")
                                      ("frame" "single")
@@ -370,8 +372,46 @@ a couple of new document classes
                                      ("showstringspaces" "false")
                                      ("breakatwhitespace" "false")
                                      ("breaklines" "true")))
+
 #+END_SRC
 
+I think the ~lualatex~ seems to work better when working in a UTF-8
+environment. Therefore, set the PDF process commands to use it. 
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-latex-pdf-process
+        '("lualatex -interaction nonstopmode -output-directory %o %f"
+          "lualatex -interaction nonstopmode -output-directory %o %f"
+          "lualatex -interaction nonstopmode -output-directory %o %f"))
+
+#+END_SRC
+
+Need to add a few additional packages to make all of this work. In particular,
+the ~xcolor~ and ~parskip~ packages. 
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-latex-packages-alist
+        '(("" "parskip")
+          ("" "xcolor")
+          ("" "listings")))
+
+#+END_SRC
+
+*** HTML Export 
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-html-checkbox-type 'unicode
+        org-html-html5-fancy t
+        org-html-doctype "html5")
+
+#+END_SRC
+
+*** ASCII Export
+#+BEGIN_SRC emacs-lisp
+  (setq org-ascii-charset 'utf-8
+        org-ascii-text-width 79)
+
+#+END_SRC
 ** Finally
 Add require statements and do some things which need to be done after org is
 loaded. 
@@ -401,10 +441,6 @@ loaded.
                '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
 	         "<src lang=\"clojure-mode\">\n?\n</src>"))
 
-  (add-to-list 'org-latex-packages-alist '("" "listings"))
-  (add-to-list 'org-latex-packages-alist '("" "xcolor"))
-  (add-to-list 'org-latex-packages-alist '("" "parskip"))
-  ;; (add-to-list 'org-latex-packages-alist '("margin=1.5cm" "geometry"))
 #+END_SRC
 
 * Use Package
