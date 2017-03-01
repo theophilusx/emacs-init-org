@@ -233,9 +233,29 @@ Supported Languages
      (scheme . t)
      (shell . t)
      (sql . t)
-     (C . t)))
+     (C . t)
+     (ditaa . t)
+     (plantuml . t)))
 
 #+END_SRC
+
+Some of the diagram support features of org require external packages. This
+includes
+  - ditaa :: An ascii based diagram generator which uses the =ditaa.jar=
+             library. This library is located in =~/.emacs.d/jars= and has been
+             checked into the =emacs-init-org= repository.
+  - dot :: A text based state or data flow diagram feature based on the
+           =graphviz= software. This software needs to be installed separately.
+  - plantUML :: A UML diagram feature based on the =plantUML.jar= library. The
+                jar file has been checked into the =emacs-init-org= repository
+                in the =~/.emacs.d/jars= directory.
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
+        org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
+        org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
+
+#+END_SRC 
 
 ** Org Export
 #+BEGIN_SRC emacs-lisp
