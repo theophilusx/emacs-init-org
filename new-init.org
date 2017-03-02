@@ -206,7 +206,7 @@ the old fashioned way!
 Some Babel defaults
 
 #+BEGIN_SRC emacs-lisp
-  (setq org-babel-clojure-backend 'cider
+  (setq org-confirm-babel-evaluate nil
         org-babel-noweb-wrap-start "«"
         org-babel-noweb-wrap-end "»")
 
@@ -238,6 +238,15 @@ Supported Languages
      (plantuml . t)))
 
 #+END_SRC
+
+*** Org Clojure
+#+BEGIN_SRC emacs-lisp
+  (setq org-babel-clojure-backend 'cider
+        org-babel-clojure-sync-nrepl-timeout 0)
+
+#+END_SRC
+
+*** Org Diagrams
 
 Some of the diagram support features of org require external packages. This
 includes
