@@ -49,7 +49,10 @@ package repositories. I add
 #+BEGIN_SRC emacs-lisp
   (require 'package)
 
-  (setq package-enable-at-startup nil)
+  (setq package-enable-at-startup nil
+        package-archive-priorities '(("org" . 2) ("melpa" . 1) ("gnu" . 0))
+        package-pinned-packages '((org . "org")))
+
   (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
   (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
   (package-initialize)
@@ -74,9 +77,9 @@ I have had problems loading org-plus-contrib with use-package, so now I do it
 the old fashioned way!
 
 #+BEGIN_SRC emacs-lisp
-  (unless (package-installed-p 'org-plus-contrib)
-    (package-refresh-contents)
-    (package-install 'org-plus-contrib))
+  (unless (package-installed-p 'org)
+    (package-refresh)
+    (package-install 'org))
 
 #+END_SRC
 
@@ -97,9 +100,13 @@ the old fashioned way!
 
 ** Org Modules
 #+BEGIN_SRC emacs-lisp
-  (setq org-modules '(org-bibtex org-docview org-eww org-info org-irc
-                                 org-bookmark org-drill org-git-link
-                                 org-secretary))
+  (setq org-modules '(org-bibtex
+                      org-crypt
+                      org-docview
+                      org-eww
+                      org-info
+                      org-irc
+                      org-protocol))
 
 #+END_SRC
 ** Org Capture
@@ -212,32 +219,6 @@ Some Babel defaults
 
 #+END_SRC
 
-Supported Languages 
-
-#+BEGIN_SRC emacs-lisp
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (clojure . t)
-     (css . t)
-     (dot . t)
-     (java . t)
-     (js . t)
-     (latex . t)
-     (ledger . t)
-     (makefile . t)
-     (org . t)
-     (perl . t)
-     (python . t)
-     (ruby . t)
-     (scheme . t)
-     (shell . t)
-     (sql . t)
-     (C . t)
-     (ditaa . t)
-     (plantuml . t)))
-
-#+END_SRC
 
 *** Org Clojure
 #+BEGIN_SRC emacs-lisp
@@ -448,7 +429,6 @@ loaded.
 #+BEGIN_SRC emacs-lisp
   (require 'org)
   (require 'org-capture)
-  (require 'org-mime)
   (require 'org-clock)
   (require 'org-agenda)
   (require 'ob-core)
@@ -469,6 +449,33 @@ loaded.
   (add-to-list 'org-structure-template-alist
                '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
 	         "<src lang=\"clojure-mode\">\n?\n</src>"))
+
+#+END_SRC
+
+Supported Languages 
+
+#+BEGIN_SRC emacs-lisp
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (clojure . t)
+     (css . t)
+     (dot . t)
+     (java . t)
+     (js . t)
+     (latex . t)
+     (ledger . t)
+     (makefile . t)
+     (org . t)
+     (perl . t)
+     (python . t)
+     (ruby . t)
+     (scheme . t)
+     (shell . t)
+     (sql . t)
+     (C . t)
+     (ditaa . t)
+     (plantuml . t)))
 
 #+END_SRC
 
