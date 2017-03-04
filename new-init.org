@@ -1785,7 +1785,55 @@ Setup version control stuff
     :init
     (setq elfeed-db-directory "~/Dropbox/.elfeed"
           elfeed-enclosure-default-dir "~/.emacs.d/elfeed"
-          elfeed-save-multiple-enclosures-without-asking t))
+          elfeed-save-multiple-enclosures-without-asking t)
+
+    (defun elfeed-mark-all-as-read ()
+      (interactive)
+      (mark-whole-buffer)
+      (elfeed-search-untag-all-unread))
+
+    ;;functions to support syncing .elfeed between machines
+    ;;makes sure elfeed reads index from disk before launching
+    (defun tx/elfeed ()
+      "Wrapper to load the elfeed db from disk before opening"
+      (interactive)
+      (elfeed-db-load)
+      (elfeed)
+      (elfeed-search-update--force))
+
+    ;;write to disk when quiting
+    (defun tx/elfeed-save-db-and-bury ()
+      "Wrapper to save the elfeed db to disk before burying buffer"
+      (interactive)
+      (elfeed-db-save)
+      (quit-window))
+
+    (defhydra hydra-elfeed ()
+     "filter"
+     ("s" (elfeed-search-set-filter "@6-months-ago +sec +unread") "sec")
+     ("n" (elfeed-search-set-filter "@6-months-ago +news +unread") "news")
+     ("e" (elfeed-search-set-filter "@6-months-ago +emacs +unread") "emacs")
+     ("p" (elfeed-search-set-filter "@6-months-ago +prog +unread") "programming")
+     ("c" (elfeed-search-set-filter "@6-months-ago +clojure +unread") "clojure")
+     ("*" (elfeed-search-set-filter "@6-months-ago +star") "Starred")
+     ("u" (elfeed-search-set-filter "@6-months-ago +totag +unread") "un-tagged")
+     ("f" (elfeed-search-set-filter "@6-months-ago +fun +unread") "fun")
+     ("M" elfeed-toggle-star "Mark")
+     ("A" (elfeed-search-set-filter "@6-months-ago") "All")
+     ("T" (elfeed-search-set-filter "@1-day-ago +unread") "Today")
+     ("Q" bjm/elfeed-save-db-and-bury "Quit Elfeed" :color blue)
+     ("q" nil "quit" :color blue))
+  
+    :config
+    (defalias 'elfeed-toggle-star
+      (elfeed-expose #'elfeed-search-toggle-all 'star))
+    :bind (:map elfeed-search-mode-map
+	        ("q" . tx/elfeed-save-db-and-bury)
+	        ("Q" . tx/elfeed-save-db-and-bury)
+	        ("m" . elfeed-toggle-star)
+	        ("M" . elfeed-toggle-star)
+	        ("j" . hydra-elfeed/body)
+	        ("J" . hydra-elfeed/body)))
 
   (use-package elfeed-org
     :ensure t
