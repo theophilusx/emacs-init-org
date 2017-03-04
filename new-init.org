@@ -481,7 +481,7 @@ Supported Languages
 
 ** OSX
 #+BEGIN_SRC emacs-lisp
-  (when *is-a-mac**
+  (when *is-a-mac*
     (use-package org-mac-link
       :ensure t
       :bind (:map org-mode-map
