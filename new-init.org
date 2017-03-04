@@ -479,6 +479,15 @@ Supported Languages
 
 #+END_SRC
 
+** OSX
+#+BEGIN_SRC emacs-lisp
+  (when *is-a-mac**
+    (use-package org-mac-link
+      :ensure t
+      :bind (:map org-mode-map
+                  ("C-c g" . org-mac-grab-link))))
+
+#+END_SRC
 * Use Package
 I just found John Wiegley's use-package macro, which I think is a really
 convenient way to manage the installation and configuration of ELPA
