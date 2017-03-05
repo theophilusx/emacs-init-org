@@ -6,16 +6,16 @@
   The following adds additional directories to the emacs load-path so that
   emacs can find various additional libraries etc
 
-  #+BEGIN_SRC emacs-lisp
-    (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-  #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+#+END_SRC
 
   Any small third party libraries I use which are not packaged in an ELPA
   repository go in the ~.emacs.d/lib~  subdirectory.
 
-  #+BEGIN_SRC emacs-lisp
-    (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
-  #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
+#+END_SRC
 
 * Set Some Constants
   I set a couple of constants which can then be used to control configuration
@@ -57,8 +57,8 @@
      (require 'package)
 
      (setq package-enable-at-startup nil)
-     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
      (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
+     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
      (package-initialize)
 
    #+END_SRC
@@ -85,6 +85,14 @@
   correctly. 
 ** hydra
   #+BEGIN_SRC emacs-lisp
+    (use-package winner
+      :config
+      (winner-mode 1))
+
+    (use-package windmove
+      :config
+      (windmove-default-keybindings))
+
     (use-package hydra
       :ensure t
       :config
@@ -120,12 +128,6 @@
             (shrink-window arg)
           (enlarge-window arg)))
 
-      (use-package winner
-        :config
-        (winner-mode 1))
-      (use-package windmove
-        :config
-        (windmove-default-keybindings))
       (defhydra my-hydra-zoom ()
         "zoom"
         ("-" text-scale-decrease "out")
@@ -183,39 +185,6 @@
         ("m" headlong-bookmark-jump)))
 
   #+END_SRC
-* OSX Tweaks
-  Some tweaks to make emacs and OSX get on better. Note that I also install the
-  coreutils package from homebrew to get some GNU flavoured utilities. These
-  tend to start with 'g', so we need to do some additional variable settings. 
-
-  #+BEGIN_SRC emacs-lisp
-    (when *is-a-mac*
-      (setq mac-command-modifier 'meta)
-      (setq mac-option-modifier 'none)
-      (setq dired-free-space-program "gdf")
-      (setq insert-directory-program "gls")
-      (setq default-input-method "MacOSX")
-      ;; Make mouse wheel / trackpad scrolling less jerky
-      (setq mouse-wheel-scroll-amount '(1 ((shift) . 5)
-                                          ((control))))
-      (dolist (multiple '("" "double-" "triple-"))
-        (dolist (direction '("right" "left"))
-          (global-set-key (read-kbd-macro
-                           (concat "<" multiple "wheel-" direction ">")) 'ignore)))
-      (bind-key "M-'" 'ns-next-frame)
-      (bind-key "M-h" 'ns-do-hide-emacs)
-      (bind-key "M-`" 'ms-do-hide-others)
-      (use-package applescript-mode
-        :ensure t
-        :mode ("\\.applescript" . applescript-mode))
-      (use-package osx-plist
-        :ensure t)
-      (use-package osx-trash
-        :ensure t
-        :config (osx-trash-setup)))
-
-
-  #+END_SRC
 * Org Mode
   Start by getting required package. I'm using the org-plus-contrib
   package from the org repository.
@@ -236,39 +205,38 @@
       :demand t
       :mode ("\\.org\\'" . org-mode)
       :init
-      (setq org-agenda-files '("~/Dropbox/org/personal.org"
-                               "~/Dropbox/org/planner.org"
-                               "~/Dropbox/org/policy.org"
-                               "~/Dropbox/org/projects.org"
-                               "~/Dropbox/org/refile.org"
-                               "~/Dropbox/org/security.org"
-                               "~/Dropbox/org/urs.org"
-                               "~/Dropbox/org/storage.org"
-                               "~/Dropbox/org/iam.org")
+      (setq org-agenda-files '("~/Dropbox/org")
             org-agenda-remove-tags t
             org-agenda-skip-unavailable-files t
             org-agenda-span 14
+            org-babel-clojure-backend 'cider
+            org-babel-noweb-wrap-start "«"
+            org-babel-noweb-wrap-end "»"
+            org-babel-results-keyword "NAME"
             org-catch-invisible-edits 'smart
             org-clock-in-resume t
             org-clock-out-remove-zero-time-clocks t
             org-clock-persist t
-            org-clock-persistence-insinuate t
-            org-time-clocksum-format '(:hours "%d" :require-hours t
-                                              :minutes ":%02d" :require-minutes t)
-            org-completion-use-ido t
+            org-confirm-babel-evaluate nil
             org-ctrl-k-protect-subtree t
             org-default-notes-file "~/Dropbox/org/notes.org"
             org-directory "~/Dropbox/org"
+            org-ellipsis "…"
             org-enforce-todo-checkbox-dependencies t
             org-enforce-todo-dependencies t
             org-export-backends '(ascii beamer html
-                                        icalendar latex
-                                        md odt org koma-letter
-                                        taskjuggler)
-            org-export-kill-product-buffer-when-displayed t
+                                        icalendar latex texinfo
+                                        md odt org koma-letter)
+            org-export-coding-system 'utf-8
+            org-export-copy-to-kill-ring nil
+            org-export-preserve-breaks nil
             org-export-with-sub-superscripts nil
             org-export-with-tags nil
+            org-export-with-toc nil
+            org-fontify-emphasized-text t
             org-hide-block-startup t
+            org-hide-emphasis-markers t
+            org-hide-leading-stars t
             org-html-validation-link nil
             org-list-allow-alphabetical t
             org-list-description-max-indent 5
@@ -283,7 +251,14 @@
                                        (org-agenda-files :maxlevel . 5)))
             org-refile-use-outline-path (quote file)
             org-startup-align-all-tables t
-            org-plantuml-jar-path "~/.emacs.d/plantuml/plantuml.jar")
+            org-startup-with-inline-images (display-graphic-p)
+            org-src-fontify-natively t
+            org-src-tab-acts-natively t
+            org-src-window-setup 'current-window
+            org-support-shift-select t
+            org-time-clocksum-format '(:hours "%d" :require-hours t
+                                              :minutes ":%02d" :require-minutes t)
+            )
       (setq org-capture-templates
             (quote
              (("t" "todo" entry
@@ -374,16 +349,23 @@
       (org-babel-do-load-languages
        'org-babel-load-languages
        '(
-         ;;(R . t)
-         (ditaa . t)
-         (dot . t)
+         (R . nil)
+         (C . t)
+         (clojure . t)
+         (css . t)
+         (java . t)
+         (js . t)
+         (makefile . t)
+         (perl . t)
+         (ditaa . nil)
+         (dot . nil)
          (emacs-lisp . t)
-         ;;(gnuplot . t)
-         ;;(haskell . nil)
+         (gnuplot . nil)
+         (haskell . nil)
          (latex . t)
          (ledger . t)
-         ;;(ocaml . nil)
-         ;;(octave . t)
+         (ocaml . nil)
+         (octave . nil)
          (python . t)
          (ruby . t)
          (screen . nil)
@@ -397,65 +379,18 @@
       (add-to-list 'org-structure-template-alist
                    '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
                      "<src lang=\"emacs-lisp\">\n?\n</src>"))
+      (add-to-list 'org-structure-template-alist
+                   '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+                     "<src lang=\"clojure-mode\">\n?\n</src>"))
       (bind-key "C-c l" 'org-store-link)
       (bind-key "C-c a" 'org-agenda)
-      (bind-key "C-c b" 'org-iswitch)
+      (bind-key "C-c b" 'org-switchb)
       (bind-key "C-c r" 'org-capture))
 
 
-   #+END_SRC
 
-** Task Juggler
-  I use org-taskjuggler for producing project gant charts etc
+  #+END_SRC
 
-  #+BEGIN_SRC emacs-lisp
-    ;; (use-package org-taskjuggler
-    ;;   :disabled t
-    ;;   :ensure t
-    ;;   :init
-    ;;   (setq org-taskjuggler-default-global-header
-    ;;       " timingresolution 60min
-    ;;             timezone \"Australia/Sydney\"
-    ;;             dailyworkinghours 7
-    ;;             workinghours mon - fri 9:00 - 13:00, 14:00 - 17:00
-    ;;             workinghours sat, sun off
-    ;;           "
-    ;;       org-taskjuggler-default-project-duration 365)
-    ;;   (setq org-taskjuggler-default-reports
-    ;;       '("textreport report \"Plan\" {
-    ;;             formats html
-    ;;             header '== %title =='
-
-    ;;             center -8<-
-    ;;               [#Plan Plan] | [#Resource_Allocation Resource Allocation]
-    ;;               ----
-    ;;               === Plan ===
-    ;;               <[report id=\"plan\"]>
-    ;;               ----
-    ;;               === Resource Allocation ===
-    ;;               <[report id=\"resourceGraph\"]>
-    ;;             ->8-
-    ;;           }
-
-    ;;           # A traditional Gantt chart with a project overview.
-    ;;           taskreport plan \"\" {
-    ;;             headline \"Project Plan\"
-    ;;             columns bsi, name, start, end, effort, chart { width 1500 }
-    ;;             loadunit shortauto
-    ;;             hideresource 1
-    ;;           }
-
-    ;;           # A graph showing resource allocation. It identifies whether each
-    ;;           # resource is under- or over-allocated for.
-    ;;           resourcereport resourceGraph \"\" {
-    ;;             headline \"Resource Allocation Graph\"
-    ;;             columns no, name, effort, weekly { width 1500 }
-    ;;             loadunit shortauto
-    ;;             hidetask ~(isleaf() & isleaf_())
-    ;;             sorttasks plan.start.up
-    ;;           }")))
-
-   #+END_SRC
 
 ** Some OS X packages
    If running under OS X, there are a couple of additional packages we need
@@ -470,20 +405,39 @@
         (unbind-key "M-h")))
   #+END_SRC
 
-** Org pomadoro
-  I like to use the pomadoro technique for getting work done.
-  See [[https://en.wikipedia.org/wiki/Pomodoro_Technique][Pomadoro Technique]] for details. There is an org package to help with applying
-  this technique using org-mode
+* OSX Tweaks
+  Some tweaks to make emacs and OSX get on better. Note that I also install the
+  coreutils package from homebrew to get some GNU flavoured utilities. These
+  tend to start with 'g', so we need to do some additional variable settings. 
 
-  #+BEGIN_SRC emacs-lisp 
-    (use-package org-pomodoro
-      :ensure t
-      :disabled t
-      :config
-      (after-load 'org-agenda
-        (bind-key "P" 'org-pomodoro org-agenda-mode-map)))
+  #+BEGIN_SRC emacs-lisp
+    (when *is-a-mac*
+      (setq mac-command-modifier 'meta)
+      (setq mac-option-modifier 'none)
+      (setq dired-free-space-program "gdf")
+      (setq insert-directory-program "gls")
+      (setq default-input-method "MacOSX")
+      ;; Make mouse wheel / trackpad scrolling less jerky
+      (setq mouse-wheel-scroll-amount '(1 ((shift) . 5)
+                                          ((control))))
+      (dolist (multiple '("" "double-" "triple-"))
+        (dolist (direction '("right" "left"))
+          (global-set-key (read-kbd-macro
+                           (concat "<" multiple "wheel-" direction ">")) 'ignore)))
+      (bind-key "M-'" 'ns-next-frame)
+      (bind-key "M-h" 'ns-do-hide-emacs)
+      (bind-key "M-`" 'ms-do-hide-others)
+      (use-package applescript-mode
+        :ensure t
+        :mode ("\\.applescript" . applescript-mode))
+      (use-package osx-plist
+        :ensure t)
+      (use-package osx-trash
+        :ensure t
+        :config (osx-trash-setup)))
+
+
   #+END_SRC
-
 * Basic defaults
   Some basic defaults and customizations 
 
@@ -555,26 +509,29 @@
 
 ** Set some setq defaults
   #+BEGIN_SRC emacs-lisp
-    (setq apropos-do-all t
-          auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
-          backup-directory-alist `(("." . ,(concat user-emacs-directory
-                                                   "backups")))
-          default-frame-alist '((top . 1) (left . 1) (width . 81) (height . 29))
-          delete-by-moving-to-trash t
-          ediff-window-setup-function 'ediff-setup-windows-plain
-          eldoc-idle-delay 1.5
-          inhibit-startup-message t
-          initial-fram-alist '((top . 1) (left . 1) (width . 81) (height . 29))
-          line-move-visual nil
-          load-prefer-newer t
-          max-mini-window-height 0.50
-          message-log-max 2048
-          mouse-yank-at-point t
-          require-final-newline t
-          save-interprogram-paste-before-kill t
-          visible-bell t
-          x-select-enable-clipboard t
-          x-select-enable-primary t)
+  (setq apropos-do-all t
+        auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
+        backup-directory-alist `(("." . ,(concat user-emacs-directory
+                                                 "backups")))
+        blink-matching-paren nil
+        default-frame-alist '((top . 1) (left . 1) (width . 81) (height . 29))
+        delete-by-moving-to-trash t
+        ediff-window-setup-function 'ediff-setup-windows-plain
+        eldoc-idle-delay 1.5
+        inhibit-startup-message t
+        initial-fram-alist '((top . 1) (left . 1) (width . 81) (height . 29))
+        line-move-visual nil
+        load-prefer-newer t
+        max-mini-window-height 0.50
+        message-log-max 2048
+        mouse-yank-at-point t
+        require-final-newline t
+        save-interprogram-paste-before-kill t
+        show-paren-delay 0
+        show-paren-style 'expression
+        visible-bell t
+        x-select-enable-clipboard t
+        x-select-enable-primary t)
   #+END_SRC
 
 ** Set some setq-defaults
@@ -609,12 +566,12 @@
     (if *is-a-mac*
         (set-face-attribute 'default nil
                             :foundry nil
-                            :family "Source Code Pro"
-                            :height 280)
+                            :family "Inconsolata"
+                            :height 320)
       (set-face-attribute 'default nil
-                          :foundry "adobe"
-                          :family "Source Code Pro"
-                          :height 138))
+                          :foundry nil
+                          :family "Inconsolata"
+                          :height 180))
   #+END_SRC
 
   #+BEGIN_SRC emacs-lisp
@@ -798,6 +755,11 @@
      ;; (use-package dropdown-list
      ;;   :ensure t)
 
+   #+END_SRC
+** Adaptive wrap
+   #+BEGIN_SRC emacs-lisp
+     (use-package adaptive-wrap
+       :ensure t)
    #+END_SRC
 * Editing 
   Text editing stuff
@@ -1111,17 +1073,17 @@
 
 ** Hide and Show 
   #+BEGIN_SRC emacs-lisp
-    (use-package hideshowvis
-      :ensure t
-      :config
-      (progn
-        (dolist (hook '(emacs-lisp-mode-hook
-                        prog-mode-hook
-                        clojure-mode-hook))
-          (add-hook hook 'hideshowvis-enable))
-        ;; graphical +/- fold buttons
-        ;; (hideshowvis-symbols)
-        (bind-key "M-[" 'hs-toggle-hiding)))
+  ;; (use-package hideshowvis
+  ;;   :ensure t
+  ;;   :config
+  ;;   (progn
+  ;;     (dolist (hook '(emacs-lisp-mode-hook
+  ;;                     prog-mode-hook
+  ;;                     clojure-mode-hook))
+  ;;       (add-hook hook 'hideshowvis-enable))
+  ;;     ;; graphical +/- fold buttons
+  ;;     ;; (hideshowvis-symbols)
+  ;;     (bind-key "M-[" 'hs-toggle-hiding)))
   #+END_SRC
 ** Rainbow Mode
    #+BEGIN_SRC emacs-lisp
@@ -1206,8 +1168,10 @@
      (use-package smartparens-config
          :ensure smartparens
          :config
-         (show-smartparens-global-mode t)
-         (sp-use-smartparens-bindings)
+         (progn
+           (sp-use-smartparens-bindings)
+           (smartparens-global-mode)
+           (show-smartparens-global-mode))
          (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
          (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
 
@@ -1238,25 +1202,34 @@
       and /default.dic/
 
     #+BEGIN_SRC emacs-lisp 
-      (when *spell-check-support-enabled*
-        (use-package ispell
-          :init
-          (if *is-a-mac*
-              (setq ispell-dictionary "british")
-            (setq ispell-dictionary "british-ise"))
-          :config
-          (when (executable-find ispell-program-name)
-            (use-package flyspell
-              :diminish flyspell-mode
-              :init
-              (setq flyspell-use-meta-tab nil)
-              (defun try-flyspell (arg)
-                (if (nth 4 (syntax-ppss))
-                    (call-interactively 'flyspell-correct-word-before-point)
-                  nil))
-              :config
-              (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-              (add-hook 'text-mode-hook 'flyspell-mode)))))
+    (when *spell-check-support-enabled*
+      (use-package ispell
+        :init
+        (if *is-a-mac*
+            (setq ispell-dictionary "british")
+          (setq ispell-dictionary "british-ise"))
+        :config
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC ". "#\\+END_SRC$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_example ". "#\\+end_example$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_EXAMPLE ". "#\\+END_EXAMPLE$"))
+        (add-to-list 'ispell-skip-region-alist '("\:PROPERTIES\:$" . "\:END\:$"))
+        (add-to-list 'ispell-skip-region-alist '("\\[fn:.+:" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("^http" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("=.*" . ".*="))
+        (add-to-list 'ispell-skip-region-alist '("- \\*.+" . ".*\\*: "))
+        (when (executable-find ispell-program-name)
+          (use-package flyspell
+            :diminish flyspell-mode
+            :init
+            (setq flyspell-use-meta-tab nil)
+            (defun try-flyspell (arg)
+              (if (nth 4 (syntax-ppss))
+                  (call-interactively 'flyspell-correct-word-before-point)
+                nil))
+            :config
+            (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+            (add-hook 'text-mode-hook 'flyspell-mode)))))
     #+END_SRC
 
 ** Timestamps
@@ -1354,6 +1327,22 @@
      (use-package restclient
        :ensure t)
 
+   #+END_SRC
+** Alert
+
+   #+BEGIN_SRC emacs-lisp
+   (use-package alert
+     :ensure t
+     :config
+     (setq alert-fade-time 10)
+     (when *is-a-mac*
+       (setq alert-default-style 'growl))
+     (setq alert-reveal-idle-time 120))
+   #+END_SRC
+** Write Good
+   #+BEGIN_SRC emacs-lisp
+   (use-package writegood-mode
+     :ensure t)
    #+END_SRC
 * Application Modes 
   Modes relating to emacs applications 
@@ -1841,23 +1830,33 @@
 
 
    #+END_SRC
+** Scheme
+   #+BEGIN_SRC emacs-lisp
+     (use-package geiser
+       :ensure t)
+
+     (use-package sicp
+       :ensure t)
+
+
+   #+END_SRC
 * Theme 
   #+BEGIN_SRC emacs-lisp
-    (use-package solarized-theme
-      :ensure t
-      :init 
-      (setq-default custom-enabled-themes '(solarized-dark))
-      :config
-      (setq fci-rule-color "Yellow"
-            fci-rule-width 2)
-      (defun reapply-themes ()
-        "Forcibly load the themes listed in `custom-enabled-themes'."
-        (dolist (theme custom-enabled-themes)
-          (unless (custom-theme-p theme)
-            (load-theme theme)))
-        (custom-set-variables `(custom-enabled-themes
-                                (quote ,custom-enabled-themes))))
-      (add-hook 'after-init-hook 'reapply-themes))
+  (use-package solarized-theme
+    :ensure t
+    :init 
+    (setq-default custom-enabled-themes '(solarized-dark))
+    (setq solarized-distinct-fringe-background +1)
+    (setq solarized-use-more-italic nil)
+    :config
+    (defun reapply-themes ()
+      "Forcibly load the themes listed in `custom-enabled-themes'."
+      (dolist (theme custom-enabled-themes)
+        (unless (custom-theme-p theme)
+          (load-theme theme)))
+      (custom-set-variables `(custom-enabled-themes
+                              (quote ,custom-enabled-themes))))
+    (add-hook 'after-init-hook 'reapply-themes))
 
    #+END_SRC
 ** Diminish Mode
@@ -1939,13 +1938,13 @@
 
 * Startup Window
   #+BEGIN_SRC emacs-lisp
-    (defun my-startup-window ()
-      (interactive)
-      (org-agenda nil "wr")
-      (delete-other-windows))
+    ;; (defun my-startup-window ()
+    ;;   (interactive)
+    ;;   (org-agenda nil "wr")
+    ;;   (delete-other-windows))
 
-    (setq warning-minimum-level :error
-          warning-minimum-log-level :error)
+    ;; (setq warning-minimum-level :error
+    ;;       warning-minimum-log-level :error)
 
-    (add-hook 'after-init-hook 'my-startup-window t)
+    ;; (add-hook 'after-init-hook 'my-startup-window t)
   #+END_SRC

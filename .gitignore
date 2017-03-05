@@ -1,0 +1,13 @@
+*~
+*.el
+.saveplace
+.smex-items
+auto-save-list/
+backups/
+elpa/
+ido.last
+projectile-bookmarks.eld
+recentf
+history
+repl-history
+url

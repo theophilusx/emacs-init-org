@@ -16,22 +16,12 @@
 	(make-directory-internal elpa-dir)))
 
   ;; load init.org and tangle
-  (message "Get use-package package from elpa")
-  (require 'package)
-
-  (setq package-enable-at-startup nil)
-  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-  (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
-  (package-initialize)
-
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-
-  (require 'use-package)
-  (require 'diminish)
-  (require 'bind-key)
-  (require 'ob-tangle)
-  (org-babel-load-file (expand-file-name my-org-file user-emacs-directory)))
+  ;; We can't tangle without org!
+  (require 'org)
+  (require 'ob)
+  ;; tangle it
+  (org-babel-tangle-file (expand-file-name my-org-file user-emacs-directory)
+                         "tangle-out.el" "emacs-lisp")
+  (message "File tangled!"))
 
 
