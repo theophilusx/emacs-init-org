@@ -59,6 +59,26 @@ package repositories. I add
 
 #+END_SRC
 
+* Use Package
+I just found John Wiegley's use-package macro, which I think is a really
+convenient way to manage the installation and configuration of ELPA
+packages. Therefore, I plan to migrate my configuration to use that package.
+
+We have a slight bootstrap or /chicken and egg/ problem, we need the use-package
+package from ELPA before we can use it, but it is what we want to use to install
+the package. Therefore, need a simple light weight way to get that package. Lets
+do the simple way
+
+#+BEGIN_SRC emacs-lisp
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package))
+  (setq use-package-verbose nil)
+  (eval-when-compile
+    (require 'use-package))
+  (require 'diminish)
+  (require 'bind-key)
+#+END_SRC
 * Org Mode
 Start by getting required package. I'm using the org-plus-contrib package from
 the org repository.
@@ -488,37 +508,17 @@ Supported Languages
                   ("C-c g" . org-mac-grab-link))))
 
 #+END_SRC
-* Use Package
-I just found John Wiegley's use-package macro, which I think is a really
-convenient way to manage the installation and configuration of ELPA
-packages. Therefore, I plan to migrate my configuration to use that package.
+** Org Key Bindings
+ Put the org key bindings after loading of use-package, which also
+ installs bind-key
 
-We have a slight bootstrap or /chicken and egg/ problem, we need the use-package
-package from ELPA before we can use it, but it is what we want to use to install
-the package. Therefore, need a simple light weight way to get that package. Lets
-do the simple way
+  #+BEGIN_SRC emacs-lisp 
+    (bind-key "C-c l" 'org-store-link)
+    (bind-key "C-c a" 'org-agenda)
+    (bind-key "C-c b" 'org-switchb)
+    (bind-key "C-c r" 'org-capture)
 
-#+BEGIN_SRC emacs-lisp
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-  (setq use-package-verbose nil)
-  (eval-when-compile
-    (require 'use-package))
-  (require 'diminish)
-  (require 'bind-key)
-#+END_SRC
-* Org Key Bindings
-Put the org key bindings after loading of use-package, which also
-installs bind-key
-
- #+BEGIN_SRC emacs-lisp 
-   (bind-key "C-c l" 'org-store-link)
-   (bind-key "C-c a" 'org-agenda)
-   (bind-key "C-c b" 'org-switchb)
-   (bind-key "C-c r" 'org-capture)
-
- #+END_SRC
+  #+END_SRC
 
 * Hydra
 Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work

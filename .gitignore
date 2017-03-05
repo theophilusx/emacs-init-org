@@ -1,7 +1,10 @@
 *~
 *.el
 .saveplace
+.saved-places
 .smex-items
+.sql-history
+.sqli_history
 auto-save-list/
 backups/
 elpa/
@@ -11,3 +14,9 @@ recentf
 history
 repl-history
 url
+bookmarks
+cider-history
+eshell/
+tramp
+places
+.DS_Store
