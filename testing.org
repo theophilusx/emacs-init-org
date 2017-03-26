@@ -1,0 +1,215 @@
+#+TITLE: Emacs init.el File
+#+DATE: \today
+#+AUTHOR: Tim Cross
+
+* Load Path
+  The following adds additional directories to the emacs load-path so that
+  emacs can find various additional libraries etc
+
+  #+BEGIN_SRC emacs-lisp
+    (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+  #+END_SRC
+
+  Any small third party libraries I use which are not packaged in an ELPA
+  repository go in the ~.emacs.d/lib~  subdirectory.
+
+  #+BEGIN_SRC emacs-lisp
+    (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
+  #+END_SRC
+
+* Set Some Constants
+  I set a couple of constants which can then be used to control configuration
+  settings in my init file.
+
+  I run emacs on both OSX and Linux. To handle differences in configuration
+  settings for the two platforms, I set a constant which determines if emacs is
+  running on OSX or not. 
+
+  #+BEGIN_SRC emacs-lisp
+    (defconst *is-a-mac* (eq system-type 'darwin)
+      "T if emacs is running under OSX, nil otherwise.")
+  #+END_SRC
+
+  Set a constant to determine if spell checking is to be enabled. Not sure if I
+  really need this, but leaving it in place for now.
+
+  #+BEGIN_SRC emacs-lisp
+    (defconst *spell-check-support-enabled* t
+      "T if we want spell checking support enabled, nil otherwise.")
+  #+END_SRC
+
+* ELPA
+  ELPA has made managing add-on elisp packages *much* easier than it use to
+  be. The trick is to only load packages you really want/need and not get
+  carried away loading lots of additional packages /just in case/.
+
+  I just found John Wiegley's use-package macro, which I think is a really
+  convenient way to manage the installation and configuration of ELPA
+  packages. Therefore, I plan to migrate my configuration to use that package.
+
+   First, we need to load package.el and then we need to add some additional package
+   repositories. I add
+
+   - The Org repository so that I can use most recent org-plus-contrib package
+   - The melpa repository
+
+   #+BEGIN_SRC emacs-lisp
+     (require 'package)
+
+     (setq package-enable-at-startup nil)
+     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+     (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
+     (package-initialize)
+
+   #+END_SRC
+
+   We have a slight bootstrap or /chicken and egg/ problem, we need the
+   use-package package from ELPA before we can use it, but it is what we want
+   to use to install the package. Therefore, need a simple light weight way to
+   get that package. Lets do the simple way
+
+   #+BEGIN_SRC emacs-lisp
+     (unless (package-installed-p 'use-package)
+       (package-refresh-contents)
+       (package-install 'use-package))
+     ;;(setq use-package-verbose t)
+     (eval-when-compile
+       (require 'use-package))
+     (require 'diminish)
+     (require 'bind-key)
+   #+END_SRC
+
+* Emacspeak
+ Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
+ facility, it is important that it is loaded as early as possible in the Emacs boot
+ process.
+
+ First, setup a constant which tells emacs where to look for the
+ emacspeak distro
+
+ #+BEGIN_SRC emacs-lisp 
+     (defconst *emacspeak-src-dir* "~/git/emacspeak/trunk"
+       "Where emacs will find the emacspeak distro")
+   #+END_SRC
+
+ Need to load different speech servers depending on the platform
+
+ #+BEGIN_SRC emacs-lisp 
+     (if *is-a-mac*
+         (defconst *emacspeak-server* "mac")
+       (defconst *emacspeak-server* "outloud"))
+   #+END_SRC
+
+ Add the EmacsSpeak info documentation to the info search path. From
+ within Info, you can hit ~g~ and then enter ~(emacspeak)~ at the
+ prompt to open the Emacspeak info documentation
+
+ #+BEGIN_SRC emacs-lisp 
+   (add-to-list 'Info-default-directory-list (concat *emacspeak-src-dir* "/info"))
+ #+END_SRC
+
+ Seems to be a couple of references to free variables which throw up 
+bytecomp warnings. Put some defvars in place to silence them.
+
+ #+BEGIN_SRC emacs-lisp
+   (defvar emacspeak-we-url-executor nil)
+   (defvar org-ans2 nil)
+   (defvar ido-process-ignore-lists nil)
+ #+END_SRC
+
+
+ When emacs is not being run in batch mode and when emacspeak is not
+ yet loaded, then load it
+
+ #+BEGIN_SRC emacs-lisp 
+   (when (and (not noninteractive)
+              (not (featurep 'emacspeak)))
+     (add-to-list 'load-path *emacspeak-src-dir*)
+     (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
+     (setenv "DTK_PROGRAM" *emacspeak-server*)
+     (if *is-a-mac*
+         (setq emacspeak-wizards-available-browsers
+               '(eww-browse-url browse-url-default-macosx-browser))
+       (setq emacspeak-wizards-available-browsers
+             '(eww-browse-url browse-url-default-browser)))
+     (setq dtk-program *emacspeak-server*
+           dtk-use-tones nil
+           emacspeak-mail-alert nil
+           tts-default-speech-rate 90
+           outloud-default-speech-rate 90
+           emacspeak-vm-use-raman-settings nil
+           mac-default-speech-rate 400
+           emacspeak-erc-my-nick "theophilusx"
+           emacspeak-erc-speak-all-participants t
+           emacspeak-play-emacspeak-startup-icon nil
+           emacspeak-play-program "/home/tcross/bin/play"
+           emacspeak-play-args nil
+           emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
+           emacspeak-speak-tooltips t)
+     (if *is-a-mac*
+         (progn
+           (setq emacspeak-soxplay-command "/usr/local/bin/play -v 1.2 %s earwax &")
+           (setq sox-play "/usr/local/bin/play"))
+       (setq emacspeak-soxplay-command "/usr/bin/play -v 1.2 %s earwax &")
+       (setq sox-play "/usr/bin/play"))
+     (add-hook 'emacspeak-startup-hook
+               (lambda ()
+                 (dtk-set-rate tts-default-speech-rate 1)
+                 (dtk-interp-sync)
+                 (emacspeak-sounds-select-theme "3d/")))
+     (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
+ #+END_SRC
+
+* OSX Tweaks
+  Some tweaks to make emacs and OSX get on better 
+
+  #+BEGIN_SRC emacs-lisp
+    (when *is-a-mac*
+      (setq mac-command-modifier 'meta)
+      (setq mac-option-modifier 'none)
+      (setq default-input-method "MacOSX")
+      ;; Make mouse wheel / trackpad scrolling less jerky
+      (setq mouse-wheel-scroll-amount '(1 ((shift) . 5)
+                                          ((control))))
+      (dolist (multiple '("" "double-" "triple-"))
+        (dolist (direction '("right" "left"))
+          (global-set-key (read-kbd-macro
+                           (concat "<" multiple "wheel-" direction ">")) 'ignore)))
+      (bind-key "M='" 'ns-next-frame)
+      (bind-key "M-h" 'ns-do-hide-emacs)
+      (bind-key "M-`" 'ms-do-hide-others))
+
+  #+END_SRC
+* Javascript
+   #+BEGIN_SRC emacs-lisp
+     (use-package js2-mode
+       :ensure t
+       ;;:mode ("\\.js\\'" . js2-mode)
+       ;;:interpreter ("node" . js2-mode)
+       :init
+       (setq-default js2-basic-offset 2
+                     js2-bounce-indent-p nil)
+       :config
+       ;; (use-package xref-js2
+       ;;   :ensure t)
+       ;; (js2-imenu-extras-setup)
+       ;; (define-key js2-mode-map (kbd "M-.") nil)
+       ;; (add-hook 'js2-mode-hook
+       ;;           (lambda ()
+       ;;             (add-hook 'xref-backend-functions
+       ;;                       #'xref-js2-xref-backend nil t)))
+       (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+       )
+
+     ;; (use-package js2-refactor
+     ;;   :ensure t
+     ;;   :config
+     ;;   (add-hook 'js2-mode-hook #'js2-refactor-mode)
+     ;;   (js2r-add-keybindings-with-prefix "C-c C-m"))
+
+     ;; (use-package tern
+     ;;   :ensure t
+     ;;   :config
+     ;;   (add-hook 'js2-mode-hook #'tern-mode))
+
+   #+END_SRC
