@@ -88,447 +88,6 @@ do the simple way
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
-* Org Mode
-Start by getting required package. I'm using the org-plus-contrib package from
-the org repository.
-
-*Note*: Occasionally, you may run into problems when installing org from a
-repository. Essentially the problem can occur if you have some of the bundled
-org files loaded when you try to install a repo version. The easiest way to fix
-this is to reload org mode using the command
-
-  : C-u M-x org-reload
-
-Then remove the repo package version (in my case, this is org-plus-congtrib) and
-re-install. This will normally ensure a 'stable' environment.
-
-I have had problems loading org-plus-contrib with use-package, so now I do it
-the old fashioned way!
-
-#+BEGIN_SRC emacs-lisp
-  (unless (package-installed-p 'org)
-    (package-refresh)
-    (package-install 'org))
-
-#+END_SRC
-
-** Org Basic Settings
-#+BEGIN_SRC emacs-lisp
-  (setq org-catch-invisible-edits 'smart
-        org-ctrl-k-protect-subtree t
-        org-default-notes-file "~/Dropbox/org/notes.org"
-        org-directory "~/Dropbox/org"
-        org-ellipsis "…"
-        org-list-allow-alphabetical t
-        org-list-indent-offset 2
-        org-pretty-entities t
-        org-startup-align-all-tables t
-        org-startup-with-inline-images (display-graphic-p)
-        org-support-shift-select t)
-#+END_SRC
-
-** Org Modules
-#+BEGIN_SRC emacs-lisp
-  (setq org-modules '(org-bibtex
-                      org-crypt
-                      org-docview
-                      org-eww
-                      org-info
-                      org-irc
-                      org-protocol))
-
-#+END_SRC
-** Org Capture
-#+BEGIN_SRC emacs-lisp
-  (setq org-capture-templates
-        (quote
-         (("t" "todo" entry
-           (file "~/Dropbox/org/refile.org")
-           "* TODO %?
-                          %U
-                          %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-          ("r" "respond" entry
-           (file "~/Dropbox/org/refile.org")
-           "* NEXT Respond to %:from on %:subject
-                          SCHEDULED: %t
-                          %U
-                          %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-          ("n" "note" entry
-           (file "~/Dropbox/org/refile.org")
-           "* %? :NOTE:
-                          %U
-                          %a" :empty-lines-after 1 :clock-in t :clock-resume t)
-          ("j" "journal" entry
-           (file+datetree "~/Dropbox/org/journal.org")
-           "* %?
-                          %U" :empty-lines-after 1 :clock-in t :clock-resume t)
-          ("p" "phone" entry
-           (file "~/Dropbox/org/refile.org")
-           "* PHONE %? :PHONE:
-                          %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
-
-#+END_SRC
-
-** Org TODO 
-#+BEGIN_SRC emacs-lisp
-  (setq org-enforce-todo-checkbox-dependencies t
-        org-enforce-todo-dependencies t
-        org-log-done 'time
-        org-log-into-drawer t)
-  (setq org-todo-keywords
-        (quote
-         ((sequence "TODO(t)"
-                    "NEXT(n)"
-                    "STARTED(s!)"
-                    "DELEGATED(w@/!)"
-                    "HOLD(h@/!)"
-                    "|"
-                    "CANCELLED(c@)"
-                    "DONE(d!)"))))
-
-#+END_SRC
-
-** Org Refile
-#+BEGIN_SRC emacs-lisp
-  (setq org-log-refile 'time
-        org-refile-allow-creating-parent-nodes 'confirm
-        org-refile-targets (quote ((nil :maxlevel . 5)
-                                   (org-agenda-files :maxlevel . 5)))
-        org-refile-use-outline-path (quote file))
-#+END_SRC
-
-** Org Time Clocking 
-#+BEGIN_SRC emacs-lisp
-  (setq org-clock-in-resume t
-        org-clock-out-remove-zero-time-clocks t
-        org-clock-persist 'clock
-        org-time-clocksum-format '(:hours "%d" :require-hours t
-                                          :minutes ":%02d" :require-minutes t))
-
-#+END_SRC
-
-** Org Agenda 
-#+BEGIN_SRC emacs-lisp
-  (setq org-agenda-files '("~/Dropbox/org")
-        org-agenda-remove-tags t)
-
-  (setq org-agenda-custom-commands
-        (quote
-         (("n" "Agenda and all TODO's"
-           ((agenda "" nil)
-            (alltodo "" nil))
-           nil)
-          ("wr" "Weekly Report"
-           ((todo "DONE|CANCELLED"
-                  ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-            (todo "STARTED|NEXT"
-                  ((org-agenda-overriding-header "WIP")))
-            (todo "HOLD|DELEGATED"
-                  ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-            (todo "TODO"
-                  ((org-agenda-overriding-header "Task Backlog"))))
-           nil nil))))
-
-#+END_SRC
-
-** Org Blocks
-#+BEGIN_SRC emacs-lisp
-  (setq org-src-tab-acts-natively t
-	org-hide-block-startup t)
-
-#+END_SRC
-
-** Org Babel
-Some Babel defaults
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-confirm-babel-evaluate nil
-        org-babel-noweb-wrap-start "«"
-        org-babel-noweb-wrap-end "»")
-
-#+END_SRC
-
-
-*** Org Clojure
-#+BEGIN_SRC emacs-lisp
-  (setq org-babel-clojure-backend 'cider
-        org-babel-clojure-sync-nrepl-timeout 0)
-
-#+END_SRC
-
-*** Org Diagrams
-
-Some of the diagram support features of org require external packages. This
-includes
-  - ditaa :: An ascii based diagram generator which uses the =ditaa.jar=
-             library. This library is located in =~/.emacs.d/jars= and has been
-             checked into the =emacs-init-org= repository.
-  - dot :: A text based state or data flow diagram feature based on the
-           =graphviz= software. This software needs to be installed separately.
-  - plantUML :: A UML diagram feature based on the =plantUML.jar= library. The
-                jar file has been checked into the =emacs-init-org= repository
-                in the =~/.emacs.d/jars= directory.
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
-        org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
-        org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
-
-#+END_SRC 
-
-** Org Export
-#+BEGIN_SRC emacs-lisp
-  (setq org-export-backends '(ascii beamer html
-                                    latex texinfo
-                                    md odt org)
-        org-export-coding-system 'utf-8)
-
-#+END_SRC
-
-*** Latex Export
-
-I like to tweak the look of exported latex documents from the default by using
-the ~hitec~ class as most of my documents are technical in nature. I also define
-a couple of new document classes
-
-  - article :: Uses the ~hitec~ document class
-  - old-article :: This is the default original org-mode definition
-  - une-article :: One specific to work
-  - une-logo :: Includes the UNE logo and colours 
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-latex-classes
-        '(("beamer"
-           "\\documentclass[presentation]{beamer}"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-          ("article"
-           "\\documentclass[12pt]{hitec}
-  [DEFAULT-PACKAGES]
-  [PACKAGES]
-  [NO-EXTRA]
-  \\settextfraction{0.95}\n"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-          ("report"
-           "\\documentclass[11pt]{report}"
-           ("\\part{%s}" . "\\part*{%s}")
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-          ("book"
-           "\\documentclass[11pt]{book}"
-           ("\\part{%s}" . "\\part*{%s}")
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-          ("une-article"
-           "\\documentclass[a4paper,12pt]{scrartcl}
-  [DEFAULT-PACKAGES]
-  [PACKAGES]
-  \\usepackage[margin=1.5cm]{geometry}
-  [EXTRA]\n"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-          ("une-logo"
-           "\\documentclass[a4paper,12pt]{scrartcl}
-  [DEFAULT-PACKAGES]
-  [PACKAGES]
-  \\usepackage[margin=1.5cm]{geometry}
-  [EXTRA]
-  \\definecolor{unegreen}{HTML}{7AB800}
-  \\definecolor{Black}{HTML}{000000}
-  \\definecolor{White}{HTML}{FFFFFF}
-  \\definecolor{dimgrey}{HTML}{696969}
-  \\makeatletter
-  \\def\\@maketitle{
-   \\noindent \\begin{minipage}[c][4cm][t]{\\linewidth}
-     \\colorbox{Black}{%
-       \\begin{minipage}[t][4cm][c]{4cm}
-       \\flushleft
-       \\includegraphics{~/.emacs.d/img/unelogo_medium.png}
-     \\end{minipage}}
-     \\colorbox{unegreen}{%
-       \\begin{minipage}[t][4cm][c]{13.5cm}
-         \\flushright
-         \\Large \\textbf{\\color{White}{\\@title}} \\\\
-          \\vspace{4pt}
-         \\small \\color{White}{\\@author} \\\\
-         \\small \\color{White}{\\@date}
-       \\end{minipage}}
-     \\end{minipage}}
-  \\makeatother\n"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-          ("old-article" "\\documentclass[11pt]{article}"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
-        )
-#+END_SRC 
-
-I don't like the default /box/ link style used by the hyperref package. Looks a
-little ugly to me. Prefer instead to use coloured links to indicate hyper refs.
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-latex-hyperref-template
-        "\\hypersetup{pdfauthor={%a},
-                      pdftitle={%t},
-                      pdfkeywords={%k},
-                      pdfsubject={%d},
-                      pdfcreator={%c},
-                      pdflang={%L},
-                      colorlinks=true,
-                      linkcolor=blue}")
-
-#+END_SRC
-
-By default, org uses the verbatim environment for code blocks. I prefer to use
-the listings package and add a little colour. At some point, need to investigate
-the ~minted~ package as an alternative.
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-latex-listings t
-        org-latex-listings-options '(("basicstyle" "\\tiny")
-                                     ("frame" "single")
-                                     ("stringstyle" "\\color{orange}")
-                                     ("commentstyle" "\\color{cyan}")
-                                     ("keywordstyle" "\\color{blue}")
-                                     ("showstringspaces" "false")
-                                     ("breakatwhitespace" "false")
-                                     ("breaklines" "true")))
-
-#+END_SRC
-
-I think the ~lualatex~ seems to work better when working in a UTF-8
-environment. Therefore, set the PDF process commands to use it. 
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-latex-pdf-process
-        '("lualatex -interaction nonstopmode -output-directory %o %f"
-          "lualatex -interaction nonstopmode -output-directory %o %f"
-          "lualatex -interaction nonstopmode -output-directory %o %f"))
-
-#+END_SRC
-
-Need to add a few additional packages to make all of this work. In particular,
-the ~xcolor~ and ~parskip~ packages. 
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-latex-packages-alist
-        '(("" "parskip")
-          ("" "xcolor")
-          ("" "listings")))
-
-#+END_SRC
-
-*** HTML Export 
-
-#+BEGIN_SRC emacs-lisp
-  (setq org-html-checkbox-type 'unicode
-        org-html-html5-fancy t
-        org-html-doctype "html5")
-
-#+END_SRC
-
-*** ASCII Export
-#+BEGIN_SRC emacs-lisp
-  (setq org-ascii-charset 'utf-8
-        org-ascii-text-width 79)
-
-#+END_SRC
-** Finally
-Add require statements and do some things which need to be done after org is
-loaded. 
-
-#+BEGIN_SRC emacs-lisp
-  (require 'org)
-  (require 'org-capture)
-  (require 'org-clock)
-  (require 'org-agenda)
-  (require 'ob-core)
-  (require 'ob-clojure)
-  (require 'ox-latex)
-
-  (org-element-update-syntax)
-  (org-clock-persistence-insinuate)
-
-  (add-to-list 'org-structure-template-alist
-               '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-	         "<src lang=\"python\">\n?\n</src>"))
-
-  (add-to-list 'org-structure-template-alist
-               '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-	         "<src lang=\"emacs-lisp\">\n?\n</src>"))
-
-  (add-to-list 'org-structure-template-alist
-               '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-	         "<src lang=\"clojure-mode\">\n?\n</src>"))
-
-#+END_SRC
-
-Supported Languages 
-
-#+BEGIN_SRC emacs-lisp
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (clojure . t)
-     (css . t)
-     (dot . t)
-     (java . t)
-     (js . t)
-     (latex . t)
-     (ledger . t)
-     (makefile . t)
-     (org . t)
-     (perl . t)
-     (python . t)
-     (ruby . t)
-     (scheme . t)
-     (shell . t)
-     (sql . t)
-     (C . t)
-     (ditaa . t)
-     (plantuml . t)))
-
-#+END_SRC
-
-** OSX
-#+BEGIN_SRC emacs-lisp
-  (when *is-a-mac*
-    (use-package org-mac-link
-      :ensure t
-      :bind (:map org-mode-map
-                  ("C-c g" . org-mac-grab-link))))
-
-#+END_SRC
-** Org Key Bindings
- Put the org key bindings after loading of use-package, which also
- installs bind-key
-
-  #+BEGIN_SRC emacs-lisp 
-    (bind-key "C-c l" 'org-store-link)
-    (bind-key "C-c a" 'org-agenda)
-    (bind-key "C-c b" 'org-switchb)
-    (bind-key "C-c r" 'org-capture)
-
-  #+END_SRC
-
 * Hydra
 Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
 correctly. 
@@ -760,6 +319,288 @@ them.
   ;; Require my emacspeak-smartparens.el
   ;; (when (featurep 'emacspeak)
   ;;   (require 'emacspeak-smartparens))
+#+END_SRC
+
+* Org Mode
+Start by getting required package. I'm using the org-plus-contrib package from
+the org repository.
+
+*Note*: Occasionally, you may run into problems when installing org from a
+repository. Essentially the problem can occur if you have some of the bundled
+org files loaded when you try to install a repo version. The easiest way to fix
+this is to reload org mode using the command
+
+  : C-u M-x org-reload
+
+Then remove the repo package version and re-install. This will
+normally ensure a 'stable' environment.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :pin org
+    :ensure t
+    :init
+    (setq org-catch-invisible-edits 'smart
+          org-ctrl-k-protect-subtree t
+          org-default-notes-file "~/Dropbox/org/notes.org"
+          org-directory "~/Dropbox/org"
+          org-ellipsis "…"
+          org-list-allow-alphabetical t
+          org-list-indent-offset 2
+          org-pretty-entities t
+          org-startup-align-all-tables t
+          org-startup-with-inline-images (display-graphic-p)
+          org-support-shift-select t)
+    (setq org-modules '(org-bibtex
+                        org-crypt
+                        org-docview
+                        org-eww
+                        org-info
+                        org-irc
+                        org-protocol))
+    (setq org-capture-templates
+          (quote
+           (("t" "todo" entry
+             (file "~/Dropbox/org/refile.org")
+             "* TODO %?
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("r" "respond" entry
+             (file "~/Dropbox/org/refile.org")
+             "* NEXT Respond to %:from on %:subject
+                            SCHEDULED: %t
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("n" "note" entry
+             (file "~/Dropbox/org/refile.org")
+             "* %? :NOTE:
+                            %U
+                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("j" "journal" entry
+             (file+datetree "~/Dropbox/org/journal.org")
+             "* %?
+                            %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("p" "phone" entry
+             (file "~/Dropbox/org/refile.org")
+             "* PHONE %? :PHONE:
+                            %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+    (setq org-enforce-todo-checkbox-dependencies t
+          org-enforce-todo-dependencies t
+          org-log-done 'time
+          org-log-into-drawer t)
+    (setq org-todo-keywords
+          (quote
+           ((sequence "TODO(t)"
+                      "NEXT(n)"
+                      "STARTED(s!)"
+                      "DELEGATED(w@/!)"
+                      "HOLD(h@/!)"
+                      "|"
+                      "CANCELLED(c@)"
+                      "DONE(d!)"))))
+    (setq org-log-refile 'time
+          org-refile-allow-creating-parent-nodes 'confirm
+          org-refile-targets (quote ((nil :maxlevel . 5)
+                                     (org-agenda-files :maxlevel . 5)))
+          org-refile-use-outline-path (quote file))
+    (setq org-clock-in-resume t
+          org-clock-out-remove-zero-time-clocks t
+          org-clock-persist 'clock
+          org-time-clocksum-format '(:hours "%d" :require-hours t
+                                            :minutes ":%02d" :require-minutes t))
+    (setq org-agenda-files '("~/Dropbox/org")
+          org-agenda-remove-tags t)
+
+    (setq org-agenda-custom-commands
+          (quote
+           (("n" "Agenda and all TODO's"
+             ((agenda "" nil)
+              (alltodo "" nil))
+             nil)
+            ("wr" "Weekly Report"
+             ((todo "DONE|CANCELLED"
+                    ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+              (todo "STARTED|NEXT"
+                    ((org-agenda-overriding-header "WIP")))
+              (todo "HOLD|DELEGATED"
+                    ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+              (todo "TODO"
+                    ((org-agenda-overriding-header "Task Backlog"))))
+             nil nil))))
+    (setq org-src-tab-acts-natively t
+	  org-hide-block-startup t)
+    (setq org-confirm-babel-evaluate nil
+          org-babel-noweb-wrap-start "«"
+          org-babel-noweb-wrap-end "»")
+    (setq org-babel-clojure-backend 'cider
+          org-babel-clojure-sync-nrepl-timeout 0)
+    (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
+          org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
+          org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
+    (setq org-export-backends '(ascii beamer html
+                                      latex texinfo
+                                      md odt org)
+          org-export-coding-system 'utf-8)
+    (setq org-latex-classes
+          '(("beamer"
+             "\\documentclass[presentation]{beamer}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("article"
+             "\\documentclass[12pt]{hitec}
+    [DEFAULT-PACKAGES]
+    [PACKAGES]
+    [NO-EXTRA]
+    \\settextfraction{0.95}\n"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("report"
+             "\\documentclass[11pt]{report}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("book"
+             "\\documentclass[11pt]{book}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("une-article"
+             "\\documentclass[a4paper,12pt]{scrartcl}
+    [DEFAULT-PACKAGES]
+    [PACKAGES]
+    \\usepackage[margin=1.5cm]{geometry}
+    [EXTRA]\n"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("une-logo"
+             "\\documentclass[a4paper,12pt]{scrartcl}
+    [DEFAULT-PACKAGES]
+    [PACKAGES]
+    \\usepackage[margin=1.5cm]{geometry}
+    [EXTRA]
+    \\definecolor{unegreen}{HTML}{7AB800}
+    \\definecolor{Black}{HTML}{000000}
+    \\definecolor{White}{HTML}{FFFFFF}
+    \\definecolor{dimgrey}{HTML}{696969}
+    \\makeatletter
+    \\def\\@maketitle{
+     \\noindent \\begin{minipage}[c][4cm][t]{\\linewidth}
+       \\colorbox{Black}{%
+         \\begin{minipage}[t][4cm][c]{4cm}
+         \\flushleft
+         \\includegraphics{~/.emacs.d/img/unelogo_medium.png}
+       \\end{minipage}}
+       \\colorbox{unegreen}{%
+         \\begin{minipage}[t][4cm][c]{13.5cm}
+           \\flushright
+           \\Large \\textbf{\\color{White}{\\@title}} \\\\
+            \\vspace{4pt}
+           \\small \\color{White}{\\@author} \\\\
+           \\small \\color{White}{\\@date}
+         \\end{minipage}}
+       \\end{minipage}}
+    \\makeatother\n"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("old-article" "\\documentclass[11pt]{article}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+          )
+    (setq org-latex-hyperref-template
+          "\\hypersetup{pdfauthor={%a},
+                        pdftitle={%t},
+                        pdfkeywords={%k},
+                        pdfsubject={%d},
+                        pdfcreator={%c},
+                        pdflang={%L},
+                        colorlinks=true,
+                        linkcolor=blue}")
+    (setq org-latex-listings t
+          org-latex-listings-options '(("basicstyle" "\\tiny")
+                                       ("frame" "single")
+                                       ("stringstyle" "\\color{orange}")
+                                       ("commentstyle" "\\color{cyan}")
+                                       ("keywordstyle" "\\color{blue}")
+                                       ("showstringspaces" "false")
+                                       ("breakatwhitespace" "false")
+                                       ("breaklines" "true")))
+    (setq org-latex-pdf-process
+          '("lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"))
+    (setq org-latex-packages-alist
+          '(("" "parskip")
+            ("" "xcolor")
+            ("" "listings")))
+    (setq org-html-checkbox-type 'unicode
+          org-html-html5-fancy t
+          org-html-doctype "html5")
+    (setq org-ascii-charset 'utf-8
+          org-ascii-text-width 79)
+    :config
+    (org-element-update-syntax)
+    (org-clock-persistence-insinuate)
+
+    (add-to-list 'org-structure-template-alist
+                 '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+	           "<src lang=\"python\">\n?\n</src>"))
+
+    (add-to-list 'org-structure-template-alist
+                 '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+	           "<src lang=\"emacs-lisp\">\n?\n</src>"))
+
+    (add-to-list 'org-structure-template-alist
+                 '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+	           "<src lang=\"clojure-mode\">\n?\n</src>"))
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (clojure . t)
+       (css . t)
+       (dot . t)
+       (java . t)
+       (js . t)
+       (latex . t)
+       (ledger . t)
+       (makefile . t)
+       (org . t)
+       (perl . t)
+       (python . t)
+       (ruby . t)
+       (scheme . t)
+       (shell . t)
+       (sql . t)
+       (C . t)
+       (ditaa . t)
+       (plantuml . t)))
+    (when *is-a-mac*
+      (use-package org-mac-link
+        :ensure t
+        :bind (:map org-mode-map
+                    ("C-c g" . org-mac-grab-link))))
+    (bind-key "C-c l" 'org-store-link)
+    (bind-key "C-c a" 'org-agenda)
+    (bind-key "C-c b" 'org-switchb)
+    (bind-key "C-c r" 'org-capture))
+
+
 #+END_SRC
 
 * OSX Tweaks 
