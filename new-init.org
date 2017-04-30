@@ -10,7 +10,8 @@ Any small third party libraries I use which are not packaged in an ELPA
 repository go in the ~.emacs.d/lib~  subdirectory.
 
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
+  (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
+  (add-to-list 'load-path (expand-file-name "/usr/share/emacs/site-lisp/mu4e"))
 #+END_SRC
 
 * Set Some Constants
@@ -2118,7 +2119,95 @@ directory.
 
 #+END_SRC
 
+* Mail
 
+Some mail related details about me.
+
+#+BEGIN_SRC emacs-lisp
+  (when (not *is-a-mac*)
+    (setq user-mail-address "theophilusx@gmail.com"
+          user-full-name  "Tim Cross"))
+#+END_SRC
+
+Configure mu4e
+
+#+BEGIN_SRC emacs-lisp
+  (when (not *is-a-mac*)
+    (use-package mu4e
+      :config
+      (setq mu4e-maildir (expand-file-name "~/Maildir/gmail"))
+      (setq mu4e-drafts-folder "/Drafts")
+      (setq mu4e-sent-folder   "/Sent Mail")
+      (setq mu4e-trash-folder  "/Bin")
+      (setq mu4e-attachment-dir (expand-file-name "~/Desktop")
+            mu4e-user-mail-address-list '("theophilusx@gmail.com"
+                                          "tcross@une.edu.au"))
+      ;; don't save message to Sent Messages, Gmail/IMAP takes care of this
+      (setq mu4e-sent-messages-behavior 'delete)
+
+      (setq mu4e-maildir-shortcuts
+            '(("/INBOX"               . ?i)
+              ("/Sent Mail"   . ?s)
+              ("/Bin"       . ?t)
+              ("/All Mail"    . ?a)
+              ("/Drafts" . ?d)
+              ("/Starred" . ?f)))
+      (setq mu4e-bookmarks
+            '(("maildir:\"/All Mail\" flag:unread AND NOT flag:trashed"
+               "Unread messages" 117)
+              ("maildir:\"/All Mail\" date:today..now" "Today's messages" 116)
+              ("maildir:\"/All Mail\" date:7d..now" "Last 7 days" 119)
+              ("mime:image/*" "Messages with images" 112)))
+      (setq mu4e-refile-folder "/All Mail")
+      ;; allow for updating mail using 'U' in the main view:
+      (setq mu4e-get-mail-command "mbsync -a")
+      (setq mu4e-change-filenames-when-moving t
+            mu4e-compose-signature (concat "Tim Cross"))))
+
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (when (not *is-a-mac*)
+    (use-package smtpmail
+      :config
+      (setq message-send-mail-function 'smtpmail-send-it
+            smtpmail-stream-type 'starttls
+            smtpmail-default-smtp-server "smtp.gmail.com"
+            smtpmail-smtp-server "smtp.gmail.com"
+            smtpmail-smtp-service 587)
+
+      (setq smtpmail-queue-mail nil  ;; start in normal mode
+            smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
+
+      ;; don't keep message buffers around
+      (setq message-kill-buffer-on-exit t)))
+#+END_SRC
+
+Test out VM again
+
+#+BEGIN_SRC emacs-lisp
+  (when (not *is-a-mac*) 
+    (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
+    (add-to-list 'Info-additional-directory-list
+                 (expand-file-name "~/bzr/vm/new-trunk/info"))
+
+    (require 'vm-autoloads)
+
+    ;; Some hacks to make VM use shr for HTML messages
+
+    (defun vm-mime-display-internal-shr-text/html (start end layout)
+      "Use shr to inline HTML mails in the VM presentation buffer."
+      (shr-render-region start (1- end))
+      (put-text-property start end
+                         'text-rendered-by-shr t))
+
+    ;; has to be done indirectly
+    ;; Fake emacs-w3m, though we actually use shr
+
+    (defalias 'vm-mime-display-internal-emacs-w3m-text/html
+      'vm-mime-display-internal-shr-text/html))
+
+#+END_SRC
 * Emacs Server 
 Start the emacs server so that we can use emacsclient
 
