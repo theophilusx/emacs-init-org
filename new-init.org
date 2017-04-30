@@ -35,6 +35,133 @@ really need this, but leaving it in place for now.
     "T if we want spell checking support enabled, nil otherwise.")
 #+END_SRC
 
+* Emacspeak
+
+Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
+facility, it is important that it is loaded as early as possible in the Emacs
+boot process.
+
+First, setup a constant which tells emacs where to look for the emacspeak distro
+
+#+BEGIN_SRC emacs-lisp 
+  (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
+    "Where emacs will find the emacspeak distro")
+#+END_SRC
+
+Need to load different speech servers depending on the platform
+
+#+BEGIN_SRC emacs-lisp 
+  (if *is-a-mac*
+      (defconst *emacspeak-server* "mac")
+    (defconst *emacspeak-server* "outloud"))
+#+END_SRC
+
+Add the EmacsSpeak info documentation to the info search path. From within Info,
+you can hit ~g~ and then enter ~(emacspeak)~ at the prompt to open the Emacspeak
+info documentation
+
+#+BEGIN_SRC emacs-lisp 
+  (require 'info)
+  (add-to-list 'Info-additional-directory-list
+               (expand-file-name "info"  *emacspeak-src-dir*))
+#+END_SRC
+
+Seems to be a couple of references to free variables which throw up bytecomp
+warnings. Put some defvars in place to silence them.
+
+#+BEGIN_SRC emacs-lisp
+  (defvar emacspeak-we-url-executor nil)
+  (defvar org-ans2 nil)
+  (defvar ido-process-ignore-lists nil)
+#+END_SRC
+
+When emacs is not being run in batch mode and when emacspeak is not yet loaded,
+then load it
+
+#+BEGIN_SRC emacs-lisp 
+  (when (and (not noninteractive)
+             (not (featurep 'emacspeak)))
+    (add-to-list 'load-path *emacspeak-src-dir*)
+    (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
+    (setenv "DTK_PROGRAM" *emacspeak-server*)
+    (setq dtk-program *emacspeak-server*
+          dtk-use-tones nil
+          emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
+          emacspeak-erc-my-nick "theophilusx"
+          emacspeak-erc-speak-all-participants t
+          emacspeak-mail-alert nil
+          emacspeak-play-emacspeak-startup-icon nil
+          emacspeak-play-program "/home/tcross/bin/play"
+          emacspeak-play-args nil
+          emacspeak-wizards-available-browsers (if *is-a-mac*
+                                                   '(eww-browse-url browse-url-default-macosx-browser)
+                                                 '(eww-browse-url browse-url-default-browser))
+          emacspeak-vm-use-raman-settings nil
+          mac-default-speech-rate 400        
+          outloud-default-speech-rate 90
+          sox-play (if *is-a-mac*
+                       "/usr/local/bin/play"
+                     "/usr/bin/play")
+          emacspeak-soxplay-command (if *is-a-mac*
+                                        "/usr/local/bin/play -v 1.2 %s earwax &"
+                                      "/usr/bin/play -v 1.2 %s earwax &")
+          tts-default-speech-rate 90)
+    (add-hook 'emacspeak-startup-hook
+              (lambda ()
+                (dtk-set-rate tts-default-speech-rate 1)
+                (dtk-interp-sync)
+                (emacspeak-sounds-select-theme "3d/")))
+    (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
+#+END_SRC
+
+I like to set my own key bindings and there are a lot of emacspeak key bindings
+I don't need/want. However, emacspeak does a key binding /refresh/ at the end of
+the init process by adding some emacspeak setup functions to the
+=after-init-hook=. This means we need to make our setup changes in this hook and
+ensure our changes are added /after/ emacspeak hook functions run by appending
+them.
+
+#+BEGIN_SRC emacs-lisp
+  (defhydra my-hydra-wizards ()
+    "Emacspeak Wizards"
+    ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
+    ("b" emacspeak-wizards-cycle-browser "Browser")
+    ("e" emacspeak-wizards-eww-buffer-list "eww")
+    ("r" emacspeak-wizards-find-file-as-root "root")
+    ("g" emacspeak-wizards-find-grep "Grep")
+    ("f" emacspeak-wizards-finder-find "Find")
+    ("F" emacspeak-wizards-generate-finder "Finder")
+    ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
+    ("s" emacspeak-wizards-spot-words "Spot")
+    ("t" emacspeak-wizards-tramp-open-location "Tramp")
+    ("q" nil "Quit"))
+  (defun my-esp-bindings ()
+    (message "Loading my emacspeak key bindings...")
+    (unbind-key "<S-left>")
+    (unbind-key "<S-right>")
+    (unbind-key "<C-left>")
+    (unbind-key "<C-right>")
+    (unbind-key "<C-down>")
+    (unbind-key "<C-up>")
+    (unbind-key "<S-up>")
+    (unbind-key "<S-down>")
+    (bind-key "<f5>" 'my-hydra-window/body)
+    (bind-key "<f7>" 'my-hydra-wizards/body)
+    (bind-key "C-z" 'my-hydra-zoom/body))
+
+
+  (add-hook 'after-init-hook #'my-esp-bindings t)
+#+END_SRC
+
+ I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
+ they are mature enough, I will generally submit them for inclusion 
+
+#+BEGIN_SRC emacs-lisp
+  ;; Require my emacspeak-smartparens.el
+  ;; (when (featurep 'emacspeak)
+  ;;   (require 'emacspeak-smartparens))
+#+END_SRC
+
 * Custom 
 #+BEGIN_SRC emacs-lisp
   (if *is-a-mac*
@@ -194,133 +321,6 @@ correctly.
        ("m" headlong-bookmark-jump)))
 
  #+END_SRC
-
-* Emacspeak
-
-Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
-facility, it is important that it is loaded as early as possible in the Emacs
-boot process.
-
-First, setup a constant which tells emacs where to look for the emacspeak distro
-
-#+BEGIN_SRC emacs-lisp 
-  (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
-    "Where emacs will find the emacspeak distro")
-#+END_SRC
-
-Need to load different speech servers depending on the platform
-
-#+BEGIN_SRC emacs-lisp 
-  (if *is-a-mac*
-      (defconst *emacspeak-server* "mac")
-    (defconst *emacspeak-server* "outloud"))
-#+END_SRC
-
-Add the EmacsSpeak info documentation to the info search path. From within Info,
-you can hit ~g~ and then enter ~(emacspeak)~ at the prompt to open the Emacspeak
-info documentation
-
-#+BEGIN_SRC emacs-lisp 
-  (require 'info)
-  (add-to-list 'Info-additional-directory-list
-               (expand-file-name "info"  *emacspeak-src-dir*))
-#+END_SRC
-
-Seems to be a couple of references to free variables which throw up bytecomp
-warnings. Put some defvars in place to silence them.
-
-#+BEGIN_SRC emacs-lisp
-  (defvar emacspeak-we-url-executor nil)
-  (defvar org-ans2 nil)
-  (defvar ido-process-ignore-lists nil)
-#+END_SRC
-
-When emacs is not being run in batch mode and when emacspeak is not yet loaded,
-then load it
-
-#+BEGIN_SRC emacs-lisp 
-  (when (and (not noninteractive)
-             (not (featurep 'emacspeak)))
-    (add-to-list 'load-path *emacspeak-src-dir*)
-    (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
-    (setenv "DTK_PROGRAM" *emacspeak-server*)
-    (setq dtk-program *emacspeak-server*
-          dtk-use-tones nil
-          emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
-          emacspeak-erc-my-nick "theophilusx"
-          emacspeak-erc-speak-all-participants t
-          emacspeak-mail-alert nil
-          emacspeak-play-emacspeak-startup-icon nil
-          emacspeak-play-program "/home/tcross/bin/play"
-          emacspeak-play-args nil
-          emacspeak-wizards-available-browsers (if *is-a-mac*
-                                                   '(eww-browse-url browse-url-default-macosx-browser)
-                                                 '(eww-browse-url browse-url-default-browser))
-          emacspeak-vm-use-raman-settings nil
-          mac-default-speech-rate 400        
-          outloud-default-speech-rate 90
-          sox-play (if *is-a-mac*
-                       "/usr/local/bin/play"
-                     "/usr/bin/play")
-          emacspeak-soxplay-command (if *is-a-mac*
-                                        "/usr/local/bin/play -v 1.2 %s earwax &"
-                                      "/usr/bin/play -v 1.2 %s earwax &")
-          tts-default-speech-rate 90)
-    (add-hook 'emacspeak-startup-hook
-              (lambda ()
-                (dtk-set-rate tts-default-speech-rate 1)
-                (dtk-interp-sync)
-                (emacspeak-sounds-select-theme "3d/")))
-    (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
-#+END_SRC
-
-I like to set my own key bindings and there are a lot of emacspeak key bindings
-I don't need/want. However, emacspeak does a key binding /refresh/ at the end of
-the init process by adding some emacspeak setup functions to the
-=after-init-hook=. This means we need to make our setup changes in this hook and
-ensure our changes are added /after/ emacspeak hook functions run by appending
-them.
-
-#+BEGIN_SRC emacs-lisp
-  (defhydra my-hydra-wizards ()
-    "Emacspeak Wizards"
-    ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-    ("b" emacspeak-wizards-cycle-browser "Browser")
-    ("e" emacspeak-wizards-eww-buffer-list "eww")
-    ("r" emacspeak-wizards-find-file-as-root "root")
-    ("g" emacspeak-wizards-find-grep "Grep")
-    ("f" emacspeak-wizards-finder-find "Find")
-    ("F" emacspeak-wizards-generate-finder "Finder")
-    ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-    ("s" emacspeak-wizards-spot-words "Spot")
-    ("t" emacspeak-wizards-tramp-open-location "Tramp")
-    ("q" nil "Quit"))
-  (defun my-esp-bindings ()
-    (message "Loading my emacspeak key bindings...")
-    (unbind-key "<S-left>")
-    (unbind-key "<S-right>")
-    (unbind-key "<C-left>")
-    (unbind-key "<C-right>")
-    (unbind-key "<C-down>")
-    (unbind-key "<C-up>")
-    (unbind-key "<S-up>")
-    (unbind-key "<S-down>")
-    (bind-key "<f5>" 'my-hydra-window/body)
-    (bind-key "<f7>" 'my-hydra-wizards/body)
-    (bind-key "C-z" 'my-hydra-zoom/body))
-
-
-  (add-hook 'after-init-hook #'my-esp-bindings t)
-#+END_SRC
-
- I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
- they are mature enough, I will generally submit them for inclusion 
-
-#+BEGIN_SRC emacs-lisp
-  ;; Require my emacspeak-smartparens.el
-  ;; (when (featurep 'emacspeak)
-  ;;   (require 'emacspeak-smartparens))
-#+END_SRC
 
 * Org Mode
 Start by getting required package. I'm using the org-plus-contrib package from
