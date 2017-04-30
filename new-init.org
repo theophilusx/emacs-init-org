@@ -768,8 +768,8 @@ Set the default font
                           :family "Inconsolata"
                           :height 320)
     (set-face-attribute 'default nil
-                        :foundry nil
-                        :family "Inconsolata"
+                        :foundry "PfEd"
+                        :family "Ricty Diminished"
                         :height 180))
 #+END_SRC
 
