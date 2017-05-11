@@ -73,6 +73,7 @@ warnings. Put some defvars in place to silence them.
   (defvar emacspeak-we-url-executor nil)
   (defvar org-ans2 nil)
   (defvar ido-process-ignore-lists nil)
+  (defvar select-object nil)
 #+END_SRC
 
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
@@ -95,7 +96,7 @@ then load it
           emacspeak-play-args nil
           emacspeak-wizards-available-browsers (if *is-a-mac*
                                                    '(eww-browse-url browse-url-default-macosx-browser)
-                                                 '(eww-browse-url browse-url-default-browser))
+                                                 '(eww-browse-url browse-url-chrome))
           emacspeak-vm-use-raman-settings nil
           mac-default-speech-rate 400        
           outloud-default-speech-rate 90
@@ -1747,7 +1748,7 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
     :init
     (if *is-a-mac*
         (setq browse-url-browser-function 'browse-url-default-macosx-browser)
-      (setq browse-url-browser-function 'browse-url-default-browser))
+      (setq browse-url-browser-function 'browse-url-chrome))
     (defhydra my-hydra-browse-url ()
       "Browse URL"
       ("." browse-url-at-point "at point")
@@ -1852,58 +1853,61 @@ Configure lisp modes.
 Setup ~clojure-mode~ and ~cider~. 
 
 #+BEGIN_SRC emacs-lisp
-  (use-package clojure-cheatsheet
-    :ensure t)
+    (use-package clojure-cheatsheet
+      :ensure t
+      :commands clojure-cheatsheet)
 
-  (use-package clojure-snippets
-    :ensure t)
+    (use-package clojure-snippets
+      :ensure t)
 
-  (use-package cider-hydra
-    :ensure t)
+    (use-package cider-hydra
+      :ensure t
+      :commands cider-hydra-mode)
 
-  (use-package clojure-mode
+    (use-package clojure-mode
+      :ensure t
+      :init
+      (setq clojure-align-forms-automatically t)
+      :config
+      (add-hook 'clojure-mode-hook #'subword-mode)
+      (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
+
+    (use-package cider
+      :ensure t
+      :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
+      :init
+      (setq cider-prompt-for-symbol nil
+            cider-font-lock-dynamically '(macro core function var)
+            cider-eldoc-display-for-symbol-at-point nil
+            eldoc-echo-area-use-multiline-p t
+            cider-overlays-use-font-lock t
+            cider-use-overlays t
+            cider-show-error-buffer nil
+            cider-repl-display-help-banner nil
+            cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
+            cider-repl-history-file (expand-file-name "repl-history"
+                                                      user-emacs-directory))
+      :config
+      (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
+      (add-hook 'cider-mode-hook #'cider-hydra-mode)
+      (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
+      (bind-key "c" 'clojure-cheatsheet cider-doc-map))
+
+    (use-package clj-refactor
+      :ensure t
+      :commands clj-refactor-mode
+      :init
+      (setq cljr-warn-on-eval nil)
+      :config
+      ;; (add-hook 'clojure-mode-hook (lambda ()
+      ;;                                (clj-refactor-mode 1)
+      ;;                                ;; insert keybinding setup here
+      ;;                                (cljr-add-keybindings-with-prefix "C-c C-m")))
+      )
+
+  (use-package inf-clojure
     :ensure t
-    :init
-    (setq clojure-align-forms-automatically t)
-    :config
-    ;; (add-hook 'clojure-mode-hook #'paredit-mode)
-    (add-hook 'clojure-mode-hook #'subword-mode)
-    (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
-
-  (use-package cider
-    :ensure t
-    :init
-    (setq cider-prompt-for-symbol nil
-          cider-font-lock-dynamically '(macro core function var)
-          cider-eldoc-display-for-symbol-at-point nil
-          eldoc-echo-area-use-multiline-p t
-          cider-overlays-use-font-lock t
-          cider-use-overlays t
-          cider-show-error-buffer nil
-          cider-repl-display-help-banner nil
-          cider-cljs-lein-repl "(do (use 'figwheel-sidecar.repl-api) (start-figwheel!) (cljs-repl))"
-          cider-repl-history-file (expand-file-name "repl-history"
-                                                    user-emacs-directory))
-    :config
-    (add-hook 'cider-mode-hook #'eldoc-mode)
-    (add-hook 'cider-repl-mode-hook #'eldoc-mode)
-    ;; (add-hook 'cider-repl-mode-hook #'paredit-mode)
-    (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
-    (add-hook 'cider-mode-hook #'cider-hydra-mode)
-    (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
-    (bind-key "c" 'clojure-cheatsheet cider-doc-map))
-
-  (use-package clj-refactor
-    :ensure t
-    :config
-    (add-hook 'clojure-mode-hook (lambda ()
-                                   (clj-refactor-mode 1)
-                                   ;; insert keybinding setup here
-                                   ))
-    (cljr-add-keybindings-with-prefix "C-c C-m")
-    (setq cljr-warn-on-eval nil)
-    )
-
+    :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
 #+END_SRC
 
 ** SQL
