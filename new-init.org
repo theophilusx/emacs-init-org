@@ -2145,9 +2145,8 @@ directory.
 Some mail related details about me.
 
 #+BEGIN_SRC emacs-lisp
-  (when (not *is-a-mac*)
-    (setq user-mail-address "theophilusx@gmail.com"
-          user-full-name  "Tim Cross"))
+  (setq user-mail-address "theophilusx@gmail.com"
+        user-full-name  "Tim Cross")
 #+END_SRC
 
 Configure mu4e
@@ -2188,45 +2187,43 @@ Configure mu4e
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-  (when (not *is-a-mac*)
-    (use-package smtpmail
-      :config
-      (setq message-send-mail-function 'smtpmail-send-it
-            smtpmail-stream-type 'starttls
-            smtpmail-default-smtp-server "smtp.gmail.com"
-            smtpmail-smtp-server "smtp.gmail.com"
-            smtpmail-smtp-service 587)
+  (use-package smtpmail
+    :config
+    (setq message-send-mail-function 'smtpmail-send-it
+          smtpmail-stream-type 'starttls
+          smtpmail-default-smtp-server "smtp.gmail.com"
+          smtpmail-smtp-server "smtp.gmail.com"
+          smtpmail-smtp-service 587)
 
-      (setq smtpmail-queue-mail nil  ;; start in normal mode
-            smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
+    (setq smtpmail-queue-mail nil  ;; start in normal mode
+          smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
 
-      ;; don't keep message buffers around
-      (setq message-kill-buffer-on-exit t)))
+    ;; don't keep message buffers around
+    (setq message-kill-buffer-on-exit t))
 #+END_SRC
 
 Test out VM again
 
 #+BEGIN_SRC emacs-lisp
-  (when (not *is-a-mac*) 
-    (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
-    (add-to-list 'Info-additional-directory-list
-                 (expand-file-name "~/bzr/vm/new-trunk/info"))
+  (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
+  (add-to-list 'Info-additional-directory-list
+               (expand-file-name "~/bzr/vm/new-trunk/info"))
 
-    (require 'vm-autoloads)
+  (require 'vm-autoloads)
 
-    ;; Some hacks to make VM use shr for HTML messages
+  ;; Some hacks to make VM use shr for HTML messages
 
-    (defun vm-mime-display-internal-shr-text/html (start end layout)
-      "Use shr to inline HTML mails in the VM presentation buffer."
-      (shr-render-region start (1- end))
-      (put-text-property start end
-                         'text-rendered-by-shr t))
+  (defun vm-mime-display-internal-shr-text/html (start end layout)
+    "Use shr to inline HTML mails in the VM presentation buffer."
+    (shr-render-region start (1- end))
+    (put-text-property start end
+                       'text-rendered-by-shr t))
 
-    ;; has to be done indirectly
-    ;; Fake emacs-w3m, though we actually use shr
+  ;; has to be done indirectly
+  ;; Fake emacs-w3m, though we actually use shr
 
-    (defalias 'vm-mime-display-internal-emacs-w3m-text/html
-      'vm-mime-display-internal-shr-text/html))
+  (defalias 'vm-mime-display-internal-emacs-w3m-text/html
+    'vm-mime-display-internal-shr-text/html)
 
 #+END_SRC
 * Emacs Server 
