@@ -205,126 +205,6 @@ do the simple way
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
-* Hydra
-Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
-correctly. 
-
- #+BEGIN_SRC emacs-lisp
-   (use-package winner
-     :config
-     (winner-mode 1))
-
-   (use-package windmove
-     :config
-     (windmove-default-keybindings))
-
-   (use-package hydra
-     :ensure t
-     :config
-     (defun hydra-move-splitter-left (arg)
-       "Move window splitter left."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'right))
-           (shrink-window-horizontally arg)
-         (enlarge-window-horizontally arg)))
-
-     (defun hydra-move-splitter-right (arg)
-       "Move window splitter right."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'right))
-           (enlarge-window-horizontally arg)
-         (shrink-window-horizontally arg)))
-
-     (defun hydra-move-splitter-up (arg)
-       "Move window splitter up."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'up))
-           (enlarge-window arg)
-         (shrink-window arg)))
-
-     (defun hydra-move-splitter-down (arg)
-       "Move window splitter down."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'up))
-           (shrink-window arg)
-         (enlarge-window arg)))
-
-     (defhydra my-hydra-wizards ()
-       "Emacspeak Wizards"
-       ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-       ("b" emacspeak-wizards-cycle-browser "Browser")
-       ("e" emacspeak-wizards-eww-buffer-list "eww")
-       ("r" emacspeak-wizards-find-file-as-root "root")
-       ("g" emacspeak-wizards-find-grep "Grep")
-       ("f" emacspeak-wizards-finder-find "Find")
-       ("F" emacspeak-wizards-generate-finder "Finder")
-       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-       ("s" emacspeak-wizards-spot-words "Spot")
-       ("t" emacspeak-wizards-tramp-open-location "Tramp")
-       ("q" nil "Quit"))
-
-     (defhydra my-hydra-zoom ()
-       "zoom"
-       ("-" text-scale-decrease "out")
-       ("+" text-scale-increase "in")
-       ("0" (text-scale-adjust 0) "reset")
-       ("q" nil "quit" :color blue))
-     (defhydra my-hydra-error ()
-       "goto-error"
-       ("h" first-error "first")
-       ("j" next-error "next")
-       ("k" previous-error "prev")
-       ("v" recenter-top-bottom "recenter")
-       ("q" nil "quit"))
-     (require 'winner)
-     (defhydra my-hydra-window (:color red :hint nil)
-       "
-    Split: _v_ert _x_:horz
-   Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
-     Move: _s_wap
-   Frames: _f_rame new  _df_ delete
-     Misc: _m_ark _a_ce  _u_ndo  _r_edo"
-       ("h" windmove-left)
-       ("j" windmove-down)
-       ("k" windmove-up)
-       ("l" windmove-right)
-       ("H" hydra-move-splitter-left)
-       ("J" hydra-move-splitter-down)
-       ("K" hydra-move-splitter-up)
-       ("L" hydra-move-splitter-right)
-       ("|" (lambda ()
-              (interactive)
-              (split-window-right)
-              (windmove-right)))
-       ("_" (lambda ()
-              (interactive)
-              (split-window-below)
-              (windmove-down)))
-       ("v" split-window-right)
-       ("x" split-window-below)
-       ;;("t" transpose-frame "'")
-       ;; winner-mode must be enabled
-       ("u" winner-undo)
-       ("r" winner-redo) ;;Fixme, not working?
-       ("o" delete-other-windows :exit t)
-       ("a" ace-window :exit t)
-       ("f" make-frame :exit t)
-       ("s" ace-swap-window)
-       ("da" ace-delete-window)
-       ("dw" delete-window)
-       ("db" kill-this-buffer)
-       ("df" delete-frame :exit t)
-       ("q" nil)
-       ;;("i" ace-maximize-window "ace-one" :color blue)
-       ;;("b" ido-switch-buffer "buf")
-       ("m" headlong-bookmark-jump)))
-
- #+END_SRC
-
 * Org Mode
 Start by getting required package. I'm using the org-plus-contrib package from
 the org repository.
@@ -607,6 +487,127 @@ normally ensure a 'stable' environment.
 
 #+END_SRC
 
+* Hydra
+Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
+correctly. 
+
+ #+BEGIN_SRC emacs-lisp
+   (use-package winner
+     :config
+     (winner-mode 1))
+
+   (use-package windmove
+     :config
+     (windmove-default-keybindings))
+
+   (use-package hydra
+     :ensure t
+     :config
+     (defun hydra-move-splitter-left (arg)
+       "Move window splitter left."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'right))
+           (shrink-window-horizontally arg)
+         (enlarge-window-horizontally arg)))
+
+     (defun hydra-move-splitter-right (arg)
+       "Move window splitter right."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'right))
+           (enlarge-window-horizontally arg)
+         (shrink-window-horizontally arg)))
+
+     (defun hydra-move-splitter-up (arg)
+       "Move window splitter up."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'up))
+           (enlarge-window arg)
+         (shrink-window arg)))
+
+     (defun hydra-move-splitter-down (arg)
+       "Move window splitter down."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'up))
+           (shrink-window arg)
+         (enlarge-window arg)))
+
+     (defhydra my-hydra-wizards ()
+       "Emacspeak Wizards"
+       ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
+       ("b" emacspeak-wizards-cycle-browser "Browser")
+       ("e" emacspeak-wizards-eww-buffer-list "eww")
+       ("r" emacspeak-wizards-find-file-as-root "root")
+       ("g" emacspeak-wizards-find-grep "Grep")
+       ("f" emacspeak-wizards-finder-find "Find")
+       ("F" emacspeak-wizards-generate-finder "Finder")
+       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
+       ("s" emacspeak-wizards-spot-words "Spot")
+       ("t" emacspeak-wizards-tramp-open-location "Tramp")
+       ("q" nil "Quit"))
+
+     (defhydra my-hydra-zoom ()
+       "zoom"
+       ("-" text-scale-decrease "out")
+       ("+" text-scale-increase "in")
+       ("0" (text-scale-adjust 0) "reset")
+       ("q" nil "quit" :color blue))
+
+     (defhydra my-hydra-error ()
+       "goto-error"
+       ("h" first-error "first")
+       ("j" next-error "next")
+       ("k" previous-error "prev")
+       ("v" recenter-top-bottom "recenter")
+       ("q" nil "quit"))
+     (require 'winner)
+     (defhydra my-hydra-window (:color red :hint nil)
+       "
+    Split: _v_ert _x_:horz
+   Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
+     Move: _s_wap
+   Frames: _f_rame new  _df_ delete
+     Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+       ("h" windmove-left)
+       ("j" windmove-down)
+       ("k" windmove-up)
+       ("l" windmove-right)
+       ("H" hydra-move-splitter-left)
+       ("J" hydra-move-splitter-down)
+       ("K" hydra-move-splitter-up)
+       ("L" hydra-move-splitter-right)
+       ("|" (lambda ()
+              (interactive)
+              (split-window-right)
+              (windmove-right)))
+       ("_" (lambda ()
+              (interactive)
+              (split-window-below)
+              (windmove-down)))
+       ("v" split-window-right)
+       ("x" split-window-below)
+       ;;("t" transpose-frame "'")
+       ;; winner-mode must be enabled
+       ("u" winner-undo)
+       ("r" winner-redo) ;;Fixme, not working?
+       ("o" delete-other-windows :exit t)
+       ("a" ace-window :exit t)
+       ("f" make-frame :exit t)
+       ("s" ace-swap-window)
+       ("da" ace-delete-window)
+       ("dw" delete-window)
+       ("db" kill-this-buffer)
+       ("df" delete-frame :exit t)
+       ("q" nil)
+       ;;("i" ace-maximize-window "ace-one" :color blue)
+       ;;("b" ido-switch-buffer "buf")
+       ("m" headlong-bookmark-jump)))
+
+ #+END_SRC
+
 * OSX Tweaks 
 Some tweaks to make emacs and OSX get on better. Note that I also install the
 coreutils package from homebrew to get some GNU flavoured utilities. These tend
@@ -744,14 +745,6 @@ Some basic defaults and customizations
                 indent-tabs-mode nil
                 save-place t
                 show-trailing-whitespace nil)
-#+END_SRC
-
-** Set some global key bindings
-#+BEGIN_SRC emacs-lisp
-  (bind-key "C-s" 'isearch-forward-regexp)
-  (bind-key "C-r" 'isearch-backward-regexp)
-  (bind-key "C-M-s" 'isearch-forward)
-  (bind-key "C-M-r" 'isearch-backward)
 #+END_SRC
 
 ** Coding System
@@ -925,6 +918,12 @@ Set up the exec path for emacs
     (bind-key "C-x C-r" 'ido-recentf-open))
 #+END_SRC
 
+** Swiper
+#+BEGIN_SRC emacs-lisp
+  (use-package swiper
+    :ensure t
+    :bind ("C-s".  swiper))
+#+END_SRC
 ** Free Keys
 The ~free-keys~ package provides a convenient way to identify keys which are
 potential bind candidates. Combine this with the ~describe-personal-keybindings~
