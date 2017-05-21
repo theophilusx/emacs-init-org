@@ -1,5 +1,4 @@
 *~
-*.el
 .saveplace
 .saved-places
 .smex-items
@@ -21,3 +20,7 @@ tramp
 places
 .DS_Store
 snippets
+init.el
+tangle.el
+linux-custom.el
+org-clock-save.el
