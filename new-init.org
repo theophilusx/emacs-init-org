@@ -342,7 +342,7 @@ normally ensure a 'stable' environment.
 #+BEGIN_SRC emacs-lisp
   (use-package org
     :pin org
-    :ensure t
+    :ensure org-plus-contrib 
     :init
     (setq org-catch-invisible-edits 'smart
           org-ctrl-k-protect-subtree t
