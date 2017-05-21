@@ -2265,4 +2265,9 @@ to do this!
   ;;       warning-minimum-log-level :error)
 
   ;; (add-hook 'after-init-hook 'my-startup-window t)
+
+  (defun my-after-init-config ()
+    (require 'ido-fix))
+
+  (add-hook 'after-init-hook 'my-after-init-config)
 #+END_SRC
