@@ -11,7 +11,6 @@ repository go in the ~.emacs.d/lib~  subdirectory.
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
-  (add-to-list 'load-path (expand-file-name "/usr/share/emacs/site-lisp/mu4e"))
 #+END_SRC
 
 * Set Some Constants
@@ -2034,27 +2033,26 @@ Setup ~clojure-mode~ and ~cider~.
 
 ** Python
 #+BEGIN_SRC emacs-lisp
-  (use-package python
+  (use-package jedi
+    :ensure t
+    :mode ("\\.py\\'" . python-mode)
     :init
-    (use-package jedi
-      :ensure t
-      :mode ("\\.py\\'" . python-mode)
-      :init
-      (setq jedi:complete-on-dot t)
-      :config
-      (add-hook 'python-mode-hook 'jedi:setup)
-      (jedi:install-server))
-    (use-package company-jedi
-      :ensure t)
-    (use-package importmagic
-      :ensure t)
-    (use-package elpy
-      :ensure t
-      :init
-      (setq elpy-rpc-backend "jedi")
-      :config
-      (elpy-enable)))
+    (setq jedi:complete-on-dot t)
+    :config
+    (add-hook 'python-mode-hook 'jedi:setup))
 
+  (use-package company-jedi
+    :ensure t)
+
+  (use-package importmagic
+    :ensure t)
+
+  (use-package elpy
+    :ensure t
+    :init
+    (setq elpy-rpc-backend "jedi")
+    :config
+    (elpy-enable))
 
 #+END_SRC
 
@@ -2152,12 +2150,17 @@ Configure mu4e
 
 #+BEGIN_SRC emacs-lisp
   (when (not *is-a-mac*)
+    (add-to-list 'load-path (expand-file-name "/usr/share/emacs/site-lisp/mu4e"))
+    (require 'info)
+    (add-to-list 'Info-additional-directory-list
+               (expand-file-name "info"  "/usr/share/"))
+    (require 'emacspeak-mu4e)
     (use-package mu4e
       :config
-      (setq mu4e-maildir (expand-file-name "~/Maildir/gmail"))
-      (setq mu4e-drafts-folder "/Drafts")
-      (setq mu4e-sent-folder   "/Sent Mail")
-      (setq mu4e-trash-folder  "/Bin")
+      (setq mu4e-maildir (expand-file-name "~/Maildir"))
+      (setq mu4e-drafts-folder "/gmail/Drafts")
+      (setq mu4e-sent-folder   "/gmail/Sent Mail")
+      (setq mu4e-trash-folder  "/gmail/Bin")
       (setq mu4e-attachment-dir (expand-file-name "~/Desktop")
             mu4e-user-mail-address-list '("theophilusx@gmail.com"
                                           "tcross@une.edu.au"))
@@ -2165,19 +2168,19 @@ Configure mu4e
       (setq mu4e-sent-messages-behavior 'delete)
 
       (setq mu4e-maildir-shortcuts
-            '(("/INBOX"               . ?i)
-              ("/Sent Mail"   . ?s)
-              ("/Bin"       . ?t)
-              ("/All Mail"    . ?a)
-              ("/Drafts" . ?d)
-              ("/Starred" . ?f)))
+            '(("/gmail/INBOX"               . ?i)
+              ("/gmail/Sent Mail"   . ?s)
+              ("/gmail/Bin"       . ?t)
+              ("/gmail/All Mail"    . ?a)
+              ("/gmail/Drafts" . ?d)
+              ("/gmail/Starred" . ?f)))
       (setq mu4e-bookmarks
-            '(("maildir:\"/All Mail\" flag:unread AND NOT flag:trashed"
+            '(("maildir:\"/gmail/All Mail\" flag:unread AND NOT flag:trashed"
                "Unread messages" 117)
-              ("maildir:\"/All Mail\" date:today..now" "Today's messages" 116)
-              ("maildir:\"/All Mail\" date:7d..now" "Last 7 days" 119)
+              ("maildir:\"/gmail/All Mail\" date:today..now" "Today's messages" 116)
+              ("maildir:\"/gmail/All Mail\" date:7d..now" "Last 7 days" 119)
               ("mime:image/*" "Messages with images" 112)))
-      (setq mu4e-refile-folder "/All Mail")
+      (setq mu4e-refile-folder "/gmail/All Mail")
       ;; allow for updating mail using 'U' in the main view:
       (setq mu4e-get-mail-command "mbsync -a")
       (setq mu4e-change-filenames-when-moving t
