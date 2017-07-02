@@ -245,28 +245,24 @@ normally ensure a 'stable' environment.
           (quote
            (("t" "todo" entry
              (file "~/Dropbox/org/refile.org")
-             "* TODO %?
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+             "* TODO %?\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("r" "respond" entry
              (file "~/Dropbox/org/refile.org")
-             "* NEXT Respond to %:from on %:subject
-                            SCHEDULED: %t
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+             "* NEXT Respond to %:from on %:subject\n SCHEDULED: %t\n  :LOGBOOK:\n  CREATED:: %U\n  REFERENCE: %f\n  :END:"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("n" "note" entry
-             (file "~/Dropbox/org/refile.org")
-             "* %? :NOTE:
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+             (file "~/Dropbox/org/notes.org")
+             "* %? :NOTE:\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("j" "journal" entry
              (file+datetree "~/Dropbox/org/journal.org")
-             "* %?
-                            %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+             "* %?\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("p" "phone" entry
              (file "~/Dropbox/org/refile.org")
-             "* PHONE %? :PHONE:
-                            %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+             "* PHONE %? :PHONE:\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             :empty-lines-after 1 :clock-in t :clock-resume t))))
     (setq org-enforce-todo-checkbox-dependencies t
           org-enforce-todo-dependencies t
           org-log-done 'time
@@ -311,7 +307,7 @@ normally ensure a 'stable' environment.
                     ((org-agenda-overriding-header "Task Backlog"))))
              nil nil))))
     (setq org-src-tab-acts-natively t
-	  org-hide-block-startup t)
+          org-hide-block-startup t)
     (setq org-confirm-babel-evaluate nil
           org-babel-noweb-wrap-start "«"
           org-babel-noweb-wrap-end "»")
@@ -443,15 +439,15 @@ normally ensure a 'stable' environment.
 
     (add-to-list 'org-structure-template-alist
                  '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-	           "<src lang=\"python\">\n?\n</src>"))
+                   "<src lang=\"python\">\n?\n</src>"))
 
     (add-to-list 'org-structure-template-alist
                  '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-	           "<src lang=\"emacs-lisp\">\n?\n</src>"))
+                   "<src lang=\"emacs-lisp\">\n?\n</src>"))
 
     (add-to-list 'org-structure-template-alist
                  '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-	           "<src lang=\"clojure-mode\">\n?\n</src>"))
+                   "<src lang=\"clojure-mode\">\n?\n</src>"))
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((emacs-lisp . t)
@@ -485,6 +481,9 @@ normally ensure a 'stable' environment.
 
 
 #+END_SRC
+
+#+RESULTS:
+: t
 
 * Hydra
 Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
