@@ -2141,11 +2141,6 @@ directory.
 
 Some mail related details about me.
 
-#+BEGIN_SRC emacs-lisp
-  (setq user-mail-address "theophilusx@gmail.com"
-        user-full-name  "Tim Cross")
-#+END_SRC
-
 Configure mu4e
 
 #+BEGIN_SRC emacs-lisp
@@ -2156,36 +2151,92 @@ Configure mu4e
                (expand-file-name "info"  "/usr/share/"))
     (require 'emacspeak-mu4e)
     (use-package mu4e
-      :config
-      (setq mu4e-maildir (expand-file-name "~/Maildir"))
-      (setq mu4e-drafts-folder "/gmail/Drafts")
-      (setq mu4e-sent-folder   "/gmail/Sent Mail")
-      (setq mu4e-trash-folder  "/gmail/Bin")
-      (setq mu4e-attachment-dir (expand-file-name "~/Desktop")
+      :init
+      (setq mu4e-maildir (expand-file-name "~/Maildir")
+            mu4e-attachment-dir (expand-file-name "~/Desktop")
+            mu4e-sent-messages-behavior 'delete
+            mu4e-get-mail-command "mbsync -a"
+            mu4e-change-filenames-when-moving t
+            mu4e-context-policy 'pick-first
+            mu4e-compose-context-policy nil
             mu4e-user-mail-address-list '("theophilusx@gmail.com"
                                           "tcross@une.edu.au"))
-      ;; don't save message to Sent Messages, Gmail/IMAP takes care of this
-      (setq mu4e-sent-messages-behavior 'delete)
 
-      (setq mu4e-maildir-shortcuts
-            '(("/gmail/INBOX"               . ?i)
-              ("/gmail/Sent Mail"   . ?s)
-              ("/gmail/Bin"       . ?t)
-              ("/gmail/All Mail"    . ?a)
-              ("/gmail/Drafts" . ?d)
-              ("/gmail/Starred" . ?f)))
-      (setq mu4e-bookmarks
-            '(("maildir:\"/gmail/All Mail\" flag:unread AND NOT flag:trashed"
-               "Unread messages" 117)
-              ("maildir:\"/gmail/All Mail\" date:today..now" "Today's messages" 116)
-              ("maildir:\"/gmail/All Mail\" date:7d..now" "Last 7 days" 119)
-              ("mime:image/*" "Messages with images" 112)))
-      (setq mu4e-refile-folder "/gmail/All Mail")
-      ;; allow for updating mail using 'U' in the main view:
-      (setq mu4e-get-mail-command "mbsync -a")
-      (setq mu4e-change-filenames-when-moving t
-            mu4e-compose-signature (concat "Tim Cross"))))
-
+      :config
+      (setq mu4e-bookmarks `(,(make-mu4e-bookmark
+                               :name  "Unread messages"
+                               :query "flag:unread AND NOT flag:trashed"
+                               :key ?u)
+                             ,(make-mu4e-bookmark
+                               :name "Today's messages"
+                               :query "date:today..now"
+                               :key ?t)
+                             ,(make-mu4e-bookmark
+                               :name "Last 7 days"
+                               :query "date:7d..now"
+                               :key ?w)
+                             ,(make-mu4e-bookmark
+                               :name "Messages with images"
+                               :query "mime:image/*"
+                               :key ?p)))
+      (setq mu4e-contexts
+            `(,(make-mu4e-context
+                :name "Private"
+                :enter-func (lambda ()
+                              (mu4e-message "Entering Private context"))
+                :leave-func (lambda ()
+                              (mu4e-message "Leaving Private context"))
+                ;; we match based on the contact-fields of the message
+                :match-func (lambda (msg)
+                              (when msg
+                                (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
+                :vars '((user-mail-address . "theophilusx@gmail.com")
+                        (user-full-name . "Tim Cross")
+                        (mu4e-compose-signature . (concat "Tim Cross\n"))
+                        (mu4e-drafts-folder . "/gmail/Drafts")
+                        (mu4e-sent-folder . "/gmail/Sent Mail")
+                        (mu4e-trash-folder . "/gmail/Bin")
+                        (mu4e-refile-folder . "/gmail/All Mail")
+                        (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
+                                                    ("/gmail/Sent Mail" . ?s)
+                                                    ("/gmail/Bin" . ?t)
+                                                    ("/gmail/All Mail" . ?a)
+                                                    ("/gmail/Drafts" . ?d)
+                                                    ("/gmail/Starred" . ?f)))
+                        (smtpmail-smtp-server . "smtp.gmail.com")
+                        (smtpmail-smtp-service . 587)))
+              ,(make-mu4e-context
+                :name "Work"
+                :enter-func (lambda ()
+                              (mu4e-message "Switch to the Work context"))
+                ;; we match based on the contact-fields of the message
+                :match-func (lambda (msg)
+                              (when msg
+                                (mu4e-message-contact-field-matches msg :to "tcross@une.edu.au")))
+                :vars '((user-mail-address . "tcross@une.edu.au")
+                        (user-full-name . "Tim Cross")
+                        (mu4e-compose-signature . (concat "Tim Cross\n"
+                                                          "Manager Information Security\n"
+                                                          "Information Technology Directorate\n"
+                                                          "University of New England N.S.W. 2351\n\n"
+                                                          "Email: tcross@une.edu.au\n"
+                                                          "Phone: +61 2 6773 3210\n"
+                                                          "Mobile: 0428 212 217\n\n"
+                                                          "www.une.edu.au\n"
+                                                          "CRICOS Provider Number: 00003G"))
+                        (mu4e-drafts-folder . "/une/Drafts")
+                        (mu4e-sent-folder . "/une/Sent")
+                        (mu4e-trash-folder . "/une/Deleted Items")
+                        (mu4e-refile-folder "/une/Archive")
+                        (mu4e-maildir-shortcuts . (("/une/Inbox" . ?i)
+                                                   ("/une/Sent" . ?s)
+                                                   ("/une/Deleted Items" . ?t)
+                                                   ("/une/Drafts" . ?d)
+                                                   ("/une/IAM Project" . ?p)
+                                                   ("/une/Security" . ?m)
+                                                   ("/une/ITMT" . ?b)))
+                        (smtpmail-smtp-server . "mailhub.une.edu.au")
+                        (smtpmail-smtp-service . 25)))))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -2193,13 +2244,9 @@ Configure mu4e
     :config
     (setq message-send-mail-function 'smtpmail-send-it
           smtpmail-stream-type 'starttls
-          smtpmail-default-smtp-server "smtp.gmail.com"
-          smtpmail-smtp-server "smtp.gmail.com"
-          smtpmail-smtp-service 587)
-
+          smtpmail-default-smtp-server "smtp.gmail.com")
     (setq smtpmail-queue-mail nil  ;; start in normal mode
           smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
-
     ;; don't keep message buffers around
     (setq message-kill-buffer-on-exit t))
 #+END_SRC
