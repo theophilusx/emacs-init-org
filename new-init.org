@@ -2142,7 +2142,7 @@ Configure mu4e
 
 #+BEGIN_SRC emacs-lisp
   (require 'info)
-  (if *is-a-mac**
+  (if *is-a-mac*
       (progn
         (add-to-list 'load-path (expand-file-name
                                  "/usr/local/Cellar/mu/0.9.18_1/share/emacs/site-lisp/mu/mu4e"))
