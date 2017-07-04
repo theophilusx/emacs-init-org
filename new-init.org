@@ -245,7 +245,7 @@ normally ensure a 'stable' environment.
           (quote
            (("t" "todo" entry
              (file "~/Dropbox/org/refile.org")
-             "* TODO %?\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             "* TODO %?\n\n  %a"
              :empty-lines-after 1 :clock-in t :clock-resume t)
             ("r" "respond" entry
              (file "~/Dropbox/org/refile.org")
@@ -253,15 +253,19 @@ normally ensure a 'stable' environment.
              :empty-lines-after 1 :clock-in t :clock-resume t)
             ("n" "note" entry
              (file "~/Dropbox/org/notes.org")
-             "* %? :NOTE:\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             "* %? :NOTE:\n\n  %a"
              :empty-lines-after 1 :clock-in t :clock-resume t)
             ("j" "journal" entry
              (file+datetree "~/Dropbox/org/journal.org")
-             "* %?\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             "* %?\n  "
              :empty-lines-after 1 :clock-in t :clock-resume t)
             ("p" "phone" entry
              (file "~/Dropbox/org/refile.org")
-             "* PHONE %? :PHONE:\n  :LOGBOOK:\n  CREATED: %U\n  REFERENCE: %f\n  :END:"
+             "* PHONE %? :PHONE:\n  "
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("m" "mail" entry
+             (file "~/Dropbox/org/refile.org")
+             "* MAIL from %:from on %:subject\n\n  %a"
              :empty-lines-after 1 :clock-in t :clock-resume t))))
     (setq org-enforce-todo-checkbox-dependencies t
           org-enforce-todo-dependencies t
@@ -2160,7 +2164,6 @@ Configure mu4e
     :init
     (setq mu4e-maildir (expand-file-name "~/Maildir")
           mu4e-attachment-dir (expand-file-name "~/Desktop")
-          mu4e-sent-messages-behavior 'delete
           mu4e-get-mail-command "mbsync -a"
           mu4e-change-filenames-when-moving t
           mu4e-context-policy 'pick-first
@@ -2212,7 +2215,8 @@ Configure mu4e
                                                  ("/gmail/Drafts" . ?d)
                                                  ("/gmail/Starred" . ?f)))
                       (smtpmail-smtp-server . "smtp.gmail.com")
-                      (smtpmail-smtp-service . 587)))
+                      (smtpmail-smtp-service . 587)
+                      (mu4e-sent-messages-behavior . delete)))
             ,(make-mu4e-context
               :name "Work"
               :enter-func (lambda ()
@@ -2235,16 +2239,17 @@ Configure mu4e
                       (mu4e-drafts-folder . "/une/Drafts")
                       (mu4e-sent-folder . "/une/Sent")
                       (mu4e-trash-folder . "/une/Deleted Items")
-                      (mu4e-refile-folder "/une/Archive")
+                      (mu4e-refile-folder . "/une/Archive")
                       (mu4e-maildir-shortcuts . (("/une/Inbox" . ?i)
                                                  ("/une/Sent" . ?s)
-                                                 ("/une/Deleted Items" . ?t)
+                                                 ("/une/ITD" . ?t)
                                                  ("/une/Drafts" . ?d)
                                                  ("/une/IAM Project" . ?p)
                                                  ("/une/Security" . ?m)
                                                  ("/une/ITMT" . ?b)))
                       (smtpmail-smtp-server . "mailhub.une.edu.au")
-                      (smtpmail-smtp-service . 25))))))
+                      (smtpmail-smtp-service . 25)
+                      (mu4e-sent-messages-behavior . sent))))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
