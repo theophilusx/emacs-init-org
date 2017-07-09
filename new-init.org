@@ -854,7 +854,7 @@ Set up the exec path for emacs
     (ido-mode 1))
 
 
-  (use-package ido-ubiquitous
+  (use-package ido-completing-read+
     :ensure t
     :config
     (ido-ubiquitous-mode t))
@@ -2328,8 +2328,8 @@ to do this!
 
   ;; (add-hook 'after-init-hook 'my-startup-window t)
 
-  (defun my-after-init-config ()
-    (require 'ido-fix))
+  ;; (defun my-after-init-config ()
+  ;;   (require 'ido-fix))
 
-  (add-hook 'after-init-hook 'my-after-init-config)
+;;  (add-hook 'after-init-hook 'my-after-init-config)
 #+END_SRC

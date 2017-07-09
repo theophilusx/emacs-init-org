@@ -100,15 +100,19 @@
                  ('unread "unread"))) flags " "))
 
 (defun emacspeak-mu4e-speak-msg-header ()
-  (let* ((from-1 (first (mu4e-message-field-at-point :from)))
-         (from (if (listp from-1)
-                   (first from-1)
-                 from-1))
-        (subject (mu4e-message-field-at-point :subject))
-        (date (format-time-string mu4e-headers-date-format
-                                  (mu4e-message-field-at-point :date)))
-        (flags (emacspeak-mu4e-msg-status
-                (mu4e-message-field-at-point :flags))))
+  (let* ((mail-list (mu4e-message-field-at-point :mailing-list))
+         (from-1 (first (mu4e-message-field-at-point :from)))
+         (from (concat (if (listp from-1)
+                            (first from-1)
+                         from-1)
+                       (if mail-list
+                           (format " in list %s" mail-list)
+                         "")))
+         (subject (mu4e-message-field-at-point :subject))
+         (date (format-time-string mu4e-headers-date-format
+                                   (mu4e-message-field-at-point :date)))
+         (flags (emacspeak-mu4e-msg-status
+                 (mu4e-message-field-at-point :flags))))
     (dtk-speak (format "%s from %s subject %s on %s"
                        flags from subject date))))
 
@@ -152,6 +156,46 @@
       (emacspeak-speak-region start (window-end window t)))))
 
 (add-hook 'mu4e-view-mode-hook 'emacspeak-mu4e-speak-message t)
+
+
+;; Message actions. Mu4e has the concept of actions, which are
+;; things you can do on a message or attachment. We can use this
+;; functionality to add voice support for emacspeak rather than the more
+;; fragile approach of advising function.s
+
+(defun emacspeak-mu4e-speak-subject (msg)
+  "Speak subject of current message at point"
+  (dtk-speak (format "Subject %s" (mu4e-message-field msg :subject))))
+
+(add-to-list 'mu4e-headers-actions
+             '("Subject speak" . emacspeak-mu4e-speak-subject))
+
+(add-to-list 'mu4e-view-actions
+             '("Subject speak" . emacspeak-mu4e-speak-subject))
+
+(defun emacspeak-mu4e-speak-from (msg)
+  "Speak the message from header"
+  (let ((from (first (mu4e-message-field msg :from))))
+    (dtk-speak (format "From %s" (if (listp from)
+                                     (first from)
+                                   from)))))
+
+(add-to-list 'mu4e-headers-actions
+             '("From speak" . emacspeak-mu4e-speak-from))
+
+(add-to-list 'mu4e-view-actions
+             '("From speak" . emacspeak-mu4e-speak-from))
+
+(defun emacspeak-mu4e-speak-flags (msg)
+  "Speak the message flags"
+  (dtk-speak (format "Flags %s" (emacspeak-mu4e-msg-status
+                                 (mu4e-message-field msg :flags)))))
+
+(add-to-list 'mu4e-headers-actions
+             '("Flags speak" . emacspeak-mu4e-speak-flags))
+
+(add-to-list 'mu4e-view-actions
+             '("Flag speak" . emacspeak-mu4e-speak-flags))
 
 
 ;;}}}
