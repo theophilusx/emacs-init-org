@@ -2070,6 +2070,24 @@ Setup ~clojure-mode~ and ~cider~.
 
 #+END_SRC
 
+** CL
+#+BEGIN_SRC emacs-lisp
+  (when (not *is-a-mac*)
+    (use-package slime
+      :ensure t
+      :init
+      (setq slime-contribs '(slime-fancy)
+            slime-complete-symbol-function 'slime-fuzzy-complete-symbol
+            slime-net-coding-system 'utf-8-unix
+            slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
+            slime-default-lisp 'sbcl)
+      :config
+      (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
+            common-lisp-hyperspec-symbols-table
+            (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
+            common-lisp-hyperspec-issuex-table
+            (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))))
+#+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
   (use-package solarized-theme
