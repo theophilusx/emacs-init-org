@@ -192,10 +192,10 @@
                                  (mu4e-message-field msg :flags)))))
 
 (add-to-list 'mu4e-headers-actions
-             '("Flags speak" . emacspeak-mu4e-speak-flags))
+             '("Attribute Flags speak" . emacspeak-mu4e-speak-flags))
 
 (add-to-list 'mu4e-view-actions
-             '("Flag speak" . emacspeak-mu4e-speak-flags))
+             '("Attribute Flag speak" . emacspeak-mu4e-speak-flags))
 
 
 ;;}}}
