@@ -311,10 +311,9 @@ normally ensure a 'stable' environment.
                     ((org-agenda-overriding-header "Task Backlog"))))
              nil nil))))
     (setq org-src-tab-acts-natively t
-          org-hide-block-startup t)
-    (setq org-confirm-babel-evaluate nil
-          org-babel-noweb-wrap-start "«"
-          org-babel-noweb-wrap-end "»")
+          org-hide-block-startup t
+          org-src-window-setup 'current-window)
+    (setq org-confirm-babel-evaluate nil)
     (setq org-babel-clojure-backend 'cider
           org-babel-clojure-sync-nrepl-timeout 0)
     (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
@@ -450,8 +449,11 @@ normally ensure a 'stable' environment.
                    "<src lang=\"emacs-lisp\">\n?\n</src>"))
 
     (add-to-list 'org-structure-template-alist
-                 '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+                 '("clj" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
                    "<src lang=\"clojure-mode\">\n?\n</src>"))
+    (add-to-list 'org-structure-template-alist
+                 '("cl" "#+BEGIN_SRC lisp\n?\n#+END_SRC"
+                   "<src lang=\"lisp-mode\">\n?\n</src>"))
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((emacs-lisp . t)
@@ -462,6 +464,7 @@ normally ensure a 'stable' environment.
        (js . t)
        (latex . t)
        (ledger . t)
+       (lisp . t)
        (makefile . t)
        (org . t)
        (perl . t)
@@ -768,7 +771,7 @@ Set the default font
     (set-face-attribute 'default nil
                         :foundry "PfEd"
                         :family "Ricty Diminished"
-                        :height 180))
+                        :height 190))
 #+END_SRC
 
 Setup some font scaling support
@@ -2072,21 +2075,24 @@ Setup ~clojure-mode~ and ~cider~.
 
 ** CL
 #+BEGIN_SRC emacs-lisp
-  (when (not *is-a-mac*)
-    (use-package slime
-      :ensure t
-      :init
-      (setq slime-contribs '(slime-fancy)
-            slime-complete-symbol-function 'slime-fuzzy-complete-symbol
-            slime-net-coding-system 'utf-8-unix
-            slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
-            slime-default-lisp 'sbcl)
-      :config
-      (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
-            common-lisp-hyperspec-symbols-table
-            (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
-            common-lisp-hyperspec-issuex-table
-            (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))))
+    (when (not *is-a-mac*)
+      (use-package slime
+        :ensure t
+        :init
+        (setq slime-contribs '(slime-fancy)
+              slime-complete-symbol-function 'slime-fuzzy-complete-symbol
+              slime-net-coding-system 'utf-8-unix
+              slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
+              slime-default-lisp 'sbcl)
+        :config
+        (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
+              common-lisp-hyperspec-symbols-table
+              (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
+              common-lisp-hyperspec-issuex-table
+              (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
+        (load (expand-file-name "~/quicklisp/slime-helper.el"))
+        (add-to-list 'Info-additional-directory-list
+                 (expand-file-name "~/git/stumpwm"))))
 #+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
