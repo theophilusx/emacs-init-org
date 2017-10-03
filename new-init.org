@@ -489,9 +489,6 @@ normally ensure a 'stable' environment.
 
 #+END_SRC
 
-#+RESULTS:
-: t
-
 * Hydra
 Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
 correctly. 
@@ -1385,6 +1382,15 @@ Not sure if imenu is of any real value. Disabling it for now
     (add-hook 'prog-mode-hook 'linum-mode))
 #+END_SRC
 
+** flycheck
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flycheck
+    :ensure t
+    :init
+    (global-flycheck-mode))
+
+#+END_SRC
 * Utility Modes 
 ** Spelling
 When running on OSX it is necessary to
