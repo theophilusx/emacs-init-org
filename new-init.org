@@ -1824,12 +1824,16 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
 
 * Programming Modes 
 ** Lua
+
+No time for any Lua programming just now, so commenting out configuration as it
+is not required at this time. 
+
 #+BEGIN_SRC emacs-lisp
-  (use-package lua-mode
-    :ensure t
-    :commands (lua-mode)
-    :mode "\\.lua\\'"
-    :interpreter "lua")
+  ;; (use-package lua-mode
+  ;;   :ensure t
+  ;;   :commands (lua-mode)
+  ;;   :mode "\\.lua\\'"
+  ;;   :interpreter "lua")
 
 #+END_SRC
 
@@ -2067,63 +2071,78 @@ Setup ~clojure-mode~ and ~cider~.
 #+END_SRC
 
 ** Powershell
+
+Have been blessed with no need to do powershell scripting at this time, so
+disabling this support for now. 
+
 #+BEGIN_SRC emacs-lisp
-  (use-package powershell
-    :ensure t)
+  ;; (use-package powershell
+  ;;   :ensure t)
 #+END_SRC
 
 ** Python
+
+No time to continue with learning Python programming at this time, so disabling
+this support for now. 
+
 #+BEGIN_SRC emacs-lisp
-  (use-package jedi
-    :ensure t
-    :mode ("\\.py\\'" . python-mode)
-    :init
-    (setq jedi:complete-on-dot t)
-    :config
-    (add-hook 'python-mode-hook 'jedi:setup))
+  ;; (use-package jedi
+  ;;   :ensure t
+  ;;   :mode ("\\.py\\'" . python-mode)
+  ;;   :init
+  ;;   (setq jedi:complete-on-dot t)
+  ;;   :config
+  ;;   (add-hook 'python-mode-hook 'jedi:setup))
 
-  (use-package company-jedi
-    :ensure t)
+  ;; (use-package company-jedi
+  ;;   :ensure t)
 
-  (use-package importmagic
-    :ensure t)
+  ;; (use-package importmagic
+  ;;   :ensure t)
 
-  (use-package elpy
-    :ensure t
-    :init
-    (setq elpy-rpc-backend "jedi")
-    :config
-    (elpy-enable))
+  ;; (use-package elpy
+  ;;   :ensure t
+  ;;   :init
+  ;;   (setq elpy-rpc-backend "jedi")
+  ;;   :config
+  ;;   (elpy-enable))
 
 #+END_SRC
 
 ** Scheme
+
+No need for scheme support at this time. Disabling for now.
+
 #+BEGIN_SRC emacs-lisp
-  (use-package geiser
-    :ensure t)
+  ;; (use-package geiser
+  ;;   :ensure t)
 
 #+END_SRC
 
 ** CL
+
+Moved back to Gnome from Stumpwn for now. Until time permits for full stumpwm
+setup, comment out for now.
+
 #+BEGIN_SRC emacs-lisp
-    (when (not *is-a-mac*)
-      (use-package slime
-        :ensure t
-        :init
-        (setq slime-contribs '(slime-fancy)
-              slime-complete-symbol-function 'slime-fuzzy-complete-symbol
-              slime-net-coding-system 'utf-8-unix
-              slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
-              slime-default-lisp 'sbcl)
-        :config
-        (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
-              common-lisp-hyperspec-symbols-table
-              (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
-              common-lisp-hyperspec-issuex-table
-              (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
-        (load (expand-file-name "~/quicklisp/slime-helper.el"))
-        (add-to-list 'Info-additional-directory-list
-                 (expand-file-name "~/git/stumpwm"))))
+  ;; (when (not *is-a-mac*)
+  ;;   (use-package slime
+  ;;     :ensure t
+  ;;     :init
+  ;;     (setq slime-contribs '(slime-fancy)
+  ;;           slime-complete-symbol-function 'slime-fuzzy-complete-symbol
+  ;;           slime-net-coding-system 'utf-8-unix
+  ;;           slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
+  ;;           slime-default-lisp 'sbcl)
+  ;;     :config
+  ;;     (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
+  ;;           common-lisp-hyperspec-symbols-table
+  ;;           (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
+  ;;           common-lisp-hyperspec-issuex-table
+  ;;           (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
+  ;;     (load (expand-file-name "~/quicklisp/slime-helper.el"))
+  ;;     (add-to-list 'Info-additional-directory-list
+  ;;              (expand-file-name "~/git/stumpwm"))))
 #+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
