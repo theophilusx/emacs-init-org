@@ -199,10 +199,20 @@ do the simple way
 #+BEGIN_SRC emacs-lisp
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
-    (package-install 'use-package))
+    (package-install 'diminish)
+    (package-install 'bind-key)
+    ;;(package-install 'use-package)
+    )
+
+  ;; melpa version of use-package currently broken. Load from git clone instead
   (setq use-package-verbose nil)
   (eval-when-compile
+    ;; Following line is not needed if use-package.el is in ~/.emacs.d
+    (add-to-list 'load-path "~/git/github/use-package")
     (require 'use-package))
+
+  ;; (eval-when-compile
+  ;;   (require 'use-package))
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
@@ -748,7 +758,8 @@ Some basic defaults and customizations
   (setq-default fill-column 80
                 indent-tabs-mode nil
                 save-place t
-                show-trailing-whitespace nil)
+                show-trailing-whitespace nil
+                tab-width 4)
 #+END_SRC
 
 ** Coding System
@@ -770,7 +781,7 @@ Set the default font
     (set-face-attribute 'default nil
                         :foundry "PfEd"
                         :family "Ricty Diminished"
-                        :height 190))
+                        :height 196))
 #+END_SRC
 
 Setup some font scaling support
@@ -1148,7 +1159,7 @@ Using ~ag~ package for searches. This needs some OS support
     (progn
       (unbind-key "<tab>" yas-minor-mode-map)
       (unbind-key "TAB" yas-minor-mode-map)
-      ;;(bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
+      (bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
       (yas-load-directory "~/.emacs.d/snippets")
       (yas-global-mode 1)))
 #+END_SRC
@@ -1195,8 +1206,7 @@ Using ~ag~ package for searches. This needs some OS support
   (use-package hippie-expand
     :init
     (setq hippie-expand-try-functions-list
-          '(yas-hippie-try-expand
-            try-expand-dabbrev
+          '(try-expand-dabbrev
             try-expand-dabbrev-all-buffers
             try-expand-dabbrev-from-kill
             try-flyspell
@@ -1266,8 +1276,8 @@ Highlight symbols and enable navigation by symbol in programming modes. See
 
 ** Electric Pair Mode
 #+BEGIN_SRC emacs-lisp 
-  (when (fboundp 'electric-pair-mode)
-    (electric-pair-mode))
+  ;; (when (fboundp 'electric-pair-mode)
+  ;;   (electric-pair-mode))
 #+END_SRC
 
 ** Goto Address
@@ -1397,6 +1407,18 @@ Not sure if imenu is of any real value. Disabling it for now
     :ensure t
     :init
     (global-flycheck-mode))
+
+#+END_SRC
+** Highlight Indentation 
+Highlight the indentation level in programming modes.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package highlight-indent-guides
+    :ensure t
+    :init
+    (setq highlight-indent-guides-method 'character)
+    :config
+    (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
 
 #+END_SRC
 * Utility Modes 
@@ -2032,11 +2054,10 @@ Setup ~clojure-mode~ and ~cider~.
     :mode "\\.js\\'"
     :interpreter ("node" . js2-mode)
     :init
-    (setq-default js2-basic-offset 2
-                  js2-bounce-indent-p nil)
+    (setq-default js2-bounce-indent-p nil)
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
-    ;; (js2-imenu-extras-setup)
+    (js2-imenu-extras-setup)
     (define-key js2-mode-map (kbd "M-.") nil))
 
   (use-package xref-js2
@@ -2074,7 +2095,7 @@ Setup ~clojure-mode~ and ~cider~.
   (use-package indium
     :ensure t
     :config
-    (add-hook 'js-mode-hook #'indium-interaction-mode))
+    (add-hook 'js2-mode-hook #'indium-interaction-mode))
 
 #+END_SRC
 
@@ -2246,7 +2267,7 @@ Configure mu4e
     :init
     (setq mu4e-maildir (expand-file-name "~/Maildir")
           mu4e-attachment-dir (expand-file-name "~/Desktop")
-          mu4e-get-mail-command "mbsync -a"
+          mu4e-get-mail-command "mbsync gmail"
           mu4e-change-filenames-when-moving t
           mu4e-context-policy 'pick-first
           mu4e-compose-context-policy nil
