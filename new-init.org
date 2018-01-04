@@ -201,18 +201,18 @@ do the simple way
     (package-refresh-contents)
     (package-install 'diminish)
     (package-install 'bind-key)
-    ;;(package-install 'use-package)
-    )
+    (package-install 'use-package))
+
+  (setq use-package-verbose nil)
 
   ;; melpa version of use-package currently broken. Load from git clone instead
-  (setq use-package-verbose nil)
-  (eval-when-compile
-    ;; Following line is not needed if use-package.el is in ~/.emacs.d
-    (add-to-list 'load-path "~/git/github/use-package")
-    (require 'use-package))
-
   ;; (eval-when-compile
+  ;;   ;; Following line is not needed if use-package.el is in ~/.emacs.d
+  ;;   (add-to-list 'load-path "~/git/github/use-package")
   ;;   (require 'use-package))
+
+  (eval-when-compile
+    (require 'use-package))
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
@@ -268,7 +268,7 @@ normally ensure a 'stable' environment.
              "* %? :NOTE:\n\n  %a"
              :empty-lines-after 1 :clock-in t :clock-resume t)
             ("j" "journal" entry
-             (file+datetree "~/Dropbox/org/journal.org")
+             (file+olp+datetree "~/Dropbox/org/journal.org")
              "* %?\n  "
              :empty-lines-after 1 :clock-in t :clock-resume t)
             ("p" "phone" entry
@@ -2267,7 +2267,7 @@ Configure mu4e
     :init
     (setq mu4e-maildir (expand-file-name "~/Maildir")
           mu4e-attachment-dir (expand-file-name "~/Desktop")
-          mu4e-get-mail-command "mbsync gmail"
+          mu4e-get-mail-command "mbsync -a"
           mu4e-change-filenames-when-moving t
           mu4e-context-policy 'pick-first
           mu4e-compose-context-policy nil
@@ -2351,8 +2351,8 @@ Configure mu4e
                                                  ("/une/IAM Project" . ?p)
                                                  ("/une/Security" . ?m)
                                                  ("/une/ITMT" . ?b)))
-                      (smtpmail-smtp-server . "mailhub.une.edu.au")
-                      (smtpmail-smtp-service . 25)
+                      (smtpmail-smtp-server . "smtp.office365.com")
+                      (smtpmail-smtp-service . 587)
                       (mu4e-sent-messages-behavior . sent))))))
 #+END_SRC
 
