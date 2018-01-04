@@ -11,7 +11,6 @@ repository go in the ~.emacs.d/lib~  subdirectory.
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
-  (add-to-list 'load-path (expand-file-name "/usr/share/emacs/site-lisp/mu4e"))
 #+END_SRC
 
 * Set Some Constants
@@ -74,6 +73,8 @@ warnings. Put some defvars in place to silence them.
   (defvar org-ans2 nil)
   (defvar ido-process-ignore-lists nil)
   (defvar select-object nil)
+  (defvar *slime-inspector* nil)
+
 #+END_SRC
 
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
@@ -98,7 +99,7 @@ then load it
                                                    '(eww-browse-url browse-url-default-macosx-browser)
                                                  '(eww-browse-url browse-url-chrome))
           emacspeak-vm-use-raman-settings nil
-          mac-default-speech-rate 400        
+          mac-default-speech-rate 375        
           outloud-default-speech-rate 90
           sox-play (if *is-a-mac*
                        "/usr/local/bin/play"
@@ -198,133 +199,23 @@ do the simple way
 #+BEGIN_SRC emacs-lisp
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
+    (package-install 'diminish)
+    (package-install 'bind-key)
     (package-install 'use-package))
+
   (setq use-package-verbose nil)
+
+  ;; melpa version of use-package currently broken. Load from git clone instead
+  ;; (eval-when-compile
+  ;;   ;; Following line is not needed if use-package.el is in ~/.emacs.d
+  ;;   (add-to-list 'load-path "~/git/github/use-package")
+  ;;   (require 'use-package))
+
   (eval-when-compile
     (require 'use-package))
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
-* Hydra
-Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
-correctly. 
-
- #+BEGIN_SRC emacs-lisp
-   (use-package winner
-     :config
-     (winner-mode 1))
-
-   (use-package windmove
-     :config
-     (windmove-default-keybindings))
-
-   (use-package hydra
-     :ensure t
-     :config
-     (defun hydra-move-splitter-left (arg)
-       "Move window splitter left."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'right))
-           (shrink-window-horizontally arg)
-         (enlarge-window-horizontally arg)))
-
-     (defun hydra-move-splitter-right (arg)
-       "Move window splitter right."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'right))
-           (enlarge-window-horizontally arg)
-         (shrink-window-horizontally arg)))
-
-     (defun hydra-move-splitter-up (arg)
-       "Move window splitter up."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'up))
-           (enlarge-window arg)
-         (shrink-window arg)))
-
-     (defun hydra-move-splitter-down (arg)
-       "Move window splitter down."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'up))
-           (shrink-window arg)
-         (enlarge-window arg)))
-
-     (defhydra my-hydra-wizards ()
-       "Emacspeak Wizards"
-       ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-       ("b" emacspeak-wizards-cycle-browser "Browser")
-       ("e" emacspeak-wizards-eww-buffer-list "eww")
-       ("r" emacspeak-wizards-find-file-as-root "root")
-       ("g" emacspeak-wizards-find-grep "Grep")
-       ("f" emacspeak-wizards-finder-find "Find")
-       ("F" emacspeak-wizards-generate-finder "Finder")
-       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-       ("s" emacspeak-wizards-spot-words "Spot")
-       ("t" emacspeak-wizards-tramp-open-location "Tramp")
-       ("q" nil "Quit"))
-
-     (defhydra my-hydra-zoom ()
-       "zoom"
-       ("-" text-scale-decrease "out")
-       ("+" text-scale-increase "in")
-       ("0" (text-scale-adjust 0) "reset")
-       ("q" nil "quit" :color blue))
-     (defhydra my-hydra-error ()
-       "goto-error"
-       ("h" first-error "first")
-       ("j" next-error "next")
-       ("k" previous-error "prev")
-       ("v" recenter-top-bottom "recenter")
-       ("q" nil "quit"))
-     (require 'winner)
-     (defhydra my-hydra-window (:color red :hint nil)
-       "
-    Split: _v_ert _x_:horz
-   Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
-     Move: _s_wap
-   Frames: _f_rame new  _df_ delete
-     Misc: _m_ark _a_ce  _u_ndo  _r_edo"
-       ("h" windmove-left)
-       ("j" windmove-down)
-       ("k" windmove-up)
-       ("l" windmove-right)
-       ("H" hydra-move-splitter-left)
-       ("J" hydra-move-splitter-down)
-       ("K" hydra-move-splitter-up)
-       ("L" hydra-move-splitter-right)
-       ("|" (lambda ()
-              (interactive)
-              (split-window-right)
-              (windmove-right)))
-       ("_" (lambda ()
-              (interactive)
-              (split-window-below)
-              (windmove-down)))
-       ("v" split-window-right)
-       ("x" split-window-below)
-       ;;("t" transpose-frame "'")
-       ;; winner-mode must be enabled
-       ("u" winner-undo)
-       ("r" winner-redo) ;;Fixme, not working?
-       ("o" delete-other-windows :exit t)
-       ("a" ace-window :exit t)
-       ("f" make-frame :exit t)
-       ("s" ace-swap-window)
-       ("da" ace-delete-window)
-       ("dw" delete-window)
-       ("db" kill-this-buffer)
-       ("df" delete-frame :exit t)
-       ("q" nil)
-       ;;("i" ace-maximize-window "ace-one" :color blue)
-       ;;("b" ido-switch-buffer "buf")
-       ("m" headlong-bookmark-jump)))
-
- #+END_SRC
-
 * Org Mode
 Start by getting required package. I'm using the org-plus-contrib package from
 the org repository.
@@ -366,28 +257,28 @@ normally ensure a 'stable' environment.
           (quote
            (("t" "todo" entry
              (file "~/Dropbox/org/refile.org")
-             "* TODO %?
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+             "* TODO %?\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("r" "respond" entry
              (file "~/Dropbox/org/refile.org")
-             "* NEXT Respond to %:from on %:subject
-                            SCHEDULED: %t
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+             "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("n" "note" entry
-             (file "~/Dropbox/org/refile.org")
-             "* %? :NOTE:
-                            %U
-                            %a" :empty-lines-after 1 :clock-in t :clock-resume t)
+             (file "~/Dropbox/org/notes.org")
+             "* %? :NOTE:\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("j" "journal" entry
-             (file+datetree "~/Dropbox/org/journal.org")
-             "* %?
-                            %U" :empty-lines-after 1 :clock-in t :clock-resume t)
+             (file+olp+datetree "~/Dropbox/org/journal.org")
+             "* %?\n  "
+             :empty-lines-after 1 :clock-in t :clock-resume t)
             ("p" "phone" entry
              (file "~/Dropbox/org/refile.org")
-             "* PHONE %? :PHONE:
-                            %U" :empty-lines-after 1 :clock-in t :clock-resume t))))
+             "* PHONE %? :PHONE:\n  "
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("m" "mail" entry
+             (file "~/Dropbox/org/refile.org")
+             "* MAIL from %:from on %:subject\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t))))
     (setq org-enforce-todo-checkbox-dependencies t
           org-enforce-todo-dependencies t
           org-log-done 'time
@@ -432,10 +323,9 @@ normally ensure a 'stable' environment.
                     ((org-agenda-overriding-header "Task Backlog"))))
              nil nil))))
     (setq org-src-tab-acts-natively t
-	  org-hide-block-startup t)
-    (setq org-confirm-babel-evaluate nil
-          org-babel-noweb-wrap-start "«"
-          org-babel-noweb-wrap-end "»")
+          org-hide-block-startup t
+          org-src-window-setup 'current-window)
+    (setq org-confirm-babel-evaluate nil)
     (setq org-babel-clojure-backend 'cider
           org-babel-clojure-sync-nrepl-timeout 0)
     (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
@@ -564,15 +454,18 @@ normally ensure a 'stable' environment.
 
     (add-to-list 'org-structure-template-alist
                  '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-	           "<src lang=\"python\">\n?\n</src>"))
+                   "<src lang=\"python\">\n?\n</src>"))
 
     (add-to-list 'org-structure-template-alist
                  '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-	           "<src lang=\"emacs-lisp\">\n?\n</src>"))
+                   "<src lang=\"emacs-lisp\">\n?\n</src>"))
 
     (add-to-list 'org-structure-template-alist
-                 '("cl" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-	           "<src lang=\"clojure-mode\">\n?\n</src>"))
+                 '("clj" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+                   "<src lang=\"clojure-mode\">\n?\n</src>"))
+    (add-to-list 'org-structure-template-alist
+                 '("cl" "#+BEGIN_SRC lisp\n?\n#+END_SRC"
+                   "<src lang=\"lisp-mode\">\n?\n</src>"))
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((emacs-lisp . t)
@@ -583,6 +476,7 @@ normally ensure a 'stable' environment.
        (js . t)
        (latex . t)
        (ledger . t)
+       (lisp . t)
        (makefile . t)
        (org . t)
        (perl . t)
@@ -606,6 +500,127 @@ normally ensure a 'stable' environment.
 
 
 #+END_SRC
+
+* Hydra
+Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
+correctly. 
+
+ #+BEGIN_SRC emacs-lisp
+   (use-package winner
+     :config
+     (winner-mode 1))
+
+   (use-package windmove
+     :config
+     (windmove-default-keybindings))
+
+   (use-package hydra
+     :ensure t
+     :config
+     (defun hydra-move-splitter-left (arg)
+       "Move window splitter left."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'right))
+           (shrink-window-horizontally arg)
+         (enlarge-window-horizontally arg)))
+
+     (defun hydra-move-splitter-right (arg)
+       "Move window splitter right."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'right))
+           (enlarge-window-horizontally arg)
+         (shrink-window-horizontally arg)))
+
+     (defun hydra-move-splitter-up (arg)
+       "Move window splitter up."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'up))
+           (enlarge-window arg)
+         (shrink-window arg)))
+
+     (defun hydra-move-splitter-down (arg)
+       "Move window splitter down."
+       (interactive "p")
+       (if (let ((windmove-wrap-around))
+             (windmove-find-other-window 'up))
+           (shrink-window arg)
+         (enlarge-window arg)))
+
+     (defhydra my-hydra-wizards ()
+       "Emacspeak Wizards"
+       ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
+       ("b" emacspeak-wizards-cycle-browser "Browser")
+       ("e" emacspeak-wizards-eww-buffer-list "eww")
+       ("r" emacspeak-wizards-find-file-as-root "root")
+       ("g" emacspeak-wizards-find-grep "Grep")
+       ("f" emacspeak-wizards-finder-find "Find")
+       ("F" emacspeak-wizards-generate-finder "Finder")
+       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
+       ("s" emacspeak-wizards-spot-words "Spot")
+       ("t" emacspeak-wizards-tramp-open-location "Tramp")
+       ("q" nil "Quit"))
+
+     (defhydra my-hydra-zoom ()
+       "zoom"
+       ("-" text-scale-decrease "out")
+       ("+" text-scale-increase "in")
+       ("0" (text-scale-adjust 0) "reset")
+       ("q" nil "quit" :color blue))
+
+     (defhydra my-hydra-error ()
+       "goto-error"
+       ("h" first-error "first")
+       ("j" next-error "next")
+       ("k" previous-error "prev")
+       ("v" recenter-top-bottom "recenter")
+       ("q" nil "quit"))
+     (require 'winner)
+     (defhydra my-hydra-window (:color red :hint nil)
+       "
+    Split: _v_ert _x_:horz
+   Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
+     Move: _s_wap
+   Frames: _f_rame new  _df_ delete
+     Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+       ("h" windmove-left)
+       ("j" windmove-down)
+       ("k" windmove-up)
+       ("l" windmove-right)
+       ("H" hydra-move-splitter-left)
+       ("J" hydra-move-splitter-down)
+       ("K" hydra-move-splitter-up)
+       ("L" hydra-move-splitter-right)
+       ("|" (lambda ()
+              (interactive)
+              (split-window-right)
+              (windmove-right)))
+       ("_" (lambda ()
+              (interactive)
+              (split-window-below)
+              (windmove-down)))
+       ("v" split-window-right)
+       ("x" split-window-below)
+       ;;("t" transpose-frame "'")
+       ;; winner-mode must be enabled
+       ("u" winner-undo)
+       ("r" winner-redo) ;;Fixme, not working?
+       ("o" delete-other-windows :exit t)
+       ("a" ace-window :exit t)
+       ("f" make-frame :exit t)
+       ("s" ace-swap-window)
+       ("da" ace-delete-window)
+       ("dw" delete-window)
+       ("db" kill-this-buffer)
+       ("df" delete-frame :exit t)
+       ("q" nil)
+       ;;("i" ace-maximize-window "ace-one" :color blue)
+       ;;("b" ido-switch-buffer "buf")
+       ("m" headlong-bookmark-jump)))
+
+ #+END_SRC
 
 * OSX Tweaks 
 Some tweaks to make emacs and OSX get on better. Note that I also install the
@@ -717,12 +732,12 @@ Some basic defaults and customizations
         backup-directory-alist `(("." . ,(concat user-emacs-directory
                                                  "backups")))
         blink-matching-paren nil
-        default-frame-alist '((top . 1) (left . 1) (width . 81) (height . 29))
+        default-frame-alist '((top . 10) (left . 10) (width . 90) (height . 30))
         delete-by-moving-to-trash t
         ediff-window-setup-function 'ediff-setup-windows-plain
         eldoc-idle-delay 1.5
         inhibit-startup-message t
-        initial-fram-alist '((top . 1) (left . 1) (width . 81) (height . 29))
+        initial-fram-alist '((top . 10) (left . 10) (width . 90) (height . 30))
         line-move-visual nil
         load-prefer-newer t
        ;; max-mini-window-height 0.50
@@ -731,7 +746,7 @@ Some basic defaults and customizations
         require-final-newline t
         save-interprogram-paste-before-kill t
         show-paren-delay 0
-        show-paren-style 'expression
+        show-paren-style 'mixed
         truncate-lines t
         visible-bell t
         select-enable-clipboard t
@@ -743,15 +758,8 @@ Some basic defaults and customizations
   (setq-default fill-column 80
                 indent-tabs-mode nil
                 save-place t
-                show-trailing-whitespace nil)
-#+END_SRC
-
-** Set some global key bindings
-#+BEGIN_SRC emacs-lisp
-  (bind-key "C-s" 'isearch-forward-regexp)
-  (bind-key "C-r" 'isearch-backward-regexp)
-  (bind-key "C-M-s" 'isearch-forward)
-  (bind-key "C-M-r" 'isearch-backward)
+                show-trailing-whitespace nil
+                tab-width 4)
 #+END_SRC
 
 ** Coding System
@@ -773,7 +781,7 @@ Set the default font
     (set-face-attribute 'default nil
                         :foundry "PfEd"
                         :family "Ricty Diminished"
-                        :height 180))
+                        :height 196))
 #+END_SRC
 
 Setup some font scaling support
@@ -827,18 +835,6 @@ Set up the exec path for emacs
     :config (global-undo-tree-mode))
 #+END_SRC
 
-** SMEX
-#+BEGIN_SRC emacs-lisp
-  (use-package smex
-    :ensure t
-    :demand t
-    :init (setq smex-save-file (expand-file-name ".smex-items" user-emacs-directory))
-    :bind (("M-x" . smex)
-           ("M-X" . smex-major-mode-commands)
-           ("C-c C-c M-x" . execute-extended-command))
-    :config (smex-initialize))
-#+END_SRC
-
 ** Ido Mode
 #+BEGIN_SRC emacs-lisp
   (use-package ido
@@ -858,11 +854,22 @@ Set up the exec path for emacs
     :config
     (ido-mode 1))
 
-
-  (use-package ido-ubiquitous
+  (use-package ido-completing-read+
     :ensure t
     :config
     (ido-ubiquitous-mode t))
+#+END_SRC
+
+** SMEX
+#+BEGIN_SRC emacs-lisp
+    (use-package smex
+      :ensure t
+      :demand t
+      :init (setq smex-save-file (expand-file-name ".smex-items" user-emacs-directory))
+      :bind (("M-x" . smex)
+             ("M-X" . smex-major-mode-commands)
+             ("C-c C-c M-x" . execute-extended-command))
+      :config (smex-initialize))
 #+END_SRC
 
 ** IBuffer
@@ -925,6 +932,12 @@ Set up the exec path for emacs
     (bind-key "C-x C-r" 'ido-recentf-open))
 #+END_SRC
 
+** Swiper
+#+BEGIN_SRC emacs-lisp
+  (use-package swiper
+    :ensure t
+    :bind ("C-s".  swiper))
+#+END_SRC
 ** Free Keys
 The ~free-keys~ package provides a convenient way to identify keys which are
 potential bind candidates. Combine this with the ~describe-personal-keybindings~
@@ -1018,17 +1031,21 @@ browse-kill-ring mode look a little better. See [[https://github.com/purcell/pag
 #+END_SRC
 
 ** Move Or Duplicate Lines
+
+While this seems like a really handy utility, I find I never seem to use it, so
+commenting it out for now.
+
 #+BEGIN_SRC emacs-lisp
-  (use-package move-dup
-    :ensure t
-    :commands (md/move-lines-up
-              md/move-lines-down
-              md/duplicate-down
-              md/duplicate-up)
-    :bind (("M-S-<up>" . md/move-lines-up)
-           ("M-S-<down>" . md/move-lines-down)
-           ("C-c p" . md/duplicate-down)
-           ("C-c P" . md/duplicate-up)))
+  ;; (use-package move-dup
+  ;;   :ensure t
+  ;;   :commands (md/move-lines-up
+  ;;             md/move-lines-down
+  ;;             md/duplicate-down
+  ;;             md/duplicate-up)
+  ;;   :bind (("M-S-<up>" . md/move-lines-up)
+  ;;          ("M-S-<down>" . md/move-lines-down)
+  ;;          ("C-c p" . md/duplicate-down)
+  ;;          ("C-c P" . md/duplicate-up)))
 #+END_SRC
 
 ** Whole Line or Region
@@ -1142,7 +1159,7 @@ Using ~ag~ package for searches. This needs some OS support
     (progn
       (unbind-key "<tab>" yas-minor-mode-map)
       (unbind-key "TAB" yas-minor-mode-map)
-      ;;(bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
+      (bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
       (yas-load-directory "~/.emacs.d/snippets")
       (yas-global-mode 1)))
 #+END_SRC
@@ -1189,8 +1206,7 @@ Using ~ag~ package for searches. This needs some OS support
   (use-package hippie-expand
     :init
     (setq hippie-expand-try-functions-list
-          '(yas-hippie-try-expand
-            try-expand-dabbrev
+          '(try-expand-dabbrev
             try-expand-dabbrev-all-buffers
             try-expand-dabbrev-from-kill
             try-flyspell
@@ -1201,9 +1217,36 @@ Using ~ag~ package for searches. This needs some OS support
 #+END_SRC
 
 ** Aok
+
+Another package which sounds very useful, but which I never seem to use!
+
 #+BEGIN_SRC emacs-lisp
-  (use-package aok
-    :ensure t)
+  ;; (use-package aok
+  ;;   :ensure t)
+#+END_SRC
+
+** Outlining 
+
+Some addditional outlining support to make more things work like org-mode!
+
+ #+BEGIN_SRC emacs-lisp
+   (defvar outline-minor-mode-prefix "\M-#")
+
+   (require 'outline)
+
+   (use-package outshine
+     :ensure t
+     :init
+     (setq outshine-use-speed-commands t)
+     :config
+     (add-hook 'outline-minor-mode-hook 'outshine-hook-function))
+
+   (use-package outorg
+     :ensure t)
+
+   (use-package navi-mode
+     :ensure t)
+
 #+END_SRC
 
 * Programming Tweaks 
@@ -1233,8 +1276,8 @@ Highlight symbols and enable navigation by symbol in programming modes. See
 
 ** Electric Pair Mode
 #+BEGIN_SRC emacs-lisp 
-  (when (fboundp 'electric-pair-mode)
-    (electric-pair-mode))
+  ;; (when (fboundp 'electric-pair-mode)
+  ;;   (electric-pair-mode))
 #+END_SRC
 
 ** Goto Address
@@ -1244,10 +1287,10 @@ programming buffers
 Seems to be a problem with this mode and newest org-plus-contrib. Disabling for now.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (dolist (hook (if (fboundp 'prog-mode)
-  ;;                   '(prog-mode-hook ruby-mode-hook)
-  ;;                 '(find-file-hooks)))
-  ;;   (add-hook hook 'goto-address-prog-mode))
+  (dolist (hook (if (fboundp 'prog-mode)
+                    '(prog-mode-hook ruby-mode-hook)
+                  '(find-file-hooks)))
+    (add-hook hook 'goto-address-prog-mode))
 #+END_SRC
 
 ** Rainbow Mode
@@ -1281,64 +1324,64 @@ There are some issues with using this mode in conjunction with emacspeak. Need
 to add some paredit specific advice to provide speech feedback for this mode.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package paredit
-    :ensure t
-    :diminish paredit-mode
-    :init
-    (progn 
-      (defun maybe-map-paredit-newline ()
-        (unless (or (memq major-mode '(inferior-emacs-lisp-mode
-                                       cider-repl-mode))
-                    (minibufferp))
-          (local-set-key (kbd "RET") 'paredit-newline)))
-      (add-hook 'paredit-mode-hook 'maybe-map-paredit-newline))
-    :config
-    (progn 
-      (defvar paredit-minibuffer-commands '(eval-expression
-                                            pp-eval-expression
-                                            eval-expression-with-eldoc
-                                            ibuffer-do-eval
-                                            ibuffer-do-view-and-eval)
-        "Interactive commands where paredit should be enabled in minibuffer.")
-      (defun conditionally-enable-paredit-mode ()
-        "Enable paredit during lisp-related minibuffer commands."
-        (if (memq this-command paredit-minibuffer-commands)
-            (enable-paredit-mode)))
-      (add-hook 'minibuffer-setup-hook 'conditionally-enable-paredit-mode)
-      (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
-                             (kbd "C-M-<left>") (kbd "C-M-<right>")))
-        (define-key paredit-mode-map binding nil))
+  ;; (use-package paredit
+  ;;   :ensure t
+  ;;   :diminish paredit-mode
+  ;;   :init
+  ;;   (progn 
+  ;;     (defun maybe-map-paredit-newline ()
+  ;;       (unless (or (memq major-mode '(inferior-emacs-lisp-mode
+  ;;                                      cider-repl-mode))
+  ;;                   (minibufferp))
+  ;;         (local-set-key (kbd "RET") 'paredit-newline)))
+  ;;     (add-hook 'paredit-mode-hook 'maybe-map-paredit-newline))
+  ;;   :config
+  ;;   (progn 
+  ;;     (defvar paredit-minibuffer-commands '(eval-expression
+  ;;                                           pp-eval-expression
+  ;;                                           eval-expression-with-eldoc
+  ;;                                           ibuffer-do-eval
+  ;;                                           ibuffer-do-view-and-eval)
+  ;;       "Interactive commands where paredit should be enabled in minibuffer.")
+  ;;     (defun conditionally-enable-paredit-mode ()
+  ;;       "Enable paredit during lisp-related minibuffer commands."
+  ;;       (if (memq this-command paredit-minibuffer-commands)
+  ;;           (enable-paredit-mode)))
+  ;;     (add-hook 'minibuffer-setup-hook 'conditionally-enable-paredit-mode)
+  ;;     (dolist (binding (list (kbd "C-<left>") (kbd "C-<right>")
+  ;;                            (kbd "C-M-<left>") (kbd "C-M-<right>")))
+  ;;       (define-key paredit-mode-map binding nil))
 
-      ;; Modify kill-sentence, which is easily confused with the kill-sexp
-      ;; binding, but doesn't preserve sexp structure
-      (bind-key [remap kill-sentence] 'paredit-kill paredit-mode-map)
-      (bind-key [remap backward-kill-sentence] nil paredit-mode-map)
-      (add-hook 'lisp-mode-hook #'enable-paredit-mode)
-      (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
-      (add-hook 'clojure-mode-hook #'enable-paredit-mode)
-      (add-hook 'cider-repl-mode-hook #'enable-paredit-mode)
-      (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-      (add-hook 'ielm-mode-hook #'enable-paredit-mode)))
+  ;;     ;; Modify kill-sentence, which is easily confused with the kill-sexp
+  ;;     ;; binding, but doesn't preserve sexp structure
+  ;;     (bind-key [remap kill-sentence] 'paredit-kill paredit-mode-map)
+  ;;     (bind-key [remap backward-kill-sentence] nil paredit-mode-map)
+  ;;     (add-hook 'lisp-mode-hook #'enable-paredit-mode)
+  ;;     (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+  ;;     (add-hook 'clojure-mode-hook #'enable-paredit-mode)
+  ;;     (add-hook 'cider-repl-mode-hook #'enable-paredit-mode)
+  ;;     (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+  ;;     (add-hook 'ielm-mode-hook #'enable-paredit-mode)))
 
-  (use-package paredit-everywhere
-    :ensure t
-    :config
-    (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
+  ;; (use-package paredit-everywhere
+  ;;   :ensure t
+  ;;   :config
+  ;;   (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
 #+END_SRC
 
 ** Smartparens
 Not sure I like this mode compared to paredit. Disabling it for now.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package smartparens-config
-  ;;     :ensure smartparens
-  ;;     :config
-  ;;     (progn
-  ;;       (sp-use-smartparens-bindings)
-  ;;       (smartparens-global-mode)
-  ;;       (show-smartparens-global-mode))
-  ;;     (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
-  ;;     (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
+  (use-package smartparens-config
+      :ensure smartparens
+      :config
+      (progn
+        (sp-use-smartparens-bindings)
+        (smartparens-global-mode)
+        (show-smartparens-global-mode))
+      (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
+      (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
 
 #+END_SRC
 
@@ -1357,6 +1400,27 @@ Not sure if imenu is of any real value. Disabling it for now
     (add-hook 'prog-mode-hook 'linum-mode))
 #+END_SRC
 
+** flycheck
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flycheck
+    :ensure t
+    :init
+    (global-flycheck-mode))
+
+#+END_SRC
+** Highlight Indentation 
+Highlight the indentation level in programming modes.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package highlight-indent-guides
+    :ensure t
+    :init
+    (setq highlight-indent-guides-method 'character)
+    :config
+    (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
+
+#+END_SRC
 * Utility Modes 
 ** Spelling
 When running on OSX it is necessary to
@@ -1788,12 +1852,16 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
 
 * Programming Modes 
 ** Lua
+
+No time for any Lua programming just now, so commenting out configuration as it
+is not required at this time. 
+
 #+BEGIN_SRC emacs-lisp
-  (use-package lua-mode
-    :ensure t
-    :commands (lua-mode)
-    :mode "\\.lua\\'"
-    :interpreter "lua")
+  ;; (use-package lua-mode
+  ;;   :ensure t
+  ;;   :commands (lua-mode)
+  ;;   :mode "\\.lua\\'"
+  ;;   :interpreter "lua")
 
 #+END_SRC
 
@@ -1879,33 +1947,33 @@ Setup ~clojure-mode~ and ~cider~.
       :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
       :init
       (setq cider-prompt-for-symbol nil
-            cider-font-lock-dynamically '(macro core function var)
-            cider-eldoc-display-for-symbol-at-point nil
-            eldoc-echo-area-use-multiline-p t
-            cider-overlays-use-font-lock t
-            cider-use-overlays t
-            cider-show-error-buffer nil
-            cider-repl-display-help-banner nil
-            cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
-            cider-repl-history-file (expand-file-name "repl-history"
-                                                      user-emacs-directory))
+	    cider-font-lock-dynamically '(macro core function var)
+	    cider-eldoc-display-for-symbol-at-point nil
+	    eldoc-echo-area-use-multiline-p t
+	    cider-overlays-use-font-lock t
+	    cider-use-overlays t
+	    cider-show-error-buffer nil
+	    cider-repl-display-help-banner nil
+	    cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
+	    cider-repl-history-file (expand-file-name "repl-history"
+						      user-emacs-directory))
       :config
       (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
       (add-hook 'cider-mode-hook #'cider-hydra-mode)
       (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
       (bind-key "c" 'clojure-cheatsheet cider-doc-map))
 
-    (use-package clj-refactor
-      :ensure t
-      :commands clj-refactor-mode
-      :init
-      (setq cljr-warn-on-eval nil)
-      :config
-      ;; (add-hook 'clojure-mode-hook (lambda ()
-      ;;                                (clj-refactor-mode 1)
-      ;;                                ;; insert keybinding setup here
-      ;;                                (cljr-add-keybindings-with-prefix "C-c C-m")))
-      )
+    ;; (use-package clj-refactor
+    ;;   :ensure t
+    ;;   :commands clj-refactor-mode
+    ;;   :init
+    ;;   (setq cljr-warn-on-eval nil)
+    ;;   :config
+    ;;   (add-hook 'clojure-mode-hook (lambda ()
+    ;;                                  (clj-refactor-mode 1)
+    ;;                                  ;; insert keybinding setup here
+    ;;                                  (cljr-add-keybindings-with-prefix "C-c C-m")))
+    ;;   )
 
   (use-package inf-clojure
     :ensure t
@@ -1986,11 +2054,10 @@ Setup ~clojure-mode~ and ~cider~.
     :mode "\\.js\\'"
     :interpreter ("node" . js2-mode)
     :init
-    (setq-default js2-basic-offset 2
-                  js2-bounce-indent-p nil)
+    (setq-default js2-bounce-indent-p nil)
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
-    ;; (js2-imenu-extras-setup)
+    (js2-imenu-extras-setup)
     (define-key js2-mode-map (kbd "M-.") nil))
 
   (use-package xref-js2
@@ -2023,53 +2090,89 @@ Setup ~clojure-mode~ and ~cider~.
 
     ;; Disable completion keybindings, as we use xref-js2 instead
     (define-key tern-mode-keymap (kbd "M-.") nil)
-    (define-key tern-mode-keymap (kbd "M-,") nil)
-  )
+    (define-key tern-mode-keymap (kbd "M-,") nil))
+
+  (use-package indium
+    :ensure t
+    :config
+    (add-hook 'js2-mode-hook #'indium-interaction-mode))
+
 #+END_SRC
 
 ** Powershell
+
+Have been blessed with no need to do powershell scripting at this time, so
+disabling this support for now. 
+
 #+BEGIN_SRC emacs-lisp
-  (use-package powershell
-    :ensure t)
+  ;; (use-package powershell
+  ;;   :ensure t)
 #+END_SRC
 
 ** Python
-#+BEGIN_SRC emacs-lisp
-  (use-package python
-    :init
-    (use-package jedi
-      :ensure t
-      :mode ("\\.py\\'" . python-mode)
-      :init
-      (setq jedi:complete-on-dot t)
-      :config
-      (add-hook 'python-mode-hook 'jedi:setup)
-      (jedi:install-server))
-    (use-package company-jedi
-      :ensure t)
-    (use-package importmagic
-      :ensure t)
-    (use-package elpy
-      :ensure t
-      :init
-      (setq elpy-rpc-backend "jedi")
-      :config
-      (elpy-enable)))
 
+No time to continue with learning Python programming at this time, so disabling
+this support for now. 
+
+#+BEGIN_SRC emacs-lisp
+  ;; (use-package jedi
+  ;;   :ensure t
+  ;;   :mode ("\\.py\\'" . python-mode)
+  ;;   :init
+  ;;   (setq jedi:complete-on-dot t)
+  ;;   :config
+  ;;   (add-hook 'python-mode-hook 'jedi:setup))
+
+  ;; (use-package company-jedi
+  ;;   :ensure t)
+
+  ;; (use-package importmagic
+  ;;   :ensure t)
+
+  ;; (use-package elpy
+  ;;   :ensure t
+  ;;   :init
+  ;;   (setq elpy-rpc-backend "jedi")
+  ;;   :config
+  ;;   (elpy-enable))
 
 #+END_SRC
 
 ** Scheme
+
+No need for scheme support at this time. Disabling for now.
+
 #+BEGIN_SRC emacs-lisp
-  (use-package geiser
-    :ensure t)
-
-  (use-package sicp
-    :ensure t)
-
+  ;; (use-package geiser
+  ;;   :ensure t)
 
 #+END_SRC
 
+** CL
+
+Moved back to Gnome from Stumpwn for now. Until time permits for full stumpwm
+setup, comment out for now.
+
+#+BEGIN_SRC emacs-lisp
+  ;; (when (not *is-a-mac*)
+  ;;   (use-package slime
+  ;;     :ensure t
+  ;;     :init
+  ;;     (setq slime-contribs '(slime-fancy)
+  ;;           slime-complete-symbol-function 'slime-fuzzy-complete-symbol
+  ;;           slime-net-coding-system 'utf-8-unix
+  ;;           slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
+  ;;           slime-default-lisp 'sbcl)
+  ;;     :config
+  ;;     (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
+  ;;           common-lisp-hyperspec-symbols-table
+  ;;           (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
+  ;;           common-lisp-hyperspec-issuex-table
+  ;;           (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
+  ;;     (load (expand-file-name "~/quicklisp/slime-helper.el"))
+  ;;     (add-to-list 'Info-additional-directory-list
+  ;;              (expand-file-name "~/git/stumpwm"))))
+#+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
   (use-package solarized-theme
@@ -2142,48 +2245,115 @@ directory.
 
 * Mail
 
-Some mail related details about me.
-
-#+BEGIN_SRC emacs-lisp
-  (setq user-mail-address "theophilusx@gmail.com"
-        user-full-name  "Tim Cross")
-#+END_SRC
-
 Configure mu4e
 
 #+BEGIN_SRC emacs-lisp
-  (when (not *is-a-mac*)
-    (use-package mu4e
-      :config
-      (setq mu4e-maildir (expand-file-name "~/Maildir/gmail"))
-      (setq mu4e-drafts-folder "/Drafts")
-      (setq mu4e-sent-folder   "/Sent Mail")
-      (setq mu4e-trash-folder  "/Bin")
-      (setq mu4e-attachment-dir (expand-file-name "~/Desktop")
-            mu4e-user-mail-address-list '("theophilusx@gmail.com"
-                                          "tcross@une.edu.au"))
-      ;; don't save message to Sent Messages, Gmail/IMAP takes care of this
-      (setq mu4e-sent-messages-behavior 'delete)
+  (require 'info)
+  (if *is-a-mac*
+      (progn
+        (add-to-list 'load-path (expand-file-name
+                                 "/usr/local/Cellar/mu/0.9.18_1/share/emacs/site-lisp/mu/mu4e"))
+        (add-to-list 'Info-additional-directory-list
+                     (expand-file-name "/usr/local/Cellar/mu/0.9.18_1/share/info")))
+    (add-to-list 'load-path (expand-file-name
+                             "/usr/share/emacs/site-lisp/mu4e"))
+    (add-to-list 'Info-additional-directory-list
+                 (expand-file-name "/usr/share/info")))
 
-      (setq mu4e-maildir-shortcuts
-            '(("/INBOX"               . ?i)
-              ("/Sent Mail"   . ?s)
-              ("/Bin"       . ?t)
-              ("/All Mail"    . ?a)
-              ("/Drafts" . ?d)
-              ("/Starred" . ?f)))
-      (setq mu4e-bookmarks
-            '(("maildir:\"/All Mail\" flag:unread AND NOT flag:trashed"
-               "Unread messages" 117)
-              ("maildir:\"/All Mail\" date:today..now" "Today's messages" 116)
-              ("maildir:\"/All Mail\" date:7d..now" "Last 7 days" 119)
-              ("mime:image/*" "Messages with images" 112)))
-      (setq mu4e-refile-folder "/All Mail")
-      ;; allow for updating mail using 'U' in the main view:
-      (setq mu4e-get-mail-command "mbsync -a")
-      (setq mu4e-change-filenames-when-moving t
-            mu4e-compose-signature (concat "Tim Cross"))))
+  (require 'emacspeak-mu4e)
+  (require 'org-mu4e)
 
+  (use-package mu4e
+    :init
+    (setq mu4e-maildir (expand-file-name "~/Maildir")
+          mu4e-attachment-dir (expand-file-name "~/Desktop")
+          mu4e-get-mail-command "mbsync -a"
+          mu4e-change-filenames-when-moving t
+          mu4e-context-policy 'pick-first
+          mu4e-compose-context-policy nil
+          mu4e-view-show-addresses t
+          mu4e-user-mail-address-list '("theophilusx@gmail.com"
+                                        "tcross@une.edu.au"))
+    (setq org-mu4e-link-query-in-headers-mode nil)
+    :config
+    (add-hook 'message-mode-hook 'turn-on-orgtbl)
+    (add-hook 'message-mode-hook 'outline-minor-mode)
+    (setq mu4e-bookmarks `(,(make-mu4e-bookmark
+                             :name  "Unread messages"
+                             :query "flag:unread AND NOT flag:trashed"
+                             :key ?u)
+                           ,(make-mu4e-bookmark
+                             :name "Today's messages"
+                             :query "date:today..now"
+                             :key ?t)
+                           ,(make-mu4e-bookmark
+                             :name "Last 7 days"
+                             :query "date:7d..now"
+                             :key ?w)
+                           ,(make-mu4e-bookmark
+                             :name "Messages with images"
+                             :query "mime:image/*"
+                             :key ?p)))
+    (setq mu4e-contexts
+          `(,(make-mu4e-context
+              :name "Private"
+              :enter-func (lambda ()
+                            (mu4e-message "Entering Private context"))
+              :leave-func (lambda ()
+                            (mu4e-message "Leaving Private context"))
+              ;; we match based on the contact-fields of the message
+              :match-func (lambda (msg)
+                            (when msg
+                              (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
+              :vars '((user-mail-address . "theophilusx@gmail.com")
+                      (user-full-name . "Tim Cross")
+                      (mu4e-compose-signature . (concat "Tim Cross\n"))
+                      (mu4e-drafts-folder . "/gmail/Drafts")
+                      (mu4e-sent-folder . "/gmail/Sent Mail")
+                      (mu4e-trash-folder . "/gmail/Bin")
+                      (mu4e-refile-folder . "/gmail/All Mail")
+                      (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
+                                                 ("/gmail/Sent Mail" . ?s)
+                                                 ("/gmail/Bin" . ?t)
+                                                 ("/gmail/All Mail" . ?a)
+                                                 ("/gmail/Drafts" . ?d)
+                                                 ("/gmail/Starred" . ?f)))
+                      (smtpmail-smtp-server . "smtp.gmail.com")
+                      (smtpmail-smtp-service . 587)
+                      (mu4e-sent-messages-behavior . delete)))
+            ,(make-mu4e-context
+              :name "Work"
+              :enter-func (lambda ()
+                            (mu4e-message "Switch to the Work context"))
+              ;; we match based on the contact-fields of the message
+              :match-func (lambda (msg)
+                            (when msg
+                              (mu4e-message-contact-field-matches msg :to "tcross@une.edu.au")))
+              :vars '((user-mail-address . "tcross@une.edu.au")
+                      (user-full-name . "Tim Cross")
+                      (mu4e-compose-signature . (concat "Tim Cross\n"
+                                                        "Manager Information Security\n"
+                                                        "Information Technology Directorate\n"
+                                                        "University of New England N.S.W. 2351\n\n"
+                                                        "Email: tcross@une.edu.au\n"
+                                                        "Phone: +61 2 6773 3210\n"
+                                                        "Mobile: 0428 212 217\n\n"
+                                                        "www.une.edu.au\n"
+                                                        "CRICOS Provider Number: 00003G"))
+                      (mu4e-drafts-folder . "/une/Drafts")
+                      (mu4e-sent-folder . "/une/Sent")
+                      (mu4e-trash-folder . "/une/Deleted Items")
+                      (mu4e-refile-folder . "/une/Archive")
+                      (mu4e-maildir-shortcuts . (("/une/Inbox" . ?i)
+                                                 ("/une/Sent" . ?s)
+                                                 ("/une/ITD" . ?t)
+                                                 ("/une/Drafts" . ?d)
+                                                 ("/une/IAM Project" . ?p)
+                                                 ("/une/Security" . ?m)
+                                                 ("/une/ITMT" . ?b)))
+                      (smtpmail-smtp-server . "smtp.office365.com")
+                      (smtpmail-smtp-service . 587)
+                      (mu4e-sent-messages-behavior . sent))))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -2191,13 +2361,9 @@ Configure mu4e
     :config
     (setq message-send-mail-function 'smtpmail-send-it
           smtpmail-stream-type 'starttls
-          smtpmail-default-smtp-server "smtp.gmail.com"
-          smtpmail-smtp-server "smtp.gmail.com"
-          smtpmail-smtp-service 587)
-
+          smtpmail-default-smtp-server "smtp.gmail.com")
     (setq smtpmail-queue-mail nil  ;; start in normal mode
           smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
-
     ;; don't keep message buffers around
     (setq message-kill-buffer-on-exit t))
 #+END_SRC
@@ -2266,8 +2432,8 @@ to do this!
 
   ;; (add-hook 'after-init-hook 'my-startup-window t)
 
-  (defun my-after-init-config ()
-    (require 'ido-fix))
+  ;; (defun my-after-init-config ()
+  ;;   (require 'ido-fix))
 
-  (add-hook 'after-init-hook 'my-after-init-config)
+;;  (add-hook 'after-init-hook 'my-after-init-config)
 #+END_SRC
