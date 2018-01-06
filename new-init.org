@@ -1149,6 +1149,7 @@ Using ~ag~ package for searches. This needs some OS support
 
 ** Completions 
 *** Yasnippet
+
 #+BEGIN_SRC emacs-lisp
   (use-package yasnippet
     :ensure t
@@ -1160,8 +1161,12 @@ Using ~ag~ package for searches. This needs some OS support
       (unbind-key "<tab>" yas-minor-mode-map)
       (unbind-key "TAB" yas-minor-mode-map)
       (bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
-      (yas-load-directory "~/.emacs.d/snippets")
+      ;;(yas-load-directory "~/.emacs.d/snippets")
       (yas-global-mode 1)))
+
+  (use-package yasnippet-snippets
+    :ensure t)
+
 #+END_SRC
 
 *** Company
@@ -1275,9 +1280,10 @@ Highlight symbols and enable navigation by symbol in programming modes. See
 #+END_SRC
 
 ** Electric Pair Mode
+
 #+BEGIN_SRC emacs-lisp 
-  ;; (when (fboundp 'electric-pair-mode)
-  ;;   (electric-pair-mode))
+  (when (fboundp 'electric-pair-mode)
+    (electric-pair-mode))
 #+END_SRC
 
 ** Goto Address
@@ -1947,16 +1953,16 @@ Setup ~clojure-mode~ and ~cider~.
       :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
       :init
       (setq cider-prompt-for-symbol nil
-	    cider-font-lock-dynamically '(macro core function var)
-	    cider-eldoc-display-for-symbol-at-point nil
-	    eldoc-echo-area-use-multiline-p t
-	    cider-overlays-use-font-lock t
-	    cider-use-overlays t
-	    cider-show-error-buffer nil
-	    cider-repl-display-help-banner nil
-	    cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
-	    cider-repl-history-file (expand-file-name "repl-history"
-						      user-emacs-directory))
+        cider-font-lock-dynamically '(macro core function var)
+        cider-eldoc-display-for-symbol-at-point nil
+        eldoc-echo-area-use-multiline-p t
+        cider-overlays-use-font-lock t
+        cider-use-overlays t
+        cider-show-error-buffer nil
+        cider-repl-display-help-banner nil
+        cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
+        cider-repl-history-file (expand-file-name "repl-history"
+                              user-emacs-directory))
       :config
       (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
       (add-hook 'cider-mode-hook #'cider-hydra-mode)
@@ -2047,7 +2053,8 @@ Setup ~clojure-mode~ and ~cider~.
 
 #+END_SRC
 
-** Javascript
+** JavaScript
+
 #+BEGIN_SRC emacs-lisp
   (use-package js2-mode
     :ensure t
@@ -2055,6 +2062,9 @@ Setup ~clojure-mode~ and ~cider~.
     :interpreter ("node" . js2-mode)
     :init
     (setq-default js2-bounce-indent-p nil)
+    (setq js-indent-level 2
+          js2-include-node-externs t
+          js2-mode-assume-strict t)
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (js2-imenu-extras-setup)
