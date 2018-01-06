@@ -2255,7 +2255,21 @@ directory.
 
 * Mail
 
-Configure mu4e
+** Google Contacts
+
+Ability to access google contacts is useful. 
+
+#+BEGIN_SRC emacs-lisp
+  (use-package google-contacts
+    :ensure t
+    :init
+    (setq plstore-cache-passphrase-for-symmetric-encryption t)
+    :config
+    (require 'google-contacts-message)
+    (require 'google-org-contacts))
+#+END_SRC
+
+** Mu4e
 
 #+BEGIN_SRC emacs-lisp
   (require 'info)
@@ -2378,28 +2392,31 @@ Configure mu4e
     (setq message-kill-buffer-on-exit t))
 #+END_SRC
 
-Test out VM again
+** Test out VM again
+
+Looks like there has been no work done on VM since 2016. Suspect the client may
+have reached end-of-life!
 
 #+BEGIN_SRC emacs-lisp
-  (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
-  (add-to-list 'Info-additional-directory-list
-               (expand-file-name "~/bzr/vm/new-trunk/info"))
+  ;; (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
+  ;; (add-to-list 'Info-additional-directory-list
+  ;;              (expand-file-name "~/bzr/vm/new-trunk/info"))
 
-  (require 'vm-autoloads)
+  ;; (require 'vm-autoloads)
 
-  ;; Some hacks to make VM use shr for HTML messages
+  ;; ;; Some hacks to make VM use shr for HTML messages
 
-  (defun vm-mime-display-internal-shr-text/html (start end layout)
-    "Use shr to inline HTML mails in the VM presentation buffer."
-    (shr-render-region start (1- end))
-    (put-text-property start end
-                       'text-rendered-by-shr t))
+  ;; (defun vm-mime-display-internal-shr-text/html (start end layout)
+  ;;   "Use shr to inline HTML mails in the VM presentation buffer."
+  ;;   (shr-render-region start (1- end))
+  ;;   (put-text-property start end
+  ;;                      'text-rendered-by-shr t))
 
-  ;; has to be done indirectly
-  ;; Fake emacs-w3m, though we actually use shr
+  ;; ;; has to be done indirectly
+  ;; ;; Fake emacs-w3m, though we actually use shr
 
-  (defalias 'vm-mime-display-internal-emacs-w3m-text/html
-    'vm-mime-display-internal-shr-text/html)
+  ;; (defalias 'vm-mime-display-internal-emacs-w3m-text/html
+  ;;   'vm-mime-display-internal-shr-text/html)
 
 #+END_SRC
 * Emacs Server 
