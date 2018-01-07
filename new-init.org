@@ -495,11 +495,6 @@ normally ensure a 'stable' environment.
        (C . t)
        (ditaa . t)
        (plantuml . t)))
-    (when *is-a-mac*
-      (use-package org-mac-link
-        :ensure t
-        :bind (:map org-mode-map
-                    ("C-c g" . org-mac-grab-link))))
     (bind-key "C-c l" 'org-store-link)
     (bind-key "C-c a" 'org-agenda)
     (bind-key "C-c b" 'org-switchb)
@@ -658,8 +653,10 @@ to start with 'g', so we need to do some additional variable settings.
       :ensure t)
     (use-package osx-trash
       :ensure t
-      :config (osx-trash-setup)))
-
+      :config (osx-trash-setup))
+    (use-package grab-mac-link
+      :ensure t
+      :bind (:map org-mode-map ("C-c g" . grab-mac-link))))
 
 #+END_SRC
 
