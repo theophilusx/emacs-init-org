@@ -780,8 +780,8 @@ Set the default font
   (if *is-a-mac*
       (set-face-attribute 'default nil
                           :foundry nil
-                          :family "Inconsolata"
-                          :height 320)
+                          :family "Source Code Pro"
+                          :height 240)
     (set-face-attribute 'default nil
                         :foundry "PfEd"
                         :family "Ricty Diminished"
