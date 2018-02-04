@@ -1423,12 +1423,18 @@ Not sure if imenu is of any real value. Disabling it for now
 Highlight the indentation level in programming modes.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package highlight-indent-guides
+  ;; (use-package highlight-indent-guides
+  ;;   :ensure t
+  ;;   :init
+  ;;   (setq highlight-indent-guides-method 'character)
+  ;;   :config
+  ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
+
+  (use-package highlight-indentation
     :ensure t
-    :init
-    (setq highlight-indent-guides-method 'character)
     :config
-    (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
+    (add-hook 'prog-mode-hook #'highlight-indentation-current-column-mode))
+
 
 #+END_SRC
 * Utility Modes 
