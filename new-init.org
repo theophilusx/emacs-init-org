@@ -2289,8 +2289,8 @@ First, setup some load paths.
 
   (if *is-a-mac*
       (progn
-        (setq mu4e-lisp "/usr/local/Cellar/mu/0.9.18_1/share/emacs/site-lisp/mu/mu4e")
-        (setq mu4e-info "/usr/local/Cellar/mu/0.9.18_1/share/info"))
+        (setq mu4e-lisp "/usr/local/Cellar/mu/1.0/share/emacs/site-lisp/mu/mu4e")
+        (setq mu4e-info "/usr/local/Cellar/mu/1.0/share/info"))
     (setq mu4e-lisp "/usr/share/emacs/site-lisp/mu4e")
     (setq mu4e-info "/usr/share/info"))
 
@@ -2358,8 +2358,8 @@ Now setup mu4e.
               :match-func
               (lambda (msg)
                 (when msg
-                  (mu4e-message-contact-field-matches msg :to tx-gmail-email)))
-              :vars '((user-mail-address . tx-gmail-email)
+                  (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
+              :vars '((user-mail-address . "theophilusx@gmail.com")
                       (user-full-name . "Tim Cross")
                       (mu4e-compose-signature . (concat "Tim Cross\n"))
                       (mu4e-drafts-folder . "/gmail/Drafts")
@@ -2386,8 +2386,8 @@ Now setup mu4e.
               :match-func
               (lambda (msg)
                 (when msg
-                  (mu4e-message-contact-field-matches msg :to tx-sheepcrc-email)))
-              :vars '((user-mail-address . tx-sheepcrc-email)
+                  (mu4e-message-contact-field-matches msg :to "tcross8@une.edu.au")))
+              :vars '((user-mail-address . "tcross8@une.edu.au")
                       (user-full-name . "Tim Cross")
                       (mu4e-compose-signature . (concat
                                                  "Tim Cross\n"
@@ -2417,8 +2417,8 @@ Now setup mu4e.
               :match-func
               (lambda (msg)
                 (when msg
-                  (mu4e-message-contact-field-matches msg :to tx-hotmail-email)))
-              :vars '((user-mail-address . tx-hotmail-email)
+                  (mu4e-message-contact-field-matches msg :to "blind-bat@hotmail.com")))
+              :vars '((user-mail-address . "blind-bat@hotmail.com")
                       (user-full-name . "Tim Cross")
                       (mu4e-compose-signature . (concat "Tim Cross\n"))
                       (mu4e-drafts-folder . "/outlook/Drafts")
