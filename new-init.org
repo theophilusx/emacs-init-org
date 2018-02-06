@@ -2404,7 +2404,7 @@ Now setup mu4e.
                                                  ("/sheep/Drafts" . ?d)))
                       (smtpmail-smtp-server . "mailhub.une.edu.au")
                       (smtpmail-smtp-service . 25)
-                      (mu4e-sent-messages-behavior . delete)))
+                      (mu4e-sent-messages-behavior . sent)))
             ,(make-mu4e-context
               :name "Outlook"
               :enter-func
