@@ -2017,6 +2017,17 @@ Setup ~clojure-mode~ and ~cider~.
     (progn 
       (setq-default sql-input-ring-file-name
                     (expand-file-name ".sqli_history" user-emacs-directory))
+      (setq sql-product 'postgres
+            sql-connection-alist '(("playground"
+                                    (sql-product 'postgres)
+                                    (sql-server "localhost")
+                                    (sql-database "playground")
+                                    (sql-port 5432))
+                                   ("wdp-dev"
+                                    (sql-product 'postgres)
+                                    (sql-server "localhost")
+                                    (sql-database "wdp")
+                                    (sql-port 3330))))
       (defun tx/pop-to-sqli-buffer ()
         "Switch to the corresponding sqli buffer."
         (interactive)
