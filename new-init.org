@@ -1101,8 +1101,14 @@ Cleanup whitespace
           whitespace-line-column 80
           whitespace-style '(face lines-tail))
     :config
-    (global-whitespace-mode)
-    (global-whitespace-cleanup-mode))
+    (add-hook 'prog-mode-hook #'whitespace-mode)
+    (add-hook 'prog-mode-hook #'whitespace-cleanup-mode)
+    (add-hook 'text-mode-hook #'whitespace-mode)
+    (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
+    (add-hook 'org-mode-hook #'whitespace-mode)
+    ;; (global-whitespace-mode)
+    ;; (global-whitespace-cleanup-mode)
+    )
 
 #+END_SRC
 
