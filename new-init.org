@@ -106,7 +106,7 @@ then load it
                                                    '(eww-browse-url browse-url-default-macosx-browser)
                                                  '(eww-browse-url browse-url-chrome))
           emacspeak-vm-use-raman-settings nil
-          mac-default-speech-rate 375        
+          mac-default-speech-rate 370        
           outloud-default-speech-rate 90
           sox-play (if *is-a-mac*
                        "/usr/local/bin/play"
@@ -117,7 +117,7 @@ then load it
           tts-default-speech-rate 90)
     (add-hook 'emacspeak-startup-hook
               (lambda ()
-                (dtk-set-rate tts-default-speech-rate 1)
+                ;; (dtk-set-rate tts-default-speech-rate 1)
                 (dtk-interp-sync)
                 (emacspeak-sounds-select-theme "3d/")))
     (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
@@ -1531,8 +1531,6 @@ Add the handy ~regex-tool~ package
     :init
     (setq csv-separators '("," ";" "|" " "))
     :config
-    (use-package csv-nav
-      :ensure t)
     :mode ("\\.[Cc][Ss][Vv]\\'" . csv-mode))
 #+END_SRC
 
