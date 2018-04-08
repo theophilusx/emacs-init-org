@@ -2031,7 +2031,12 @@ Setup ~clojure-mode~ and ~cider~.
                                     (sql-product 'postgres)
                                     (sql-server "localhost")
                                     (sql-database "wdp")
-                                    (sql-port 3330))))
+                                    (sql-port 3330))
+                                   ("wdp-prod"
+                                    (sql-product 'postgres)
+                                    (sql-server "localhost")
+                                    (sql-database "wdp")
+                                    (sql-port 3331))))
       (defun tx/pop-to-sqli-buffer ()
         "Switch to the corresponding sqli buffer."
         (interactive)
