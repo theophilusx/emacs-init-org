@@ -1984,17 +1984,17 @@ Setup ~clojure-mode~ and ~cider~.
       (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
       (bind-key "c" 'clojure-cheatsheet cider-doc-map))
 
-    ;; (use-package clj-refactor
-    ;;   :ensure t
-    ;;   :commands clj-refactor-mode
-    ;;   :init
-    ;;   (setq cljr-warn-on-eval nil)
-    ;;   :config
-    ;;   (add-hook 'clojure-mode-hook (lambda ()
-    ;;                                  (clj-refactor-mode 1)
-    ;;                                  ;; insert keybinding setup here
-    ;;                                  (cljr-add-keybindings-with-prefix "C-c C-m")))
-    ;;   )
+     (use-package clj-refactor
+       :ensure t
+       :commands clj-refactor-mode
+       :init
+       (setq cljr-warn-on-eval nil)
+       :config
+       (add-hook 'clojure-mode-hook (lambda ()
+                                      (clj-refactor-mode 1)
+                                      ;; insert keybinding setup here
+                                      (cljr-add-keybindings-with-prefix "C-c C-m")))
+       )
 
   (use-package inf-clojure
     :ensure t
