@@ -1412,9 +1412,12 @@ Not sure if imenu is of any real value. Disabling it for now
 
 ** Line numbers
 #+BEGIN_SRC emacs-lisp
-  (use-package linum
-    :config
-    (add-hook 'prog-mode-hook 'linum-mode))
+  ;; (use-package linum
+  ;;   :config
+  ;;   (add-hook 'prog-mode-hook 'linum-mode))
+
+  (add-hook 'prog-mode-hook 'display-line-numbers-mode)
+
 #+END_SRC
 
 ** flycheck
