@@ -1,0 +1,5 @@
+# -*- mode: snippet; require-final-newline: nil -*-
+# name: throw statement
+# key: thr
+# --
+throw new VError(err, \`\$\{logName\} $1\`);

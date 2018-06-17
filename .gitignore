@@ -19,7 +19,6 @@ eshell/
 tramp
 places
 .DS_Store
-snippets
 init.el
 tangle.el
 linux-custom.el
