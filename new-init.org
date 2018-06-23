@@ -2303,8 +2303,8 @@ First, setup some load paths.
 
   (if *is-a-mac*
       (progn
-        (setq mu4e-lisp "/usr/local/Cellar/mu/share/emacs/site-lisp/mu/mu4e")
-        (setq mu4e-info "/usr/local/Cellar/mu/share/info"))
+        (setq mu4e-lisp "/usr/local/share/emacs/site-lisp/mu/mu4e")
+        (setq mu4e-info "/usr/local/share/info"))
     (setq mu4e-lisp "/usr/share/emacs/site-lisp/mu4e")
     (setq mu4e-info "/usr/share/info"))
 
