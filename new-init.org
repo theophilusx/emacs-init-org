@@ -1409,6 +1409,10 @@ Not sure if imenu is of any real value. Disabling it for now
 #+BEGIN_SRC emacs-lisp
   (use-package flycheck
     :ensure t
+    :config
+    (setq-default flycheck-disabled-checkers
+                  (append flycheck-disabled-checkers
+                          '(javascript-jshint)))
     :init
     (global-flycheck-mode))
 
@@ -2086,6 +2090,7 @@ Setup ~clojure-mode~ and ~cider~.
     :mode "\\.js\\'"
     :interpreter ("node" . js2-mode)
     :init
+    (flycheck-add-mode 'javascript-eslint 'js2-mode)
     (setq-default js2-bounce-indent-p nil)
     (setq js-indent-level 2
           js2-include-node-externs t
