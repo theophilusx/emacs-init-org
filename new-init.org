@@ -1795,10 +1795,12 @@ Setup version control stuff
   (use-package projectile
     :ensure t
     :diminish projectile-mode
-    :commands (projectile-mode
-               projectile-mode)
+    ;; :commands (projectile-mode
+    ;;            projectile-mode)
+    :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
     :init
-    (add-hook 'prog-mode-hook 'projectile-mode))
+    ;; (add-hook 'prog-mode-hook 'projectile-mode)
+    (projectile-mode +1))
 #+END_SRC
 
 * Auctex 
