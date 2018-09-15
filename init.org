@@ -349,12 +349,24 @@ normally ensure a 'stable' environment.
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("article"
+              ("hitec-article"
                "\\documentclass[12pt]{hitec}
       [DEFAULT-PACKAGES]
       [PACKAGES]
       [NO-EXTRA]
       \\settextfraction{0.95}\n"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+              ("article" "\\documentclass[11pt]{article}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+              ("korma-article" "\\documentclass[11pt]{scrartcl}"
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
@@ -367,64 +379,27 @@ normally ensure a 'stable' environment.
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+              ("korma-report"
+               "\\documentclass[11pt]{scrreport}"
+               ("\\part{%s}" . "\\part*{%s}")
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+              ("korma-book"
+               "\\documentclass[11pt]{scrbook}"
+               ("\\part{%s}" . "\\part*{%s}")
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
               ("book"
                "\\documentclass[11pt]{book}"
                ("\\part{%s}" . "\\part*{%s}")
                ("\\chapter{%s}" . "\\chapter*{%s}")
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("une-article"
-               "\\documentclass[a4paper,12pt]{scrartcl}
-      [DEFAULT-PACKAGES]
-      [PACKAGES]
-      \\usepackage[margin=1.5cm]{geometry}
-      [EXTRA]\n"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("une-logo"
-               "\\documentclass[a4paper,12pt]{scrartcl}
-      [DEFAULT-PACKAGES]
-      [PACKAGES]
-      \\usepackage[margin=1.5cm]{geometry}
-      [EXTRA]
-      \\definecolor{unegreen}{HTML}{7AB800}
-      \\definecolor{Black}{HTML}{000000}
-      \\definecolor{White}{HTML}{FFFFFF}
-      \\definecolor{dimgrey}{HTML}{696969}
-      \\makeatletter
-      \\def\\@maketitle{
-       \\noindent \\begin{minipage}[c][4cm][t]{\\linewidth}
-         \\colorbox{Black}{%
-           \\begin{minipage}[t][4cm][c]{4cm}
-           \\flushleft
-           \\includegraphics{~/.emacs.d/img/unelogo_medium.png}
-         \\end{minipage}}
-         \\colorbox{unegreen}{%
-           \\begin{minipage}[t][4cm][c]{13.5cm}
-             \\flushright
-             \\Large \\textbf{\\color{White}{\\@title}} \\\\
-              \\vspace{4pt}
-             \\small \\color{White}{\\@author} \\\\
-             \\small \\color{White}{\\@date}
-           \\end{minipage}}
-         \\end{minipage}}
-      \\makeatother\n"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("old-article" "\\documentclass[11pt]{article}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
-            )
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
       (setq org-latex-hyperref-template
             "\\hypersetup{pdfauthor={%a},
                           pdftitle={%t},
@@ -495,7 +470,8 @@ normally ensure a 'stable' environment.
          (sql . t)
          (C . t)
          (ditaa . t)
-         (plantuml . t)))
+         (plantuml . t)
+         (gnuplot . t)))
       (bind-key "C-c l" 'org-store-link)
       (bind-key "C-c a" 'org-agenda)
       (bind-key "C-c b" 'org-switchb)
@@ -650,8 +626,8 @@ to start with 'g', so we need to do some additional variable settings.
     (use-package applescript-mode
       :ensure t
       :mode ("\\.applescript" . applescript-mode))
-    (use-package osx-plist
-      :ensure t)
+    ;; (use-package osx-plist
+    ;;   :ensure t)
     (use-package osx-trash
       :ensure t
       :config (osx-trash-setup))
@@ -1265,6 +1241,14 @@ Some addditional outlining support to make more things work like org-mode!
 
 #+END_SRC
 
+** CUA Mode
+
+Lets try out CUA mode for a while and see if I can re-train my brain to use
+these bindings as it would make life easier with other applications. 
+
+#+BEGIN_SRC emacs-lisp
+  (cua-mode)
+#+END_SRC
 * Programming Tweaks 
 Configuration relating to programming
 
@@ -1412,9 +1396,12 @@ Not sure if imenu is of any real value. Disabling it for now
 
 ** Line numbers
 #+BEGIN_SRC emacs-lisp
-  (use-package linum
-    :config
-    (add-hook 'prog-mode-hook 'linum-mode))
+  ;; (use-package linum
+  ;;   :config
+  ;;   (add-hook 'prog-mode-hook 'linum-mode))
+
+  (add-hook 'prog-mode-hook 'display-line-numbers-mode)
+
 #+END_SRC
 
 ** flycheck
@@ -1422,6 +1409,10 @@ Not sure if imenu is of any real value. Disabling it for now
 #+BEGIN_SRC emacs-lisp
   (use-package flycheck
     :ensure t
+    :config
+    (setq-default flycheck-disabled-checkers
+                  (append flycheck-disabled-checkers
+                          '(javascript-jshint)))
     :init
     (global-flycheck-mode))
 
@@ -1792,15 +1783,24 @@ Setup version control stuff
 
 #+END_SRC
 
+** Gnuplot
+
+#+BEGIN_SRC emacs-lisp
+  (use-package gnuplot
+    :ensure t)
+
+#+END_SRC
 * Projectile 
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
     :ensure t
     :diminish projectile-mode
-    :commands (projectile-mode
-               projectile-mode)
+    ;; :commands (projectile-mode
+    ;;            projectile-mode)
+    :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
     :init
-    (add-hook 'prog-mode-hook 'projectile-mode))
+    ;; (add-hook 'prog-mode-hook 'projectile-mode)
+    (projectile-mode +1))
 #+END_SRC
 
 * Auctex 
@@ -2092,6 +2092,7 @@ Setup ~clojure-mode~ and ~cider~.
     :mode "\\.js\\'"
     :interpreter ("node" . js2-mode)
     :init
+    (flycheck-add-mode 'javascript-eslint 'js2-mode)
     (setq-default js2-bounce-indent-p nil)
     (setq js-indent-level 2
           js2-include-node-externs t
@@ -2309,8 +2310,8 @@ First, setup some load paths.
 
   (if *is-a-mac*
       (progn
-        (setq mu4e-lisp "/usr/local/Cellar/mu/1.0/share/emacs/site-lisp/mu/mu4e")
-        (setq mu4e-info "/usr/local/Cellar/mu/1.0/share/info"))
+        (setq mu4e-lisp "/usr/local/share/emacs/site-lisp/mu/mu4e")
+        (setq mu4e-info "/usr/local/share/info"))
     (setq mu4e-lisp "/usr/share/emacs/site-lisp/mu4e")
     (setq mu4e-info "/usr/share/info"))
 
