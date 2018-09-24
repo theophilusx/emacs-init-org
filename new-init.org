@@ -2096,7 +2096,9 @@ Setup ~clojure-mode~ and ~cider~.
     (setq-default js2-bounce-indent-p nil)
     (setq js-indent-level 2
           js2-include-node-externs t
-          js2-mode-assume-strict t)
+          js2-mode-assume-strict t
+          js2-highlight-level 3
+          js2-global-externs '("describe" "it"))
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (js2-imenu-extras-setup)
