@@ -2098,7 +2098,7 @@ Setup ~clojure-mode~ and ~cider~.
           js2-include-node-externs t
           js2-mode-assume-strict t
           js2-highlight-level 3
-          js2-global-externs '("describe" "it"))
+          js2-global-externs '("describe" "it" "before" "after" "beforeEach" "afterEach"))
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (js2-imenu-extras-setup)
