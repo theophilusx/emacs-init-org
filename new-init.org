@@ -1567,6 +1567,17 @@ on GitHub]]
     :ensure t)
 #+END_SRC
 
+** Lorem Ipsum 
+
+#+BEGIN_SRC emacs-lisp
+  (use-package lorem-ipsum
+    :ensure t
+    :commands (lorem-ipsum-insert-paragraph
+               lorem-ipsum-insert-sentence
+               lorem-ipsum-insert-list))
+
+#+END_SRC
+
 * Application Modes 
 Modes relating to emacs applications 
  
