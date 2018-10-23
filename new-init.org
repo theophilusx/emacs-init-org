@@ -1166,13 +1166,13 @@ Using ~ag~ package for searches. This needs some OS support
     :bind (("C-M-i" . company-complete)
            ("TAB" . company-indent-or-complete-common))
     :config
-    (progn
-      (global-company-mode 1)
-      (add-hook 'after-init-hook
-                (lambda ()
-                  (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-                                            company-preview-if-just-one-frontend
-                                            company-echo-metadata-frontend))))))
+    (global-company-mode 1)
+    (add-hook 'after-init-hook
+              (lambda ()
+                (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
+                                          company-preview-if-just-one-frontend
+                                          company-echo-metadata-frontend))))
+    (add-to-list 'company-backends 'company-elm))
 
   (use-package company-auctex
     :ensure t
@@ -2227,6 +2227,17 @@ setup, comment out for now.
   ;;     (load (expand-file-name "~/quicklisp/slime-helper.el"))
   ;;     (add-to-list 'Info-additional-directory-list
   ;;              (expand-file-name "~/git/stumpwm"))))
+#+END_SRC
+** Elm
+
+#+BEGIN_SRC emacs-lisp
+  (use-package elm-mode
+    :ensure t
+    :config
+    (setq elm-tags-on-save t
+          elm-sort-imports-on-save t
+          elm-format-on-save t))
+
 #+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
