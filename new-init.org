@@ -1247,7 +1247,8 @@ Lets try out CUA mode for a while and see if I can re-train my brain to use
 these bindings as it would make life easier with other applications. 
 
 #+BEGIN_SRC emacs-lisp
-  (cua-mode)
+  ;;(cua-mode)
+
 #+END_SRC
 * Programming Tweaks 
 Configuration relating to programming
@@ -1835,7 +1836,7 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
     :init
     (if *is-a-mac*
         (setq browse-url-browser-function 'browse-url-default-macosx-browser)
-      (setq browse-url-browser-function 'browse-url-chrome))
+      (setq browse-url-browser-function 'eww-browse-url))
     (defhydra my-hydra-browse-url ()
       "Browse URL"
       ("." browse-url-at-point "at point")
