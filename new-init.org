@@ -763,6 +763,7 @@ Set the default font
                         :foundry "PfEd"
                         :family "Ricty Diminished"
                         :height 220))
+
 #+END_SRC
 
 Setup some font scaling support
@@ -774,6 +775,20 @@ Setup some font scaling support
     (bind-key "C-M-=" 'default-text-scale-increase)
     (bind-key "C-M--" 'default-text-scale-decrease))
 #+END_SRC
+
+Setup emoji support
+
+#+BEGIN_SRC emacs-lisp
+  (use-package emojify
+    :ensure t
+    :config
+    (setq emojify-program-contexts '(comments string))
+    :init
+    (add-hook 'after-init-hook #'global-emojify-mode))
+
+#+END_SRC
+
+#+RESULTS:
 
 * Commands et. al 
 Some basic configuration relating to commands 
