@@ -1471,8 +1471,29 @@ When running on OSX it is necessary to
   (when *spell-check-support-enabled*
     (use-package ispell
       :init
+      ;;; Spell checking using hunspell
+      (setq ispell-local-dictionary-alist
+            '((nil "[A-Za-z]" "[^A-Za-z]" "[']" t
+                   ("-d" "en_US" "-i" "utf-8") nil utf-8)
+              ("american"
+               "[A-Za-z]" "[^A-Za-z]" "[']" nil
+               ("-d" "en_US") nil utf-8)
+              ("english"
+               "[A-Za-z]" "[^A-Za-z]" "[']" nil
+               ("-d" "en_GB") nil utf-8)
+              ("en_GB"
+               "[A-Za-z]" "[^A-Za-z]" "[']" nil
+               ("-d" "en_GB") nil utf-8)
+              ("en_AU"
+               "[A-Za-z]" "[^A-Za-z]" "[']" nil
+               ("-d" "en_AU") nil utf-8))
+            ispell-extra-args '("-a" "-i" "utf-8")
+            ispell-silently-savep t)
       (if *is-a-mac*
-          (setq ispell-dictionary "british")
+          (progn
+            (setenv "DICPATH" (concat (getenv "HOME") "/Library/Spelling"))
+            (setq ispell-dictionary "en_AU"
+                  ispell-program-name "/usr/local/bin/hunspell"))
         (setq ispell-dictionary "british-ise"))
       :config
       (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
