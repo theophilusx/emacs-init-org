@@ -1468,55 +1468,57 @@ When running on OSX it is necessary to
     and /default.dic/
 
 #+BEGIN_SRC emacs-lisp 
-  (when *spell-check-support-enabled*
-    (use-package ispell
-      :init
-      ;;; Spell checking using hunspell
-      (setq ispell-local-dictionary-alist
-            '((nil "[A-Za-z]" "[^A-Za-z]" "[']" t
-                   ("-d" "en_US" "-i" "utf-8") nil utf-8)
-              ("american"
-               "[A-Za-z]" "[^A-Za-z]" "[']" nil
-               ("-d" "en_US") nil utf-8)
-              ("english"
-               "[A-Za-z]" "[^A-Za-z]" "[']" nil
-               ("-d" "en_GB") nil utf-8)
-              ("en_GB"
-               "[A-Za-z]" "[^A-Za-z]" "[']" nil
-               ("-d" "en_GB") nil utf-8)
-              ("en_AU"
-               "[A-Za-z]" "[^A-Za-z]" "[']" nil
-               ("-d" "en_AU") nil utf-8))
-            ispell-extra-args '("-a" "-i" "utf-8")
-            ispell-silently-savep t)
-      (if *is-a-mac*
-          (progn
-            (setenv "DICPATH" (concat (getenv "HOME") "/Library/Spelling"))
-            (setq ispell-dictionary "en_AU"
-                  ispell-program-name "/usr/local/bin/hunspell"))
-        (setq ispell-dictionary "british-ise"))
-      :config
-      (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
-      (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC ". "#\\+END_SRC$"))
-      (add-to-list 'ispell-skip-region-alist '("^#\\+begin_example ". "#\\+end_example$"))
-      (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_EXAMPLE ". "#\\+END_EXAMPLE$"))
-      (add-to-list 'ispell-skip-region-alist '("\:PROPERTIES\:$" . "\:END\:$"))
-      (add-to-list 'ispell-skip-region-alist '("\\[fn:.+:" . "\\]"))
-      (add-to-list 'ispell-skip-region-alist '("^http" . "\\]"))
-      (add-to-list 'ispell-skip-region-alist '("=.*" . ".*="))
-      (add-to-list 'ispell-skip-region-alist '("- \\*.+" . ".*\\*: "))
-      (when (executable-find ispell-program-name)
-        (use-package flyspell
-          :diminish flyspell-mode
-          :init
-          (setq flyspell-use-meta-tab nil)
-          (defun try-flyspell (arg)
-            (if (nth 4 (syntax-ppss))
-                (call-interactively 'flyspell-correct-word-before-point)
-              nil))
-          :config
-          (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-          (add-hook 'text-mode-hook 'flyspell-mode)))))
+    (when *spell-check-support-enabled*
+      (use-package ispell
+        :init
+        ;;; Spell checking using hunspell
+        (setq ispell-local-dictionary-alist
+              '((nil "[A-Za-z]" "[^A-Za-z]" "[']" t
+                     ("-d" "en_US" "-i" "utf-8") nil utf-8)
+                ("american"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_US") nil utf-8)
+                ("english"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_GB") nil utf-8)
+                ("en_GB"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_GB") nil utf-8)
+                ("en_AU"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_AU") nil utf-8))
+              ispell-extra-args '("-a" "-i" "utf-8")
+              ispell-silently-savep t)
+        (if *is-a-mac*
+            (progn
+              (setenv "DICPATH" (concat (getenv "HOME") "/Library/Spelling"))
+              (setq ispell-dictionary "en_AU"
+                    ispell-program-name "/usr/local/bin/hunspell"))
+          ;;(setq ispell-dictionary "british-ise")
+          (setq ispell-program-name "/usr/bin/hunspell"
+                ispell-dictionary "en_AU"))
+        :config
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC ". "#\\+END_SRC$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_example ". "#\\+end_example$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_EXAMPLE ". "#\\+END_EXAMPLE$"))
+        (add-to-list 'ispell-skip-region-alist '("\:PROPERTIES\:$" . "\:END\:$"))
+        (add-to-list 'ispell-skip-region-alist '("\\[fn:.+:" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("^http" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("=.*" . ".*="))
+        (add-to-list 'ispell-skip-region-alist '("- \\*.+" . ".*\\*: "))
+        (when (executable-find ispell-program-name)
+          (use-package flyspell
+            :diminish flyspell-mode
+            :init
+            (setq flyspell-use-meta-tab nil)
+            (defun try-flyspell (arg)
+              (if (nth 4 (syntax-ppss))
+                  (call-interactively 'flyspell-correct-word-before-point)
+                nil))
+            :config
+            (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+            (add-hook 'text-mode-hook 'flyspell-mode)))))
 #+END_SRC
 
 ** Timestamps
