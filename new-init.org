@@ -60,6 +60,7 @@ facility, it is important that it is loaded as early as possible in the Emacs
 boot process.
 
 First, setup a constant which tells emacs where to look for the emacspeak distro
+** Emacspeak loading
 
 #+BEGIN_SRC emacs-lisp 
   (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
@@ -74,6 +75,8 @@ Need to load different speech servers depending on the platform
     (defconst *emacspeak-server* "outloud"))
 #+END_SRC
 
+** Emacspeak Info Documentation
+
 Add the EmacsSpeak info documentation to the info search path. From within Info,
 you can hit ~g~ and then enter ~(emacspeak)~ at the prompt to open the Emacspeak
 info documentation
@@ -86,6 +89,8 @@ info documentation
 
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
 then load it
+
+** Load Emacspeak
 
 #+BEGIN_SRC emacs-lisp 
   (when (and (not noninteractive)
@@ -130,6 +135,8 @@ the init process by adding some emacspeak setup functions to the
 ensure our changes are added /after/ emacspeak hook functions run by appending
 them.
 
+** Emacspeak Key Bindings
+
 #+BEGIN_SRC emacs-lisp
 
   (defun my-esp-bindings ()
@@ -152,6 +159,8 @@ them.
 
  I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
  they are mature enough, I will generally submit them for inclusion 
+
+** Experimental 
 
 #+BEGIN_SRC emacs-lisp
   ;; Require my emacspeak-smartparens.el
@@ -481,8 +490,6 @@ normally ensure a 'stable' environment.
 #+END_SRC
 
 * Hydra
-Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
-correctly. 
 
  #+BEGIN_SRC emacs-lisp
    (use-package winner
@@ -531,7 +538,7 @@ correctly.
      (defhydra my-hydra-wizards ()
        "Emacspeak Wizards"
        ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-       ("b" emacspeak-wizards-cycle-browser "Browser")
+       ;; ("b" emacspeak-wizards-cycle-browser "Browser")
        ("e" emacspeak-wizards-eww-buffer-list "eww")
        ("r" emacspeak-wizards-find-file-as-root "root")
        ("g" emacspeak-wizards-find-grep "Grep")
@@ -1423,15 +1430,18 @@ Not sure if imenu is of any real value. Disabling it for now
 ** flycheck
 
 #+BEGIN_SRC emacs-lisp
+  (use-package flycheck-pos-tip
+    :ensure t)
+
   (use-package flycheck
     :ensure t
     :config
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
+    (setq flycheck-display-errors-function #'flycheck-pos-tip-error-messages)
     :init
     (global-flycheck-mode))
-
 #+END_SRC
 ** Highlight Indentation 
 Highlight the indentation level in programming modes.
@@ -1994,57 +2004,62 @@ Configure lisp modes.
 Setup ~clojure-mode~ and ~cider~. 
 
 #+BEGIN_SRC emacs-lisp
-    (use-package clojure-cheatsheet
-      :ensure t
-      :commands clojure-cheatsheet)
+  ;; (use-package clojure-cheatsheet
+  ;;   :ensure t
+  ;;   :commands clojure-cheatsheet)
 
-    (use-package clojure-snippets
-      :ensure t)
+  (use-package clojure-snippets
+    :ensure t)
 
-    (use-package cider-hydra
-      :ensure t
-      :commands cider-hydra-mode)
+  (use-package cider-hydra
+    :ensure t
+    :commands cider-hydra-mode)
 
-    (use-package clojure-mode
-      :ensure t
-      :init
-      (setq clojure-align-forms-automatically t)
-      :config
-      (add-hook 'clojure-mode-hook #'subword-mode)
-      (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
+  (use-package clojure-mode
+    :ensure t
+    :init
+    (setq clojure-align-forms-automatically t)
+    :config
+    (add-hook 'clojure-mode-hook #'subword-mode)
+    (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
-    (use-package cider
-      :ensure t
-      :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
-      :init
-      (setq cider-prompt-for-symbol nil
-        cider-font-lock-dynamically '(macro core function var)
-        cider-eldoc-display-for-symbol-at-point nil
-        eldoc-echo-area-use-multiline-p t
-        cider-overlays-use-font-lock t
-        cider-use-overlays t
-        cider-show-error-buffer nil
-        cider-repl-display-help-banner nil
-        cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
-        cider-repl-history-file (expand-file-name "repl-history"
-                              user-emacs-directory))
-      :config
-      (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
-      (add-hook 'cider-mode-hook #'cider-hydra-mode)
-      (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
-      (bind-key "c" 'clojure-cheatsheet cider-doc-map))
+  (use-package flycheck-clojure
+    :ensure t)
 
-     (use-package clj-refactor
-       :ensure t
-       :commands clj-refactor-mode
-       :init
-       (setq cljr-warn-on-eval nil)
-       :config
-       (add-hook 'clojure-mode-hook (lambda ()
-                                      (clj-refactor-mode 1)
-                                      ;; insert keybinding setup here
-                                      (cljr-add-keybindings-with-prefix "C-c C-m")))
-       )
+  (use-package cider
+    :ensure t
+    :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
+    :init
+    (setq cider-prompt-for-symbol nil
+          cider-font-lock-dynamically '(macro core function var)
+          cider-eldoc-display-for-symbol-at-point nil
+          eldoc-echo-area-use-multiline-p t
+          cider-overlays-use-font-lock t
+          cider-use-overlays t
+          cider-show-error-buffer nil
+          cider-repl-display-help-banner nil
+          cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
+          cider-repl-history-file (expand-file-name "repl-history"
+                                                    user-emacs-directory))
+    :config
+    (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
+    (add-hook 'cider-mode-hook #'cider-hydra-mode)
+    (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
+    (bind-key "c" 'clojure-cheatsheet cider-doc-map)
+    (flycheck-clojure-setup))
+
+  (use-package clj-refactor
+    :ensure t
+    :commands clj-refactor-mode
+    :init
+    (setq cljr-warn-on-eval nil)
+    :config
+    (add-hook 'clojure-mode-hook (lambda ()
+                                   (clj-refactor-mode 1)
+                                   ;; insert keybinding setup here
+                                   (cljr-add-keybindings-with-prefix "C-c C-m")))
+    )
+
 
   (use-package inf-clojure
     :ensure t
