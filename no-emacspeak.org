@@ -53,111 +53,6 @@ bit.
 
 #+END_SRC
 
-* Emacspeak
-
-Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
-facility, it is important that it is loaded as early as possible in the Emacs
-boot process.
-
-First, setup a constant which tells emacs where to look for the emacspeak distro
-
-#+BEGIN_SRC emacs-lisp 
-  (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
-    "Where emacs will find the emacspeak distro")
-#+END_SRC
-
-Need to load different speech servers depending on the platform
-
-#+BEGIN_SRC emacs-lisp 
-  (if *is-a-mac*
-      (defconst *emacspeak-server* "mac")
-    (defconst *emacspeak-server* "outloud"))
-#+END_SRC
-
-Add the EmacsSpeak info documentation to the info search path. From within Info,
-you can hit ~g~ and then enter ~(emacspeak)~ at the prompt to open the Emacspeak
-info documentation
-
-#+BEGIN_SRC emacs-lisp 
-  (require 'info)
-  (add-to-list 'Info-additional-directory-list
-               (expand-file-name "info"  *emacspeak-src-dir*))
-#+END_SRC
-
-When emacs is not being run in batch mode and when emacspeak is not yet loaded,
-then load it
-
-#+BEGIN_SRC emacs-lisp 
-  ;; (when (and (not noninteractive)
-  ;;            (not (featurep 'emacspeak)))
-  ;;   (add-to-list 'load-path *emacspeak-src-dir*)
-  ;;   (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
-  ;;   (setenv "DTK_PROGRAM" *emacspeak-server*)
-  ;;   (setq dtk-program *emacspeak-server*
-  ;;         dtk-use-tones nil
-  ;;         emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
-  ;;         emacspeak-erc-my-nick "theophilusx"
-  ;;         emacspeak-erc-speak-all-participants t
-  ;;         emacspeak-mail-alert nil
-  ;;         emacspeak-play-emacspeak-startup-icon nil
-  ;;         emacspeak-play-program "/home/tcross/bin/play"
-  ;;         emacspeak-play-args nil
-  ;;         emacspeak-wizards-available-browsers (if *is-a-mac*
-  ;;                                                  '(eww-browse-url browse-url-default-macosx-browser)
-  ;;                                                '(eww-browse-url browse-url-chrome))
-  ;;         emacspeak-vm-use-raman-settings nil
-  ;;         mac-default-speech-rate 370        
-  ;;         outloud-default-speech-rate 90
-  ;;         sox-play (if *is-a-mac*
-  ;;                      "/usr/local/bin/play"
-  ;;                    "/usr/bin/play")
-  ;;         emacspeak-soxplay-command (if *is-a-mac*
-  ;;                                       "/usr/local/bin/play -v 1.2 %s earwax &"
-  ;;                                     "/usr/bin/play -v 1.2 %s earwax &")
-  ;;         tts-default-speech-rate 90)
-  ;;   (add-hook 'emacspeak-startup-hook
-  ;;             (lambda ()
-  ;;               ;; (dtk-set-rate tts-default-speech-rate 1)
-  ;;               (dtk-interp-sync)
-  ;;               (emacspeak-sounds-select-theme "3d/")))
-  ;;   (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
-#+END_SRC
-
-I like to set my own key bindings and there are a lot of emacspeak key bindings
-I don't need/want. However, emacspeak does a key binding /refresh/ at the end of
-the init process by adding some emacspeak setup functions to the
-=after-init-hook=. This means we need to make our setup changes in this hook and
-ensure our changes are added /after/ emacspeak hook functions run by appending
-them.
-
-#+BEGIN_SRC emacs-lisp
-  ;; (defun my-esp-bindings ()
-  ;;   (message "Loading my emacspeak key bindings...")
-  ;;   (unbind-key "<S-left>")
-  ;;   (unbind-key "<S-right>")
-  ;;   (unbind-key "<C-left>")
-  ;;   (unbind-key "<C-right>")
-  ;;   (unbind-key "<C-down>")
-  ;;   (unbind-key "<C-up>")
-  ;;   (unbind-key "<S-up>")
-  ;;   (unbind-key "<S-down>")
-  ;;   (bind-key "<f5>" 'my-hydra-window/body)
-  ;;   (bind-key "<f7>" 'my-hydra-wizards/body)
-  ;;   (bind-key "C-z" 'my-hydra-zoom/body))
-
-
-  ;; (add-hook 'after-init-hook #'my-esp-bindings t)
-#+END_SRC
-
- I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
- they are mature enough, I will generally submit them for inclusion 
-
-#+BEGIN_SRC emacs-lisp
-  ;; Require my emacspeak-smartparens.el
-  ;; (when (featurep 'emacspeak)
-  ;;   (require 'emacspeak-smartparens))
-#+END_SRC
-
 * Custom 
 #+BEGIN_SRC emacs-lisp
   (if *is-a-mac*
@@ -480,8 +375,6 @@ normally ensure a 'stable' environment.
 #+END_SRC
 
 * Hydra
-Emacspeak now uses hydra, but it needs to be loaded before emacspeak to work
-correctly. 
 
  #+BEGIN_SRC emacs-lisp
    (use-package winner
@@ -526,20 +419,6 @@ correctly.
              (windmove-find-other-window 'up))
            (shrink-window arg)
          (enlarge-window arg)))
-
-     (defhydra my-hydra-wizards ()
-       "Emacspeak Wizards"
-       ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-       ("b" emacspeak-wizards-cycle-browser "Browser")
-       ("e" emacspeak-wizards-eww-buffer-list "eww")
-       ("r" emacspeak-wizards-find-file-as-root "root")
-       ("g" emacspeak-wizards-find-grep "Grep")
-       ("f" emacspeak-wizards-finder-find "Find")
-       ("F" emacspeak-wizards-generate-finder "Finder")
-       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-       ("s" emacspeak-wizards-spot-words "Spot")
-       ("t" emacspeak-wizards-tramp-open-location "Tramp")
-       ("q" nil "Quit"))
 
      (defhydra my-hydra-zoom ()
        "zoom"
@@ -762,6 +641,7 @@ Set the default font
                         :foundry "PfEd"
                         :family "Ricty Diminished"
                         :height 220))
+
 #+END_SRC
 
 Setup some font scaling support
@@ -773,6 +653,20 @@ Setup some font scaling support
     (bind-key "C-M-=" 'default-text-scale-increase)
     (bind-key "C-M--" 'default-text-scale-decrease))
 #+END_SRC
+
+Setup emoji support
+
+#+BEGIN_SRC emacs-lisp
+  (use-package emojify
+    :ensure t
+    :config
+    (setq emojify-program-contexts '(comments string))
+    :init
+    (add-hook 'after-init-hook #'global-emojify-mode))
+
+#+END_SRC
+
+#+RESULTS:
 
 * Commands et. al 
 Some basic configuration relating to commands 
@@ -1165,13 +1059,13 @@ Using ~ag~ package for searches. This needs some OS support
     :bind (("C-M-i" . company-complete)
            ("TAB" . company-indent-or-complete-common))
     :config
-    (progn
-      (global-company-mode 1)
-      (add-hook 'after-init-hook
-                (lambda ()
-                  (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-                                            company-preview-if-just-one-frontend
-                                            company-echo-metadata-frontend))))))
+    (global-company-mode 1)
+    (add-hook 'after-init-hook
+              (lambda ()
+                (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
+                                          company-preview-if-just-one-frontend
+                                          company-echo-metadata-frontend))))
+    (add-to-list 'company-backends 'company-elm))
 
   (use-package company-auctex
     :ensure t
@@ -1246,7 +1140,8 @@ Lets try out CUA mode for a while and see if I can re-train my brain to use
 these bindings as it would make life easier with other applications. 
 
 #+BEGIN_SRC emacs-lisp
-  (cua-mode)
+  ;;(cua-mode)
+
 #+END_SRC
 * Programming Tweaks 
 Configuration relating to programming
@@ -1406,15 +1301,18 @@ Not sure if imenu is of any real value. Disabling it for now
 ** flycheck
 
 #+BEGIN_SRC emacs-lisp
+  (use-package flycheck-pos-tip
+    :ensure t)
+
   (use-package flycheck
     :ensure t
     :config
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
+    (setq flycheck-display-errors-function #'flycheck-pos-tip-error-messages)
     :init
     (global-flycheck-mode))
-
 #+END_SRC
 ** Highlight Indentation 
 Highlight the indentation level in programming modes.
@@ -1451,34 +1349,57 @@ When running on OSX it is necessary to
     and /default.dic/
 
 #+BEGIN_SRC emacs-lisp 
-  (when *spell-check-support-enabled*
-    (use-package ispell
-      :init
-      (if *is-a-mac*
-          (setq ispell-dictionary "british")
-        (setq ispell-dictionary "british-ise"))
-      :config
-      (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
-      (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC ". "#\\+END_SRC$"))
-      (add-to-list 'ispell-skip-region-alist '("^#\\+begin_example ". "#\\+end_example$"))
-      (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_EXAMPLE ". "#\\+END_EXAMPLE$"))
-      (add-to-list 'ispell-skip-region-alist '("\:PROPERTIES\:$" . "\:END\:$"))
-      (add-to-list 'ispell-skip-region-alist '("\\[fn:.+:" . "\\]"))
-      (add-to-list 'ispell-skip-region-alist '("^http" . "\\]"))
-      (add-to-list 'ispell-skip-region-alist '("=.*" . ".*="))
-      (add-to-list 'ispell-skip-region-alist '("- \\*.+" . ".*\\*: "))
-      (when (executable-find ispell-program-name)
-        (use-package flyspell
-          :diminish flyspell-mode
-          :init
-          (setq flyspell-use-meta-tab nil)
-          (defun try-flyspell (arg)
-            (if (nth 4 (syntax-ppss))
-                (call-interactively 'flyspell-correct-word-before-point)
-              nil))
-          :config
-          (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-          (add-hook 'text-mode-hook 'flyspell-mode)))))
+    (when *spell-check-support-enabled*
+      (use-package ispell
+        :init
+        ;;; Spell checking using hunspell
+        (setq ispell-local-dictionary-alist
+              '((nil "[A-Za-z]" "[^A-Za-z]" "[']" t
+                     ("-d" "en_US" "-i" "utf-8") nil utf-8)
+                ("american"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_US") nil utf-8)
+                ("english"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_GB") nil utf-8)
+                ("en_GB"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_GB") nil utf-8)
+                ("en_AU"
+                 "[A-Za-z]" "[^A-Za-z]" "[']" nil
+                 ("-d" "en_AU") nil utf-8))
+              ispell-extra-args '("-a" "-i" "utf-8")
+              ispell-silently-savep t)
+        (if *is-a-mac*
+            (progn
+              (setenv "DICPATH" (concat (getenv "HOME") "/Library/Spelling"))
+              (setq ispell-dictionary "en_AU"
+                    ispell-program-name "/usr/local/bin/hunspell"))
+          ;;(setq ispell-dictionary "british-ise")
+          (setq ispell-program-name "/usr/bin/hunspell"
+                ispell-dictionary "en_AU"))
+        :config
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC ". "#\\+END_SRC$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_example ". "#\\+end_example$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_EXAMPLE ". "#\\+END_EXAMPLE$"))
+        (add-to-list 'ispell-skip-region-alist '("\:PROPERTIES\:$" . "\:END\:$"))
+        (add-to-list 'ispell-skip-region-alist '("\\[fn:.+:" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("^http" . "\\]"))
+        (add-to-list 'ispell-skip-region-alist '("=.*" . ".*="))
+        (add-to-list 'ispell-skip-region-alist '("- \\*.+" . ".*\\*: "))
+        (when (executable-find ispell-program-name)
+          (use-package flyspell
+            :diminish flyspell-mode
+            :init
+            (setq flyspell-use-meta-tab nil)
+            (defun try-flyspell (arg)
+              (if (nth 4 (syntax-ppss))
+                  (call-interactively 'flyspell-correct-word-before-point)
+                nil))
+            :config
+            (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+            (add-hook 'text-mode-hook 'flyspell-mode)))))
 #+END_SRC
 
 ** Timestamps
@@ -1564,6 +1485,17 @@ on GitHub]]
 #+BEGIN_SRC emacs-lisp
   (use-package writegood-mode
     :ensure t)
+#+END_SRC
+
+** Lorem Ipsum 
+
+#+BEGIN_SRC emacs-lisp
+  (use-package lorem-ipsum
+    :ensure t
+    :commands (lorem-ipsum-insert-paragraph
+               lorem-ipsum-insert-sentence
+               lorem-ipsum-insert-list))
+
 #+END_SRC
 
 * Application Modes 
@@ -1834,7 +1766,7 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
     :init
     (if *is-a-mac*
         (setq browse-url-browser-function 'browse-url-default-macosx-browser)
-      (setq browse-url-browser-function 'browse-url-chrome))
+      (setq browse-url-browser-function 'eww-browse-url))
     (defhydra my-hydra-browse-url ()
       "Browse URL"
       ("." browse-url-at-point "at point")
@@ -1842,7 +1774,6 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
       ("r" browse-url-of-region "region")
       ("u" browse-url "URL")
       ("f" browse-url-of-file "File")
-      ("d" emacspeak-wizards-unhex-uri "Decode")
       ("q" nil "Quit"))
     :bind ("<f6>" . my-hydra-browse-url/body))
 #+END_SRC
@@ -1943,57 +1874,62 @@ Configure lisp modes.
 Setup ~clojure-mode~ and ~cider~. 
 
 #+BEGIN_SRC emacs-lisp
-    (use-package clojure-cheatsheet
-      :ensure t
-      :commands clojure-cheatsheet)
+  ;; (use-package clojure-cheatsheet
+  ;;   :ensure t
+  ;;   :commands clojure-cheatsheet)
 
-    (use-package clojure-snippets
-      :ensure t)
+  (use-package clojure-snippets
+    :ensure t)
 
-    (use-package cider-hydra
-      :ensure t
-      :commands cider-hydra-mode)
+  (use-package cider-hydra
+    :ensure t
+    :commands cider-hydra-mode)
 
-    (use-package clojure-mode
-      :ensure t
-      :init
-      (setq clojure-align-forms-automatically t)
-      :config
-      (add-hook 'clojure-mode-hook #'subword-mode)
-      (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
+  (use-package clojure-mode
+    :ensure t
+    :init
+    (setq clojure-align-forms-automatically t)
+    :config
+    (add-hook 'clojure-mode-hook #'subword-mode)
+    (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
-    (use-package cider
-      :ensure t
-      :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
-      :init
-      (setq cider-prompt-for-symbol nil
-        cider-font-lock-dynamically '(macro core function var)
-        cider-eldoc-display-for-symbol-at-point nil
-        eldoc-echo-area-use-multiline-p t
-        cider-overlays-use-font-lock t
-        cider-use-overlays t
-        cider-show-error-buffer nil
-        cider-repl-display-help-banner nil
-        cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
-        cider-repl-history-file (expand-file-name "repl-history"
-                              user-emacs-directory))
-      :config
-      (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
-      (add-hook 'cider-mode-hook #'cider-hydra-mode)
-      (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
-      (bind-key "c" 'clojure-cheatsheet cider-doc-map))
+  (use-package flycheck-clojure
+    :ensure t)
 
-     (use-package clj-refactor
-       :ensure t
-       :commands clj-refactor-mode
-       :init
-       (setq cljr-warn-on-eval nil)
-       :config
-       (add-hook 'clojure-mode-hook (lambda ()
-                                      (clj-refactor-mode 1)
-                                      ;; insert keybinding setup here
-                                      (cljr-add-keybindings-with-prefix "C-c C-m")))
-       )
+  (use-package cider
+    :ensure t
+    :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
+    :init
+    (setq cider-prompt-for-symbol nil
+          cider-font-lock-dynamically '(macro core function var)
+          cider-eldoc-display-for-symbol-at-point nil
+          eldoc-echo-area-use-multiline-p t
+          cider-overlays-use-font-lock t
+          cider-use-overlays t
+          cider-show-error-buffer nil
+          cider-repl-display-help-banner nil
+          cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
+          cider-repl-history-file (expand-file-name "repl-history"
+                                                    user-emacs-directory))
+    :config
+    (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
+    (add-hook 'cider-mode-hook #'cider-hydra-mode)
+    (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
+    (bind-key "c" 'clojure-cheatsheet cider-doc-map)
+    (flycheck-clojure-setup))
+
+  (use-package clj-refactor
+    :ensure t
+    :commands clj-refactor-mode
+    :init
+    (setq cljr-warn-on-eval nil)
+    :config
+    (add-hook 'clojure-mode-hook (lambda ()
+                                   (clj-refactor-mode 1)
+                                   ;; insert keybinding setup here
+                                   (cljr-add-keybindings-with-prefix "C-c C-m")))
+    )
+
 
   (use-package inf-clojure
     :ensure t
@@ -2095,7 +2031,9 @@ Setup ~clojure-mode~ and ~cider~.
     (setq-default js2-bounce-indent-p nil)
     (setq js-indent-level 2
           js2-include-node-externs t
-          js2-mode-assume-strict t)
+          js2-mode-assume-strict t
+          js2-highlight-level 3
+          js2-global-externs '("describe" "it" "before" "after" "beforeEach" "afterEach"))
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (js2-imenu-extras-setup)
@@ -2214,6 +2152,17 @@ setup, comment out for now.
   ;;     (add-to-list 'Info-additional-directory-list
   ;;              (expand-file-name "~/git/stumpwm"))))
 #+END_SRC
+** Elm
+
+#+BEGIN_SRC emacs-lisp
+  (use-package elm-mode
+    :ensure t
+    :config
+    (setq elm-tags-on-save t
+          elm-sort-imports-on-save t
+          elm-format-on-save t))
+
+#+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
   (use-package solarized-theme
@@ -2322,7 +2271,6 @@ First, setup some load paths.
 Next, load some additional packages we need.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (require 'emacspeak-mu4e)
   (require 'org-mu4e)
 
 #+END_SRC
