@@ -1189,11 +1189,11 @@ Using ~ag~ package for searches. This needs some OS support
            ("TAB" . company-indent-or-complete-common))
     :config
     (global-company-mode 1)
-    (add-hook 'after-init-hook
-              (lambda ()
-                (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-                                          company-preview-if-just-one-frontend
-                                          company-echo-metadata-frontend))))
+    ;; (add-hook 'after-init-hook
+    ;;           (lambda ()
+    ;;             (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
+    ;;                                       company-preview-if-just-one-frontend
+    ;;                                       company-echo-metadata-frontend))))
     (add-to-list 'company-backends 'company-elm))
 
   (use-package company-auctex
