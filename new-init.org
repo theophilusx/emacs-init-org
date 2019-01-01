@@ -1021,15 +1021,15 @@ Display lines to show where page breaks are. Useful in making the
 browse-kill-ring mode look a little better. See [[https://github.com/purcell/page-break-lines][page-break-lines on GitHub]]
 
 #+BEGIN_SRC emacs-lisp
-  (use-package page-break-lines
-    :ensure t
-    :diminish page-break-lines-mode
-    :config
-    (progn 
-      (global-page-break-lines-mode)
-      (push 'browse-kill-ring-mode page-break-lines-modes)
-      (push 'sql-mode page-break-lines-modes)
-      (push 'text-mode page-break-lines-modes)))
+  ;; (use-package page-break-lines
+  ;;   :ensure t
+  ;;   :diminish page-break-lines-mode
+  ;;   :config
+  ;;   (progn 
+  ;;     (global-page-break-lines-mode)
+  ;;     (push 'browse-kill-ring-mode page-break-lines-modes)
+  ;;     (push 'sql-mode page-break-lines-modes)
+  ;;     (push 'text-mode page-break-lines-modes)))
 
 #+END_SRC
 
@@ -1114,30 +1114,30 @@ Cleanup whitespace
 Enable setting of mark without setting of transient mark mode
 
 #+BEGIN_SRC emacs-lisp
-  (defun push-mark-no-activate ()
-    "Pushes `point' to `mark-ring' and does not activate the region
-     Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
-    (interactive)
-    (push-mark (point) t nil)
-    (message "Pushed mark to ring"))
+  ;; (defun push-mark-no-activate ()
+  ;;   "Pushes `point' to `mark-ring' and does not activate the region
+  ;;    Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
+  ;;   (interactive)
+  ;;   (push-mark (point) t nil)
+  ;;   (message "Pushed mark to ring"))
 
-  (bind-key "C-`" 'push-mark-no-activate)
+  ;; (bind-key "C-`" 'push-mark-no-activate)
 
-  (defun jump-to-mark ()
-    "Jumps to the local mark, respecting the `mark-ring' order.
-    This is the same as using \\[set-mark-command] with the prefix argument."
-    (interactive)
-    (set-mark-command 1))
+  ;; (defun jump-to-mark ()
+  ;;   "Jumps to the local mark, respecting the `mark-ring' order.
+  ;;   This is the same as using \\[set-mark-command] with the prefix argument."
+  ;;   (interactive)
+  ;;   (set-mark-command 1))
 
-  (bind-key "M-`" 'jump-to-mark)
+  ;; (bind-key "M-`" 'jump-to-mark)
 
-  (defun exchange-point-and-mark-no-activate ()
-    "Identical to \\[exchange-point-and-mark] but will not activate the region."
-    (interactive)
-    (exchange-point-and-mark)
-    (deactivate-mark nil))
+  ;; (defun exchange-point-and-mark-no-activate ()
+  ;;   "Identical to \\[exchange-point-and-mark] but will not activate the region."
+  ;;   (interactive)
+  ;;   (exchange-point-and-mark)
+  ;;   (deactivate-mark nil))
 
-  (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
+  ;; (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
 #+END_SRC
 
 ** Searching
@@ -1430,8 +1430,14 @@ Not sure if imenu is of any real value. Disabling it for now
 ** flycheck
 
 #+BEGIN_SRC emacs-lisp
-  (use-package flycheck-pos-tip
-    :ensure t)
+  ;; (use-package flycheck-pos-tip
+  ;;   :ensure t)
+
+  (use-package flycheck-inline
+    :ensure t
+    :init
+    (with-eval-after-load 'flycheck
+    (global-flycheck-inline-mode)))
 
   (use-package flycheck
     :ensure t
@@ -1439,9 +1445,10 @@ Not sure if imenu is of any real value. Disabling it for now
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
-    (setq flycheck-display-errors-function #'flycheck-pos-tip-error-messages)
+    ;;;(setq flycheck-display-errors-function #'flycheck-pos-tip-error-messages)
     :init
     (global-flycheck-mode))
+
 #+END_SRC
 ** Highlight Indentation 
 Highlight the indentation level in programming modes.
@@ -1601,13 +1608,13 @@ on GitHub]]
 
 ** Alert
 #+BEGIN_SRC emacs-lisp
-  (use-package alert
-    :ensure t
-    :config
-    (setq alert-fade-time 10)
-    (when *is-a-mac*
-      (setq alert-default-style 'growl))
-    (setq alert-reveal-idle-time 120))
+  ;; (use-package alert
+  ;;   :ensure t
+  ;;   :config
+  ;;   (setq alert-fade-time 10)
+  ;;   (when *is-a-mac*
+  ;;     (setq alert-default-style 'growl))
+  ;;   (setq alert-reveal-idle-time 120))
 #+END_SRC
 
 ** Write Good
@@ -1731,19 +1738,19 @@ Setup version control stuff
 
 ** ERC
 #+BEGIN_SRC emacs-lisp
-  (use-package erc
-    :commands 'erc
-    :init
-    (setq erc-hide-list '("JOIN" "PART" "QUIT")
-          erc-insert-timestamp-function 'erc-insert-timestamp-left
-          erc-timestamp-format "[%H:%M] "
-          erc-timestamp-only-if-changed-flag nil
-          erc-truncate-mode t)
-    :config
-    (add-hook
-     'window-configuration-change-hook
-     (lambda ()
-       (setq erc-fill-column (- (window-width) 2)))))
+  ;; (use-package erc
+  ;;   :commands 'erc
+  ;;   :init
+  ;;   (setq erc-hide-list '("JOIN" "PART" "QUIT")
+  ;;         erc-insert-timestamp-function 'erc-insert-timestamp-left
+  ;;         erc-timestamp-format "[%H:%M] "
+  ;;         erc-timestamp-only-if-changed-flag nil
+  ;;         erc-truncate-mode t)
+  ;;   :config
+  ;;   (add-hook
+  ;;    'window-configuration-change-hook
+  ;;    (lambda ()
+  ;;      (setq erc-fill-column (- (window-width) 2)))))
 #+END_SRC
 
 ** Eshell
