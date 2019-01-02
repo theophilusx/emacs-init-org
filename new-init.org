@@ -17,6 +17,8 @@ repository go in the ~.emacs.d/lib~  subdirectory.
 I set a couple of constants which can then be used to control configuration
 settings in my init file.
 
+** Mac or Linux?
+
 I run emacs on both OSX and Linux. To handle differences in configuration
 settings for the two platforms, I set a constant which determines if emacs is
 running on OSX or not. 
@@ -25,6 +27,8 @@ running on OSX or not.
   (defconst *is-a-mac* (eq system-type 'darwin)
     "T if emacs is running under OSX, nil otherwise.")
 #+END_SRC
+
+** Do Spell Checking?
 
 Set a constant to determine if spell checking is to be enabled. Not sure if I
 really need this, but leaving it in place for now.
@@ -53,6 +57,14 @@ bit.
 
 #+END_SRC
 
+** Load Emacspeak
+
+#+begin_src emacs-lisp
+  (if (getenv "RUN_EMACSPEAK")
+      (defconst *run_emacspeak* t)
+    (defconst *run_emacspeak* nil))
+#+end_src
+
 * Emacspeak
 
 Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
@@ -60,40 +72,30 @@ facility, it is important that it is loaded as early as possible in the Emacs
 boot process.
 
 First, setup a constant which tells emacs where to look for the emacspeak distro
-** Emacspeak loading
+** Emacspeak Loading Constants
 
 #+BEGIN_SRC emacs-lisp 
-  (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
-    "Where emacs will find the emacspeak distro")
+  (when *run_emacspeak*
+    (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
+      "Where emacs will find the emacspeak distro")
+    (if *is-a-mac*
+        (defconst *emacspeak-server* "mac")
+      (defconst *emacspeak-server* "outloud"))
+    (require 'info)
+    (add-to-list 'Info-additional-directory-list
+                 (expand-file-name "info"  *emacspeak-src-dir*)))
+
 #+END_SRC
 
-Need to load different speech servers depending on the platform
 
-#+BEGIN_SRC emacs-lisp 
-  (if *is-a-mac*
-      (defconst *emacspeak-server* "mac")
-    (defconst *emacspeak-server* "outloud"))
-#+END_SRC
 
-** Emacspeak Info Documentation
-
-Add the EmacsSpeak info documentation to the info search path. From within Info,
-you can hit ~g~ and then enter ~(emacspeak)~ at the prompt to open the Emacspeak
-info documentation
-
-#+BEGIN_SRC emacs-lisp 
-  (require 'info)
-  (add-to-list 'Info-additional-directory-list
-               (expand-file-name "info"  *emacspeak-src-dir*))
-#+END_SRC
-
+** Load Emacspeak
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
 then load it
 
-** Load Emacspeak
-
 #+BEGIN_SRC emacs-lisp 
-  (when (and (not noninteractive)
+  (when (and *run_emacspeak*
+             (not noninteractive)
              (not (featurep 'emacspeak)))
     (add-to-list 'load-path *emacspeak-src-dir*)
     (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
@@ -105,11 +107,6 @@ then load it
           emacspeak-erc-speak-all-participants t
           emacspeak-mail-alert nil
           emacspeak-play-emacspeak-startup-icon nil
-          emacspeak-play-program "/home/tcross/bin/play"
-          emacspeak-play-args nil
-          emacspeak-wizards-available-browsers (if *is-a-mac*
-                                                   '(eww-browse-url browse-url-default-macosx-browser)
-                                                 '(eww-browse-url browse-url-chrome))
           emacspeak-vm-use-raman-settings nil
           mac-default-speech-rate 370        
           outloud-default-speech-rate 90
@@ -138,23 +135,23 @@ them.
 ** Emacspeak Key Bindings
 
 #+BEGIN_SRC emacs-lisp
+  (when *run_emacspeak*
+    (defun my-esp-bindings ()
+      (message "Loading my emacspeak key bindings...")
+      (unbind-key "<S-left>")
+      (unbind-key "<S-right>")
+      (unbind-key "<C-left>")
+      (unbind-key "<C-right>")
+      (unbind-key "<C-down>")
+      (unbind-key "<C-up>")
+      (unbind-key "<S-up>")
+      (unbind-key "<S-down>")
+      (bind-key "<f5>" 'my-hydra-window/body)
+      (bind-key "<f7>" 'my-hydra-wizards/body)
+      (bind-key "C-z" 'my-hydra-zoom/body))
 
-  (defun my-esp-bindings ()
-    (message "Loading my emacspeak key bindings...")
-    (unbind-key "<S-left>")
-    (unbind-key "<S-right>")
-    (unbind-key "<C-left>")
-    (unbind-key "<C-right>")
-    (unbind-key "<C-down>")
-    (unbind-key "<C-up>")
-    (unbind-key "<S-up>")
-    (unbind-key "<S-down>")
-    (bind-key "<f5>" 'my-hydra-window/body)
-    (bind-key "<f7>" 'my-hydra-wizards/body)
-    (bind-key "C-z" 'my-hydra-zoom/body))
+    (add-hook 'after-init-hook #'my-esp-bindings t))
 
-
-  (add-hook 'after-init-hook #'my-esp-bindings t)
 #+END_SRC
 
  I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
@@ -163,9 +160,10 @@ them.
 ** Experimental 
 
 #+BEGIN_SRC emacs-lisp
-  ;; Require my emacspeak-smartparens.el
+  ;;;Require my emacspeak-smartparens.el
   ;; (when (featurep 'emacspeak)
   ;;   (require 'emacspeak-smartparens))
+
 #+END_SRC
 
 * Custom 
@@ -247,244 +245,244 @@ Then remove the repo package version and re-install. This will
 normally ensure a 'stable' environment.
 
 #+BEGIN_SRC emacs-lisp
-    (use-package org
-      :pin org
-      :ensure org-plus-contrib 
-      :init
-      (setq org-catch-invisible-edits 'smart
-            org-ctrl-k-protect-subtree t
-            org-default-notes-file "~/Dropbox/org/notes.org"
-            org-directory "~/Dropbox/org"
-            org-ellipsis "…"
-            org-list-allow-alphabetical t
-            org-list-indent-offset 2
-            org-pretty-entities t
-            org-startup-align-all-tables t
-            org-startup-with-inline-images (display-graphic-p)
-            org-support-shift-select t
-            org-use-sub-superscripts (quote {}))
-      (setq org-modules '(org-bibtex
-                          org-crypt
-                          org-docview
-                          org-eww
-                          org-info
-                          org-irc
-                          org-protocol))
-      (setq org-capture-templates
-            (quote
-             (("t" "todo" entry
-               (file "~/Dropbox/org/refile.org")
-               "* TODO %?\n\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("r" "respond" entry
-               (file "~/Dropbox/org/refile.org")
-               "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("n" "note" entry
-               (file "~/Dropbox/org/notes.org")
-               "* %? :NOTE:\n\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("j" "journal" entry
-               (file+olp+datetree "~/Dropbox/org/journal.org")
-               "* %?\n  "
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("p" "phone" entry
-               (file "~/Dropbox/org/refile.org")
-               "* PHONE %? :PHONE:\n  "
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("m" "mail" entry
-               (file "~/Dropbox/org/refile.org")
-               "* MAIL from %:from on %:subject\n\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t))))
-      (setq org-enforce-todo-checkbox-dependencies t
-            org-enforce-todo-dependencies t
-            org-log-done 'time
-            org-log-into-drawer t)
-      (setq org-todo-keywords
-            (quote
-             ((sequence "TODO(t)"
-                        "NEXT(n)"
-                        "STARTED(s!)"
-                        "DELEGATED(w@/!)"
-                        "HOLD(h@/!)"
-                        "|"
-                        "CANCELLED(c@)"
-                        "DONE(d!)"))))
-      (setq org-log-refile 'time
-            org-refile-allow-creating-parent-nodes 'confirm
-            org-refile-targets (quote ((nil :maxlevel . 5)
-                                       (org-agenda-files :maxlevel . 5)))
-            org-refile-use-outline-path (quote file))
-      (setq org-clock-in-resume t
-            org-clock-out-remove-zero-time-clocks t
-            org-clock-persist 'clock
-            org-time-clocksum-format '(:hours "%d" :require-hours t
-                                              :minutes ":%02d" :require-minutes t))
-      (setq org-agenda-files '("~/Dropbox/org")
-            org-agenda-remove-tags t)
+  (use-package org
+    :pin org
+    :ensure org-plus-contrib 
+    :init
+    (setq org-catch-invisible-edits 'smart
+          org-ctrl-k-protect-subtree t
+          org-default-notes-file "~/Dropbox/org/notes.org"
+          org-directory "~/Dropbox/org"
+          org-ellipsis "…"
+          org-list-allow-alphabetical t
+          org-list-indent-offset 2
+          org-pretty-entities t
+          org-startup-align-all-tables t
+          org-startup-with-inline-images (display-graphic-p)
+          org-support-shift-select t
+          org-use-sub-superscripts (quote {}))
+    (setq org-modules '(org-bibtex
+                        org-crypt
+                        org-docview
+                        org-eww
+                        org-info
+                        org-irc
+                        org-protocol))
+    (setq org-capture-templates
+          (quote
+           (("t" "todo" entry
+             (file "~/Dropbox/org/refile.org")
+             "* TODO %?\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("r" "respond" entry
+             (file "~/Dropbox/org/refile.org")
+             "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("n" "note" entry
+             (file "~/Dropbox/org/notes.org")
+             "* %? :NOTE:\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("j" "journal" entry
+             (file+olp+datetree "~/Dropbox/org/journal.org")
+             "* %?\n  "
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("p" "phone" entry
+             (file "~/Dropbox/org/refile.org")
+             "* PHONE %? :PHONE:\n  "
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("m" "mail" entry
+             (file "~/Dropbox/org/refile.org")
+             "* MAIL from %:from on %:subject\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t))))
+    (setq org-enforce-todo-checkbox-dependencies t
+          org-enforce-todo-dependencies t
+          org-log-done 'time
+          org-log-into-drawer t)
+    (setq org-todo-keywords
+          (quote
+           ((sequence "TODO(t)"
+                      "NEXT(n)"
+                      "STARTED(s!)"
+                      "DELEGATED(w@/!)"
+                      "HOLD(h@/!)"
+                      "|"
+                      "CANCELLED(c@)"
+                      "DONE(d!)"))))
+    (setq org-log-refile 'time
+          org-refile-allow-creating-parent-nodes 'confirm
+          org-refile-targets (quote ((nil :maxlevel . 5)
+                                     (org-agenda-files :maxlevel . 5)))
+          org-refile-use-outline-path (quote file))
+    (setq org-clock-in-resume t
+          org-clock-out-remove-zero-time-clocks t
+          org-clock-persist 'clock
+          org-time-clocksum-format '(:hours "%d" :require-hours t
+                                            :minutes ":%02d" :require-minutes t))
+    (setq org-agenda-files '("~/Dropbox/org")
+          org-agenda-remove-tags t)
 
-      (setq org-agenda-custom-commands
-            (quote
-             (("n" "Agenda and all TODO's"
-               ((agenda "" nil)
-                (alltodo "" nil))
-               nil)
-              ("wr" "Weekly Report"
-               ((todo "DONE|CANCELLED"
-                      ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-                (todo "STARTED|NEXT"
-                      ((org-agenda-overriding-header "WIP")))
-                (todo "HOLD|DELEGATED"
-                      ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-                (todo "TODO"
-                      ((org-agenda-overriding-header "Task Backlog"))))
-               nil nil))))
-      (setq org-src-tab-acts-natively t
-            org-hide-block-startup t
-            org-src-window-setup 'current-window)
-      (setq org-confirm-babel-evaluate nil)
-      (setq org-babel-clojure-backend 'cider
-            org-babel-clojure-sync-nrepl-timeout 0)
-      (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
-            org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
-            org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
-      (setq org-export-backends '(ascii beamer html
-                                        latex texinfo
-                                        md odt org)
-            org-export-coding-system 'utf-8)
-      (setq org-latex-classes
-            '(("beamer"
-               "\\documentclass[presentation]{beamer}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("hitec-article"
-               "\\documentclass[12pt]{hitec}
-      [DEFAULT-PACKAGES]
-      [PACKAGES]
-      [NO-EXTRA]
-      \\settextfraction{0.95}\n"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("article" "\\documentclass[11pt]{article}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("korma-article" "\\documentclass[11pt]{scrartcl}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("report"
-               "\\documentclass[11pt]{report}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("korma-report"
-               "\\documentclass[11pt]{scrreport}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("korma-book"
-               "\\documentclass[11pt]{scrbook}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("book"
-               "\\documentclass[11pt]{book}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
-      (setq org-latex-hyperref-template
-            "\\hypersetup{pdfauthor={%a},
-                          pdftitle={%t},
-                          pdfkeywords={%k},
-                          pdfsubject={%d},
-                          pdfcreator={%c},
-                          pdflang={%L},
-                          colorlinks=true,
-                          linkcolor=blue}")
-      (setq org-latex-listings t
-            org-latex-listings-options '(("basicstyle" "\\tiny")
-                                         ("frame" "single")
-                                         ("stringstyle" "\\color{orange}")
-                                         ("commentstyle" "\\color{cyan}")
-                                         ("keywordstyle" "\\color{blue}")
-                                         ("showstringspaces" "false")
-                                         ("breakatwhitespace" "false")
-                                         ("breaklines" "true")))
-      (setq org-latex-pdf-process
-            '("lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"))
-      (setq org-latex-packages-alist
-            '(("" "parskip")
-              ("" "xcolor")
-              ("" "listings")))
-      (setq org-html-checkbox-type 'unicode
-            org-html-html5-fancy t
-            org-html-doctype "html5")
-      (setq org-ascii-charset 'utf-8
-            org-ascii-text-width 79)
-      :config
-      (org-element-update-syntax)
-      (org-clock-persistence-insinuate)
+    (setq org-agenda-custom-commands
+          (quote
+           (("n" "Agenda and all TODO's"
+             ((agenda "" nil)
+              (alltodo "" nil))
+             nil)
+            ("wr" "Weekly Report"
+             ((todo "DONE|CANCELLED"
+                    ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+              (todo "STARTED|NEXT"
+                    ((org-agenda-overriding-header "WIP")))
+              (todo "HOLD|DELEGATED"
+                    ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+              (todo "TODO"
+                    ((org-agenda-overriding-header "Task Backlog"))))
+             nil nil))))
+    (setq org-src-tab-acts-natively t
+          org-hide-block-startup t
+          org-src-window-setup 'current-window)
+    (setq org-confirm-babel-evaluate nil)
+    (setq org-babel-clojure-backend 'cider
+          org-babel-clojure-sync-nrepl-timeout 0)
+    (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
+          org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
+          org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
+    (setq org-export-backends '(ascii beamer html
+                                      latex texinfo
+                                      md odt org)
+          org-export-coding-system 'utf-8)
+    (setq org-latex-classes
+          '(("beamer"
+             "\\documentclass[presentation]{beamer}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("hitec-article"
+             "\\documentclass[12pt]{hitec}
+    [DEFAULT-PACKAGES]
+    [PACKAGES]
+    [NO-EXTRA]
+    \\settextfraction{0.95}\n"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("article" "\\documentclass[11pt]{article}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("korma-article" "\\documentclass[11pt]{scrartcl}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("report"
+             "\\documentclass[11pt]{report}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("korma-report"
+             "\\documentclass[11pt]{scrreport}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("korma-book"
+             "\\documentclass[11pt]{scrbook}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("book"
+             "\\documentclass[11pt]{book}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+    (setq org-latex-hyperref-template
+          "\\hypersetup{pdfauthor={%a},
+                        pdftitle={%t},
+                        pdfkeywords={%k},
+                        pdfsubject={%d},
+                        pdfcreator={%c},
+                        pdflang={%L},
+                        colorlinks=true,
+                        linkcolor=blue}")
+    (setq org-latex-listings t
+          org-latex-listings-options '(("basicstyle" "\\tiny")
+                                       ("frame" "single")
+                                       ("stringstyle" "\\color{orange}")
+                                       ("commentstyle" "\\color{cyan}")
+                                       ("keywordstyle" "\\color{blue}")
+                                       ("showstringspaces" "false")
+                                       ("breakatwhitespace" "false")
+                                       ("breaklines" "true")))
+    (setq org-latex-pdf-process
+          '("lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"))
+    (setq org-latex-packages-alist
+          '(("" "parskip")
+            ("" "xcolor")
+            ("" "listings")))
+    (setq org-html-checkbox-type 'unicode
+          org-html-html5-fancy t
+          org-html-doctype "html5")
+    (setq org-ascii-charset 'utf-8
+          org-ascii-text-width 79)
+    :config
+    (org-element-update-syntax)
+    (org-clock-persistence-insinuate)
 
-      (add-to-list 'org-structure-template-alist
-                   '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-                     "<src lang=\"python\">\n?\n</src>"))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+    ;;                "<src lang=\"python\">\n?\n</src>"))
 
-      (add-to-list 'org-structure-template-alist
-                   '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-                     "<src lang=\"emacs-lisp\">\n?\n</src>"))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+    ;;                "<src lang=\"emacs-lisp\">\n?\n</src>"))
 
-      (add-to-list 'org-structure-template-alist
-                   '("clj" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-                     "<src lang=\"clojure-mode\">\n?\n</src>"))
-      (add-to-list 'org-structure-template-alist
-                   '("cl" "#+BEGIN_SRC lisp\n?\n#+END_SRC"
-                     "<src lang=\"lisp-mode\">\n?\n</src>"))
-      (org-babel-do-load-languages
-       'org-babel-load-languages
-       '((emacs-lisp . t)
-         (clojure . t)
-         (css . t)
-         (dot . t)
-         (java . t)
-         (js . t)
-         (latex . t)
-         (ledger . t)
-         (lisp . t)
-         (makefile . t)
-         (org . t)
-         (perl . t)
-         (python . t)
-         (ruby . t)
-         (scheme . t)
-         (shell . t)
-         (sql . t)
-         (C . t)
-         (ditaa . t)
-         (plantuml . t)
-         (gnuplot . t)))
-      (bind-key "C-c l" 'org-store-link)
-      (bind-key "C-c a" 'org-agenda)
-      (bind-key "C-c b" 'org-switchb)
-      (bind-key "C-c r" 'org-capture))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("clj" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+    ;;                "<src lang=\"clojure-mode\">\n?\n</src>"))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("cl" "#+BEGIN_SRC lisp\n?\n#+END_SRC"
+    ;;                "<src lang=\"lisp-mode\">\n?\n</src>"))
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (clojure . t)
+       (css . t)
+       (dot . t)
+       (java . t)
+       (js . t)
+       (latex . t)
+       (ledger . t)
+       (lisp . t)
+       (makefile . t)
+       (org . t)
+       (perl . t)
+       (python . t)
+       (ruby . t)
+       (scheme . t)
+       (shell . t)
+       (sql . t)
+       (C . t)
+       (ditaa . t)
+       (plantuml . t)
+       (gnuplot . t)))
+    (bind-key "C-c l" 'org-store-link)
+    (bind-key "C-c a" 'org-agenda)
+    (bind-key "C-c b" 'org-switchb)
+    (bind-key "C-c r" 'org-capture))
 
 
 #+END_SRC
@@ -535,19 +533,22 @@ normally ensure a 'stable' environment.
            (shrink-window arg)
          (enlarge-window arg)))
 
-     (defhydra my-hydra-wizards ()
-       "Emacspeak Wizards"
-       ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-       ;; ("b" emacspeak-wizards-cycle-browser "Browser")
-       ("e" emacspeak-wizards-eww-buffer-list "eww")
-       ("r" emacspeak-wizards-find-file-as-root "root")
-       ("g" emacspeak-wizards-find-grep "Grep")
-       ("f" emacspeak-wizards-finder-find "Find")
-       ("F" emacspeak-wizards-generate-finder "Finder")
-       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-       ("s" emacspeak-wizards-spot-words "Spot")
-       ("t" emacspeak-wizards-tramp-open-location "Tramp")
-       ("q" nil "Quit"))
+     (when *run_emacspeak*
+       (defhydra my-hydra-wizards ()
+         "Emacspeak Wizards"
+         ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
+         ;; ("b" emacspeak-wizards-cycle-browser "Browser")
+         ("e" emacspeak-wizards-eww-buffer-list "eww")
+         ("r" emacspeak-wizards-find-file-as-root "root")
+         ("g" emacspeak-wizards-find-grep "Grep")
+         ("f" emacspeak-wizards-finder-find "Find")
+         ("F" emacspeak-wizards-generate-finder "Finder")
+         ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
+         ("s" emacspeak-wizards-spot-words "Spot")
+         ("t" emacspeak-wizards-tramp-open-location "Tramp")
+         ("q" nil "Quit"))
+
+       )
 
      (defhydra my-hydra-zoom ()
        "zoom"
@@ -556,13 +557,14 @@ normally ensure a 'stable' environment.
        ("0" (text-scale-adjust 0) "reset")
        ("q" nil "quit" :color blue))
 
-     (defhydra my-hydra-error ()
-       "goto-error"
-       ("h" first-error "first")
-       ("j" next-error "next")
-       ("k" previous-error "prev")
-       ("v" recenter-top-bottom "recenter")
-       ("q" nil "quit"))
+     ;;  (defhydra my-hydra-error ()
+     ;;     "goto-error"
+     ;;     ("h" first-error "first")
+     ;;     ("j" next-error "next")
+     ;;     ("k" previous-error "prev")
+     ;;     ("v" recenter-top-bottom "recenter")
+     ;;     ("q" nil "quit"))
+     ;; -
      (require 'winner)
      (defhydra my-hydra-window (:color red :hint nil)
        "
@@ -750,13 +752,6 @@ Some basic defaults and customizations
                 tab-width 4)
 #+END_SRC
 
-** Coding System
-#+BEGIN_SRC emacs-lisp
-  (prefer-coding-system 'utf-8)
-  (when (display-graphic-p)
-    (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
-#+END_SRC
-
 * Fonts
 Set the default font
 
@@ -835,7 +830,8 @@ Set up the exec path for emacs
   (use-package undo-tree
     :ensure t
     :diminish undo-tree-mode
-    :config (global-undo-tree-mode))
+    :config
+    (global-undo-tree-mode))
 #+END_SRC
 
 ** Ido Mode
@@ -954,7 +950,7 @@ your emacs!
 #+END_SRC 
 
 * Editing 
-Text editing stuff
+  Text editing stuff
 
 ** Basic Tweaks 
 Some simple functions and bindings stolen from [[http://github.com/purcell/emacs.d]]
@@ -1244,34 +1240,34 @@ Another package which sounds very useful, but which I never seem to use!
 Some addditional outlining support to make more things work like org-mode!
 
  #+BEGIN_SRC emacs-lisp
-   (defvar outline-minor-mode-prefix "\M-#")
+   ;; (use-package outline
+   ;;   :config
+   ;;   (defvar outline-minor-mode-prefix "\M-#"))
 
-   (require 'outline)
 
-   (use-package outshine
+   ;; (use-package outorg
+   ;;   :ensure t)
+
+   ;; (use-package outshine
+   ;;   :ensure t
+   ;;   :init
+   ;;   (setq outshine-use-speed-commands t)
+   ;;   :config
+   ;;   (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
+   ;;   (add-hook 'clojure-mode-hook 'outshine-mode)
+   ;;   (add-hook 'jst-mode-hook 'outshine-mode)
+   ;;   (add-hook 'message-mode-hook 'outshine-mode))
+
+   ;; (use-package navi-mode
+   ;;   :ensure t)
+
+   (use-package orgalist
      :ensure t
      :init
-     (setq outshine-use-speed-commands t)
-     :config
-     (add-hook 'outline-minor-mode-hook 'outshine-hook-function))
-
-   (use-package outorg
-     :ensure t)
-
-   (use-package navi-mode
-     :ensure t)
+     (add-hook 'message-mode 'orgalist-mode))
 
 #+END_SRC
 
-** CUA Mode
-
-Lets try out CUA mode for a while and see if I can re-train my brain to use
-these bindings as it would make life easier with other applications. 
-
-#+BEGIN_SRC emacs-lisp
-  ;;(cua-mode)
-
-#+END_SRC
 * Programming Tweaks 
 Configuration relating to programming
 
@@ -1433,11 +1429,11 @@ Not sure if imenu is of any real value. Disabling it for now
   ;; (use-package flycheck-pos-tip
   ;;   :ensure t)
 
-  (use-package flycheck-inline
-    :ensure t
-    :init
-    (with-eval-after-load 'flycheck
-    (global-flycheck-inline-mode)))
+  ;; (use-package flycheck-inline
+  ;;   :ensure t
+  ;;   :init
+  ;;   (with-eval-after-load 'flycheck
+  ;;   (global-flycheck-inline-mode)))
 
   (use-package flycheck
     :ensure t
@@ -1445,7 +1441,6 @@ Not sure if imenu is of any real value. Disabling it for now
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
-    ;;;(setq flycheck-display-errors-function #'flycheck-pos-tip-error-messages)
     :init
     (global-flycheck-mode))
 
@@ -1705,8 +1700,8 @@ look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub
 Setup version control stuff
 
 #+BEGIN_SRC emacs-lisp
-  (use-package gh
-    :ensure t)
+  ;; (use-package gh
+  ;;   :ensure t)
 
   (use-package git-commit
     :ensure t)
@@ -1718,9 +1713,9 @@ Setup version control stuff
     :commands (git-timemachine-toggle git-timemachine 
                git-timemachine-switch-browser))
 
-  (use-package github-browse-file
-    :ensure t
-    :commands (github-browse-file github-browse-file-blame))
+  ;; (use-package github-browse-file
+  ;;   :ensure t
+  ;;   :commands (github-browse-file github-browse-file-blame))
 
   (use-package gitignore-mode
     :ensure t)
@@ -2408,7 +2403,9 @@ First, setup some load paths.
 Next, load some additional packages we need.
 
 #+BEGIN_SRC emacs-lisp
-  (require 'emacspeak-mu4e)
+  (when *run_emacspeak*
+    (require 'emacspeak-mu4e))
+
   (require 'org-mu4e)
 
 #+END_SRC
@@ -2436,7 +2433,7 @@ Now setup mu4e.
     (setq org-mu4e-link-query-in-headers-mode nil)
     :config
     (add-hook 'message-mode-hook 'turn-on-orgtbl)
-    (add-hook 'message-mode-hook 'outline-minor-mode)
+    ;;(add-hook 'message-mode-hook 'outline-minor-mode)
     (setq mu4e-bookmarks `(,(make-mu4e-bookmark
                              :name  "Unread messages"
                              :query "flag:unread AND NOT flag:trashed"
@@ -2637,6 +2634,13 @@ Start the emacs server so that we can use emacsclient
   (use-package server
     :config
     (server-start))
+#+END_SRC
+
+* Coding System
+#+BEGIN_SRC emacs-lisp
+  (prefer-coding-system 'utf-8)
+  (when (display-graphic-p)
+    (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
 #+END_SRC
 
 * Startup Window
