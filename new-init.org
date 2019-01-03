@@ -60,9 +60,7 @@ bit.
 ** Load Emacspeak
 
 #+begin_src emacs-lisp
-  (if (getenv "RUN_EMACSPEAK")
-      (defconst *run_emacspeak* t)
-    (defconst *run_emacspeak* nil))
+  (defconst *run_emacspeak* t)
 #+end_src
 
 * Emacspeak
