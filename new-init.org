@@ -1,4 +1,4 @@
-#+TITLE: Emacs init.el File
+#+TITEL: Emacs init.el File
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
@@ -931,6 +931,20 @@ Set up the exec path for emacs
     (bind-key "C-x C-r" 'ido-recentf-open))
 #+END_SRC
 
+** Counsel
+
+#+begin_src emacs-lisp
+  (use-package counsel
+    :ensure t
+    :bind (("C-x C-m" . counsel-M-x)
+           ("C-h f" . counsel-describe-function)
+           ("C-h v" . counsel-describe-variable)
+           ("M-i" . counsel-imenu)
+           ("C-c i" . counsel.unicode-char)
+           :map read-expression-map
+           ("C-r" . counsel-expression-history)))
+#+end_src
+
 ** Swiper
 #+BEGIN_SRC emacs-lisp
   (use-package swiper
@@ -1016,16 +1030,16 @@ which adds some editing tweaks
 Display lines to show where page breaks are. Useful in making the
 browse-kill-ring mode look a little better. See [[https://github.com/purcell/page-break-lines][page-break-lines on GitHub]]
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package page-break-lines
-  ;;   :ensure t
-  ;;   :diminish page-break-lines-mode
-  ;;   :config
-  ;;   (progn 
-  ;;     (global-page-break-lines-mode)
-  ;;     (push 'browse-kill-ring-mode page-break-lines-modes)
-  ;;     (push 'sql-mode page-break-lines-modes)
-  ;;     (push 'text-mode page-break-lines-modes)))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package page-break-lines
+    :ensure t
+    :diminish page-break-lines-mode
+    :config
+    (progn 
+      (global-page-break-lines-mode)
+      (push 'browse-kill-ring-mode page-break-lines-modes)
+      (push 'sql-mode page-break-lines-modes)
+      (push 'text-mode page-break-lines-modes)))
 
 #+END_SRC
 
@@ -1035,16 +1049,16 @@ While this seems like a really handy utility, I find I never seem to use it, so
 commenting it out for now.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package move-dup
-  ;;   :ensure t
-  ;;   :commands (md/move-lines-up
-  ;;             md/move-lines-down
-  ;;             md/duplicate-down
-  ;;             md/duplicate-up)
-  ;;   :bind (("M-S-<up>" . md/move-lines-up)
-  ;;          ("M-S-<down>" . md/move-lines-down)
-  ;;          ("C-c p" . md/duplicate-down)
-  ;;          ("C-c P" . md/duplicate-up)))
+  (use-package move-dup
+    :ensure t
+    :commands (md/move-lines-up
+              md/move-lines-down
+              md/duplicate-down
+              md/duplicate-up)
+    :bind (("M-S-<up>" . md/move-lines-up)
+           ("M-S-<down>" . md/move-lines-down)
+           ("C-c p" . md/duplicate-down)
+           ("C-c P" . md/duplicate-up)))
 #+END_SRC
 
 ** Whole Line or Region
@@ -1071,17 +1085,25 @@ defined.
     :ensure t
     :commands (unfill-paragraph unfill-region unfill-toggle))
 
-  ;; (use-package fill-column-indicator
-  ;;   :ensure t
-  ;;   :diminish fci-mode
-  ;;   :init
-  ;;   (setq fci-rule-width 3)
-  ;;   :config
-  ;;   (progn
-  ;;     (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
-  ;;     (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
-  ;;     (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
 #+END_SRC
+
+*** Fill Column Indicator
+
+Stopped using this package as it is not compatible with org src block editing
+
+#+begin_src emacs-lisp :tangle no
+    (use-package fill-column-indicator
+      :ensure t
+      :diminish fci-mode
+      :init
+      (setq fci-rule-width 3)
+      :config
+      (progn
+        (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
+        (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
+        (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
+
+#+end_src
 
 ** Whitespace Cleanup
 Cleanup whitespace
@@ -1099,41 +1121,39 @@ Cleanup whitespace
     (add-hook 'prog-mode-hook #'whitespace-cleanup-mode)
     (add-hook 'text-mode-hook #'whitespace-mode)
     (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
-    (add-hook 'org-mode-hook #'whitespace-mode)
-    ;; (global-whitespace-mode)
-    ;; (global-whitespace-cleanup-mode)
-    )
+    (add-hook 'org-mode-hook #'whitespace-mode))
 
 #+END_SRC
 
 ** Fix the mark
-Enable setting of mark without setting of transient mark mode
+Enable setting of mark without setting of transient mark mode. While this seems
+like a good idea, I don't seem to use it. Commenting it out for now.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (defun push-mark-no-activate ()
-  ;;   "Pushes `point' to `mark-ring' and does not activate the region
-  ;;    Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
-  ;;   (interactive)
-  ;;   (push-mark (point) t nil)
-  ;;   (message "Pushed mark to ring"))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (defun push-mark-no-activate ()
+    "Pushes `point' to `mark-ring' and does not activate the region
+     Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
+    (interactive)
+    (push-mark (point) t nil)
+    (message "Pushed mark to ring"))
 
-  ;; (bind-key "C-`" 'push-mark-no-activate)
+  (bind-key "C-`" 'push-mark-no-activate)
 
-  ;; (defun jump-to-mark ()
-  ;;   "Jumps to the local mark, respecting the `mark-ring' order.
-  ;;   This is the same as using \\[set-mark-command] with the prefix argument."
-  ;;   (interactive)
-  ;;   (set-mark-command 1))
+  (defun jump-to-mark ()
+    "Jumps to the local mark, respecting the `mark-ring' order.
+    This is the same as using \\[set-mark-command] with the prefix argument."
+    (interactive)
+    (set-mark-command 1))
 
-  ;; (bind-key "M-`" 'jump-to-mark)
+  (bind-key "M-`" 'jump-to-mark)
 
-  ;; (defun exchange-point-and-mark-no-activate ()
-  ;;   "Identical to \\[exchange-point-and-mark] but will not activate the region."
-  ;;   (interactive)
-  ;;   (exchange-point-and-mark)
-  ;;   (deactivate-mark nil))
+  (defun exchange-point-and-mark-no-activate ()
+    "Identical to \\[exchange-point-and-mark] but will not activate the region."
+    (interactive)
+    (exchange-point-and-mark)
+    (deactivate-mark nil))
 
-  ;; (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
+  (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
 #+END_SRC
 
 ** Searching
@@ -1185,11 +1205,6 @@ Using ~ag~ package for searches. This needs some OS support
            ("TAB" . company-indent-or-complete-common))
     :config
     (global-company-mode 1)
-    ;; (add-hook 'after-init-hook
-    ;;           (lambda ()
-    ;;             (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-    ;;                                       company-preview-if-just-one-frontend
-    ;;                                       company-echo-metadata-frontend))))
     (add-to-list 'company-backends 'company-elm))
 
   (use-package company-auctex
@@ -1226,48 +1241,88 @@ Using ~ag~ package for searches. This needs some OS support
 
 #+END_SRC
 
-** Aok
-
-Another package which sounds very useful, but which I never seem to use!
-
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package aok
-  ;;   :ensure t)
-#+END_SRC
-
 ** Outlining 
 
 Some addditional outlining support to make more things work like org-mode!
+*** Narrow/widern
 
- #+BEGIN_SRC emacs-lisp
-   ;; (use-package outline
-   ;;   :config
-   ;;   (defvar outline-minor-mode-prefix "\M-#"))
+#+begin_src emacs-lisp
+  (defun tx/narrow-or-widen-dwim (p)
+    "If the buffer is narrowed, it widens. Otherwise, it narrows
+  intelligently.  Intelligently means: region, org-src-block,
+  org-subtree, or defun, whichever applies first.  Narrowing to
+  org-src-block actually calls `org-edit-src-code'.
 
+  With prefix P, don't widen, just narrow even if buffer is already
+  narrowed."
+    (interactive "P")
+    (declare (interactive-only))
+    (cond ((and (buffer-narrowed-p) (not p)) (widen))
+          ((and (boundp 'org-src-mode) org-src-mode (not p))
+           (org-edit-src-exit))
+          ((region-active-p)
+           (narrow-to-region (region-beginning) (region-end)))
+          ((derived-mode-p 'org-mode)
+           (cond ((ignore-errors (org-edit-src-code))
+                  (delete-other-windows))
+                 ((org-at-block-p)
+                  (org-narrow-to-block))
+                 (t (org-narrow-to-subtree))))
+          ((derived-mode-p 'prog-mode) (narrow-to-defun))
+          (t (error "Please select a region to narrow to"))))
 
-   ;; (use-package outorg
-   ;;   :ensure t)
+  (eval-after-load 'org-src
+    '(bind-key "C-x C-s" 'org-edit-src-exit org-src-mode-map))
+#+end_src
 
-   ;; (use-package outshine
-   ;;   :ensure t
-   ;;   :init
-   ;;   (setq outshine-use-speed-commands t)
-   ;;   :config
-   ;;   (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
-   ;;   (add-hook 'clojure-mode-hook 'outshine-mode)
-   ;;   (add-hook 'jst-mode-hook 'outshine-mode)
-   ;;   (add-hook 'message-mode-hook 'outshine-mode))
+*** Outshine
 
-   ;; (use-package navi-mode
-   ;;   :ensure t)
+#+begin_src emacs-lisp :tangle no
+     (use-package outline
+       :config
+       (defvar outline-minor-mode-prefix "\M-#"))
 
+     (use-package outorg
+       :ensure t)
+
+     (use-package outshine
+       :ensure t
+       :init
+       (setq outshine-use-speed-commands t)
+       :config
+       (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
+       (add-hook 'clojure-mode-hook 'outshine-mode)
+       (add-hook 'jst-mode-hook 'outshine-mode)
+       (add-hook 'message-mode-hook 'outshine-mode))
+
+     (use-package navi-mode
+       :ensure t)
+
+#+end_src
+
+*** orgalist
+
+#+begin_src emacs-lisp 
    (use-package orgalist
      :ensure t
      :init
      (add-hook 'message-mode 'orgalist-mode))
 
-#+END_SRC
+#+end_src
 
+*** hideshow
+
+#+begin_src emacs-lisp
+  (use-package hideshow
+    :ensure t
+    :hook ((prog-mode . hs-minor-mode)))
+
+  (defun tx/toggle-fold ()
+    (interactive)
+    (save-excursion
+      (end-of-line)
+      (hs-toggle-hiding)))
+#+end_src
 * Programming Tweaks 
 Configuration relating to programming
 
@@ -1303,8 +1358,6 @@ Highlight symbols and enable navigation by symbol in programming modes. See
 ** Goto Address
 Lets make addresses action buttons when we find them in comments in
 programming buffers
-
-Seems to be a problem with this mode and newest org-plus-contrib. Disabling for now.
 
 #+BEGIN_SRC emacs-lisp
   (dolist (hook (if (fboundp 'prog-mode)
@@ -1392,49 +1445,35 @@ to add some paredit specific advice to provide speech feedback for this mode.
 ** Smartparens
 Not sure I like this mode compared to paredit. Disabling it for now.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package smartparens-config
-  ;;     :ensure smartparens
-  ;;     :config
-  ;;     (progn
-  ;;       (sp-use-smartparens-bindings)
-  ;;       (smartparens-global-mode)
-  ;;       (show-smartparens-global-mode))
-  ;;     (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
-  ;;     (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package smartparens-config
+    :ensure smartparens
+    :config
+    (progn
+      (sp-use-smartparens-bindings)
+      (smartparens-global-mode)
+      (show-smartparens-global-mode))
+    (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
+    (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
 
 #+END_SRC
 
 ** Imenu
-Not sure if imenu is of any real value. Disabling it for now
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package imenu-anywhere
-  ;;   :ensure t)
+#+BEGIN_SRC emacs-lisp 
+  (use-package imenu-anywhere
+    :ensure t)
 #+END_SRC
 
 ** Line numbers
+
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package linum
-  ;;   :config
-  ;;   (add-hook 'prog-mode-hook 'linum-mode))
-
   (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-
 #+END_SRC
 
 ** flycheck
 
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package flycheck-pos-tip
-  ;;   :ensure t)
-
-  ;; (use-package flycheck-inline
-  ;;   :ensure t
-  ;;   :init
-  ;;   (with-eval-after-load 'flycheck
-  ;;   (global-flycheck-inline-mode)))
-
   (use-package flycheck
     :ensure t
     :config
@@ -1448,14 +1487,7 @@ Not sure if imenu is of any real value. Disabling it for now
 ** Highlight Indentation 
 Highlight the indentation level in programming modes.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package highlight-indent-guides
-  ;;   :ensure t
-  ;;   :init
-  ;;   (setq highlight-indent-guides-method 'character)
-  ;;   :config
-  ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
-
+#+BEGIN_SRC emacs-lisp 
   (use-package highlight-indentation
     :ensure t
     :config
@@ -1553,7 +1585,7 @@ already built-in.
 ** Regex Tool
 Add the handy ~regex-tool~ package
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package regex-tool
     :ensure t
     :commands (regex-tool))
@@ -1595,27 +1627,31 @@ on GitHub]]
 #+END_SRC
 
 ** REST Client
-#+BEGIN_SRC emacs-lisp
+
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package restclient
     :ensure t)
 
 #+END_SRC
 
 ** Alert
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package alert
-  ;;   :ensure t
-  ;;   :config
-  ;;   (setq alert-fade-time 10)
-  ;;   (when *is-a-mac*
-  ;;     (setq alert-default-style 'growl))
-  ;;   (setq alert-reveal-idle-time 120))
+
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package alert
+    :ensure t
+    :config
+    (setq alert-fade-time 10)
+    (when *is-a-mac*
+      (setq alert-default-style 'growl))
+    (setq alert-reveal-idle-time 120))
 #+END_SRC
 
 ** Write Good
-#+BEGIN_SRC emacs-lisp
+
+#+BEGIN_SRC emacs-lisp 
   (use-package writegood-mode
-    :ensure t)
+    :ensure t
+    :bind ("C-M-g" . writegood-mode))
 #+END_SRC
 
 ** Lorem Ipsum 
@@ -1681,18 +1717,17 @@ I like to have directories listed first. Easiest way to do this is use the
 When I'm a bit bored or want a break from my own problems, I sometimes like to
 look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub]].
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package sx
     :ensure t
-    ;; :commands (sx-bug-report sx-authenticate sx-inbox sx-inbox-notifications
-    ;;                          sx-org-get-link sx-ask sx-search
-    ;;                          sx-search-tag-at-point sx-tab-all-questions
-    ;;                          sx-tab-unanswered sx-tab-unanswered-my-tags
-    ;;                          sx-tab-featured sx-tab-starred
-    ;;                          sx-tab-frontpage sx-tab-newest
-    ;;                          sx-tab-topvoted sx-tab-hot
-    ;;                          sx-tab-week sx-tab-month)
-    )
+    :commands (sx-bug-report sx-authenticate sx-inbox sx-inbox-notifications
+                             sx-org-get-link sx-ask sx-search
+                             sx-search-tag-at-point sx-tab-all-questions
+                             sx-tab-unanswered sx-tab-unanswered-my-tags
+                             sx-tab-featured sx-tab-starred
+                             sx-tab-frontpage sx-tab-newest
+                             sx-tab-topvoted sx-tab-hot
+                             sx-tab-week sx-tab-month))
 
 #+END_SRC
 
@@ -1700,9 +1735,6 @@ look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub
 Setup version control stuff
 
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package gh
-  ;;   :ensure t)
-
   (use-package git-commit
     :ensure t)
     :config
@@ -1712,10 +1744,6 @@ Setup version control stuff
     :ensure t
     :commands (git-timemachine-toggle git-timemachine 
                git-timemachine-switch-browser))
-
-  ;; (use-package github-browse-file
-  ;;   :ensure t
-  ;;   :commands (github-browse-file github-browse-file-blame))
 
   (use-package gitignore-mode
     :ensure t)
@@ -1732,23 +1760,25 @@ Setup version control stuff
 #+END_SRC
 
 ** ERC
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package erc
-  ;;   :commands 'erc
-  ;;   :init
-  ;;   (setq erc-hide-list '("JOIN" "PART" "QUIT")
-  ;;         erc-insert-timestamp-function 'erc-insert-timestamp-left
-  ;;         erc-timestamp-format "[%H:%M] "
-  ;;         erc-timestamp-only-if-changed-flag nil
-  ;;         erc-truncate-mode t)
-  ;;   :config
-  ;;   (add-hook
-  ;;    'window-configuration-change-hook
-  ;;    (lambda ()
-  ;;      (setq erc-fill-column (- (window-width) 2)))))
+
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package erc
+    :commands 'erc
+    :init
+    (setq erc-hide-list '("JOIN" "PART" "QUIT")
+          erc-insert-timestamp-function 'erc-insert-timestamp-left
+          erc-timestamp-format "[%H:%M] "
+          erc-timestamp-only-if-changed-flag nil
+          erc-truncate-mode t)
+    :config
+    (add-hook
+     'window-configuration-change-hook
+     (lambda ()
+       (setq erc-fill-column (- (window-width) 2)))))
 #+END_SRC
 
 ** Eshell
+
 #+BEGIN_SRC emacs-lisp
   (use-package eshell
     :commands 'eshell
@@ -1852,6 +1882,76 @@ Setup version control stuff
     :ensure t)
 
 #+END_SRC
+* Keymaps
+
+*** read-write-toggle
+
+#+begin_src emacs-lisp
+  (defun tx/read-write-toggle ()
+    "Toggles read-only in any relevant mode: ag-mode, Dired, or
+  just any file at all."
+    (interactive)
+    (if (equal major-mode 'ag-mode)
+        ;; wgrep-ag can support ag-mode
+        (wgrep-change-to-wgrep-mode)
+      ;; dired-toggle-read-only has its own conditional:
+      ;; if the mode is Dired, it will make the directory writable
+      ;; if it is not, it will just toggle read only, as desired
+      (dired-toggle-read-only)))
+#+end_src
+
+*** Scratch
+
+#+begin_src emacs-lisp
+  (defun tx/scratch ()
+      (interactive)
+      (switch-to-buffer-other-window (get-buffer-create "*scratch*")))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun tx/make-org-scratch ()
+    (interactive)
+    (find-file "~/Dropbox/org/scratch.org"))
+#+end_src
+
+** Toggle Map
+
+#+begin_src emacs-lisp
+  (bind-keys :prefix-map toggle-map
+             :prefix "C-x t"
+             ("d" . toggle-debug-on-error)
+             ("f" . tx/toggle-fold)
+             ("l" . linum-mode)
+             ("n" . tx/narrow-or-widen-dwim)
+             ("o" . org-mode)
+             ("r" . tx/read-write-toggle)
+             ("t" . text-mode)
+             ("w" . whitespace-mode))
+#+end_src
+** Launcher Map
+
+#+begin_src emacs-lisp
+  (bind-keys :prefix-map launcher-map
+             :prefix "C-x l"
+             ("A" . terminal) ;; save "a" for open-agenda
+             ("c" . calc)
+             ("C" . calendar)
+             ("d" . ediff-buffers)
+             ("e" . eshell)
+             ("E" . eww)
+             ("h" . man)
+             ("P" . proced)
+             ("s" . tx/scratch)
+             ("S" . tx/make-org-scratch))
+
+  (if *is-a-mac*
+    (use-package counsel-osx-app
+      :bind (:map launcher-map
+                  ("." . counsel-osx-app)))
+    (bind-keys :map launcher-map
+               ("." . counsel-linux-app)))
+
+#+end_src
 * Projectile 
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
@@ -2589,29 +2689,30 @@ have archived on this system, so keeping it below for reference.
 Looks like there has been no work done on VM since 2016. Suspect the client may
 have reached end-of-life!
 
-#+BEGIN_SRC emacs-lisp
-  ;; (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
-  ;; (add-to-list 'Info-additional-directory-list
-  ;;              (expand-file-name "~/bzr/vm/new-trunk/info"))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
+  (add-to-list 'Info-additional-directory-list
+               (expand-file-name "~/bzr/vm/new-trunk/info"))
 
-  ;; (require 'vm-autoloads)
+  (require 'vm-autoloads)
 
-  ;; ;; Some hacks to make VM use shr for HTML messages
+  ;; Some hacks to make VM use shr for HTML messages
 
-  ;; (defun vm-mime-display-internal-shr-text/html (start end layout)
-  ;;   "Use shr to inline HTML mails in the VM presentation buffer."
-  ;;   (shr-render-region start (1- end))
-  ;;   (put-text-property start end
-  ;;                      'text-rendered-by-shr t))
+  (defun vm-mime-display-internal-shr-text/html (start end layout)
+    "Use shr to inline HTML mails in the VM presentation buffer."
+    (shr-render-region start (1- end))
+    (put-text-property start end
+                       'text-rendered-by-shr t))
 
-  ;; ;; has to be done indirectly
-  ;; ;; Fake emacs-w3m, though we actually use shr
+  ;; has to be done indirectly
+  ;; Fake emacs-w3m, though we actually use shr
 
-  ;; (defalias 'vm-mime-display-internal-emacs-w3m-text/html
-  ;;   'vm-mime-display-internal-shr-text/html)
+  (defalias 'vm-mime-display-internal-emacs-w3m-text/html
+       'vm-mime-display-internal-shr-text/html)
 
 #+END_SRC
-* Emacs Server 
+
+*  Emacs Server
 Start the emacs server so that we can use emacsclient
 
 ** Edit Server
@@ -2647,19 +2748,20 @@ Start the emacs server so that we can use emacsclient
 My custom setup for initial window configuration. There is probably a better way
 to do this!
 
-#+BEGIN_SRC emacs-lisp
-  ;; (defun my-startup-window ()
-  ;;   (interactive)
-  ;;   (org-agenda nil "wr")
-  ;;   (delete-other-windows))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (defun my-startup-window ()
+    (interactive)
+    (org-agenda nil "wr")
+    (delete-other-windows))
 
-  ;; (setq warning-minimum-level :error
-  ;;       warning-minimum-log-level :error)
+  (setq warning-minimum-level :error
+        warning-minimum-log-level :error)
 
-  ;; (add-hook 'after-init-hook 'my-startup-window t)
+  (add-hook 'after-init-hook 'my-startup-window t)
 
-  ;; (defun my-after-init-config ()
-  ;;   (require 'ido-fix))
+  (defun my-after-init-config ()
+    (require 'ido-fix))
 
-;;  (add-hook 'after-init-hook 'my-after-init-config)
+  (add-hook 'after-init-hook 'my-after-init-config)
+
 #+END_SRC
