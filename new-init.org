@@ -1,4 +1,7 @@
-#+TITEL: Emacs init.el File
+#+TITE
+
+
+L: Emacs init.el File
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
@@ -199,6 +202,7 @@ package repositories. I add
 #+END_SRC
 
 * Use Package
+
 I just found John Wiegley's use-package macro, which I think is a really
 convenient way to manage the installation and configuration of ELPA
 packages. Therefore, I plan to migrate my configuration to use that package.
@@ -212,6 +216,7 @@ do the simple way
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'diminish)
+    (package-install 'delight)
     (package-install 'bind-key)
     (package-install 'use-package))
 
@@ -762,7 +767,7 @@ Set the default font
     (set-face-attribute 'default nil
                         :foundry "PfEd"
                         :family "Ricty Diminished"
-                        :height 220))
+                        :height 230))
 
 #+END_SRC
 
@@ -1066,7 +1071,7 @@ defined.
 #+BEGIN_SRC emacs-lisp
   (use-package whole-line-or-region
     :ensure t
-    :diminish whole-line-or-region-mode
+    :delight
     :config
     (progn
       (whole-line-or-region-mode t)
@@ -1368,6 +1373,7 @@ programming buffers
 #+BEGIN_SRC emacs-lisp
   (use-package rainbow-mode
     :ensure t
+    :delight
     :config
     (add-hook 'prog-mode-hook 'rainbow-mode)
     (add-hook 'ielm-mode-hook 'rainbow-mode)
@@ -1379,6 +1385,7 @@ programming buffers
 #+BEGIN_SRC emacs-lisp
   (use-package rainbow-delimiters 
     :ensure t
+    :delight
     :config
     (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
     (add-hook 'ielm-mode-hook 'rainbow-delimiters-mode)
@@ -1954,7 +1961,8 @@ Setup version control stuff
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
     :ensure t
-    :diminish projectile-mode
+    :delight '(:eval (concat " " (projectile-project-name)))
+    ;;:diminish projectile-mode
     ;; :commands (projectile-mode
     ;;            projectile-mode)
     :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
@@ -2254,6 +2262,7 @@ Setup ~clojure-mode~ and ~cider~.
 #+BEGIN_SRC emacs-lisp
   (use-package js2-mode
     :ensure t
+    :delight
     :mode "\\.js\\'"
     :interpreter ("node" . js2-mode)
     :init
@@ -2263,7 +2272,8 @@ Setup ~clojure-mode~ and ~cider~.
           js2-include-node-externs t
           js2-mode-assume-strict t
           js2-highlight-level 3
-          js2-global-externs '("describe" "it" "before" "after" "beforeEach" "afterEach"))
+          js2-global-externs '("describe" "it" "before"
+                               "after" "beforeEach" "afterEach"))
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (js2-imenu-extras-setup)
@@ -2271,6 +2281,7 @@ Setup ~clojure-mode~ and ~cider~.
 
   (use-package xref-js2
     :ensure t
+    :delight
     :config
     (add-hook 'js2-mode-hook
               (lambda ()
@@ -2286,6 +2297,7 @@ Setup ~clojure-mode~ and ~cider~.
 
   (use-package tern
     :ensure t
+    :delight
     :config
     (add-hook 'js2-mode-hook #'tern-mode))
 
@@ -2303,6 +2315,8 @@ Setup ~clojure-mode~ and ~cider~.
 
   (use-package indium
     :ensure t
+    :delight
+    ('indium-interaction-mode "JSI")
     :config
     (add-hook 'js2-mode-hook #'indium-interaction-mode))
 
