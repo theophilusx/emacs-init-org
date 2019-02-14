@@ -1,7 +1,4 @@
-#+TITE
-
-
-L: Emacs init.el File
+#+TITEL: Emacs init.el File
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
@@ -2319,6 +2316,16 @@ Setup ~clojure-mode~ and ~cider~.
     ('indium-interaction-mode "JSI")
     :config
     (add-hook 'js2-mode-hook #'indium-interaction-mode))
+
+  (use-package prettier-js
+    :ensure t
+    :init
+    (setq prettier-js-args '("--print-width" "80"
+                             "--tab-width" "2"
+                             "--no-bracket-spacing")
+          prettier-js-width-mode 'fill)
+    :config
+    (add-hook 'js2-mode-hook #'prettier-js-mode))
 
 #+END_SRC
 
