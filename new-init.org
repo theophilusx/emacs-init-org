@@ -1630,7 +1630,7 @@ on GitHub]]
 
 ** REST Client
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+BEGIN_SRC emacs-lisp 
   (use-package restclient
     :ensure t)
 
@@ -2326,6 +2326,9 @@ Setup ~clojure-mode~ and ~cider~.
           prettier-js-width-mode 'fill)
     :config
     (add-hook 'js2-mode-hook #'prettier-js-mode))
+
+  (use-package ng2-mode
+    :ensure t)
 
 #+END_SRC
 
