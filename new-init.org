@@ -249,7 +249,8 @@ normally ensure a 'stable' environment.
     :pin org
     :ensure org-plus-contrib 
     :init
-    (setq org-catch-invisible-edits 'smart
+    (setq org-agenda-show-outline-path nil
+          org-catch-invisible-edits 'smart
           org-ctrl-k-protect-subtree t
           org-default-notes-file "~/Dropbox/org/notes.org"
           org-directory "~/Dropbox/org"
