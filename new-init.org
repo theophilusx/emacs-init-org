@@ -1631,7 +1631,7 @@ on GitHub]]
 
 ** REST Client
 
-#+BEGIN_SRC emacs-lisp 
+#+BEGIN_SRC emacs-lisp
   (use-package restclient
     :ensure t)
 
