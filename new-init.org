@@ -2129,8 +2129,8 @@ Setup ~clojure-mode~ and ~cider~.
     (add-hook 'clojure-mode-hook #'subword-mode)
     (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
-  (use-package flycheck-clojure
-    :ensure t)
+  ;; (use-package flycheck-clojure
+  ;;   :ensure t)
 
   (use-package cider
     :ensure t
@@ -2150,9 +2150,10 @@ Setup ~clojure-mode~ and ~cider~.
     :config
     (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
     (add-hook 'cider-mode-hook #'cider-hydra-mode)
-    (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
-    (bind-key "c" 'clojure-cheatsheet cider-doc-map)
-    (flycheck-clojure-setup))
+    ;;(bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
+    ;; (bind-key "c" 'clojure-cheatsheet cider-doc-map)
+    ;;(flycheck-clojure-setup)
+    )
 
   (use-package clj-refactor
     :ensure t
