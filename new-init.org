@@ -2129,31 +2129,26 @@ Setup ~clojure-mode~ and ~cider~.
     (add-hook 'clojure-mode-hook #'subword-mode)
     (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
-  ;; (use-package flycheck-clojure
-  ;;   :ensure t)
+  (use-package flycheck-joker
+     :ensure t)
 
   (use-package cider
     :ensure t
     :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
     :init
-    (setq cider-prompt-for-symbol nil
-          cider-font-lock-dynamically '(macro core function var)
-          cider-eldoc-display-for-symbol-at-point nil
-          eldoc-echo-area-use-multiline-p t
-          cider-overlays-use-font-lock t
-          cider-use-overlays t
-          cider-show-error-buffer nil
-          cider-repl-display-help-banner nil
-          cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
-          cider-repl-history-file (expand-file-name "repl-history"
-                                                    user-emacs-directory))
+    (setq
+     ;; cider-prompt-for-symbol nil
+     ;; cider-font-lock-dynamically '(macro core function var)
+     cider-eldoc-display-for-symbol-at-point nil
+     eldoc-echo-area-use-multiline-p t
+     cider-overlays-use-font-lock t
+     cider-use-overlays t
+     cider-show-error-buffer nil
+     cider-repl-display-help-banner nil
+     cider-repl-history-file (expand-file-name "repl-history"))
     :config
     (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
-    (add-hook 'cider-mode-hook #'cider-hydra-mode)
-    ;;(bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
-    ;; (bind-key "c" 'clojure-cheatsheet cider-doc-map)
-    ;;(flycheck-clojure-setup)
-    )
+    (add-hook 'cider-mode-hook #'cider-hydra-mode))
 
   (use-package clj-refactor
     :ensure t
@@ -2164,13 +2159,12 @@ Setup ~clojure-mode~ and ~cider~.
     (add-hook 'clojure-mode-hook (lambda ()
                                    (clj-refactor-mode 1)
                                    ;; insert keybinding setup here
-                                   (cljr-add-keybindings-with-prefix "C-c C-m")))
-    )
+                                   (cljr-add-keybindings-with-prefix "C-c C-m"))))
 
 
-  (use-package inf-clojure
-    :ensure t
-    :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
+  ;; (use-package inf-clojure
+  ;;   :ensure t
+  ;;   :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
 #+END_SRC
 
 ** SQL
