@@ -86,7 +86,6 @@ First, setup a constant which tells emacs where to look for the emacspeak distro
 #+END_SRC
 
 
-
 ** Load Emacspeak
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
 then load it
@@ -106,6 +105,8 @@ then load it
           emacspeak-mail-alert nil
           emacspeak-play-emacspeak-startup-icon nil
           emacspeak-vm-use-raman-settings nil
+          emacspeak-play-program (expand-file "~/bin/play")
+          emacpseak-play-args nil
           mac-default-speech-rate 370        
           outloud-default-speech-rate 90
           sox-play (if *is-a-mac*
@@ -738,6 +739,7 @@ Some basic defaults and customizations
         save-interprogram-paste-before-kill t
         show-paren-delay 0
         show-paren-style 'mixed
+        tab-always-indent 'complete
         truncate-lines t
         visible-bell t
         select-enable-clipboard t
@@ -766,6 +768,7 @@ Set the default font
                         :foundry "PfEd"
                         :family "Ricty Diminished"
                         :height 230))
+
 
 #+END_SRC
 
@@ -1197,15 +1200,19 @@ Using ~ag~ package for searches. This needs some OS support
 
 *** Company
 #+BEGIN_SRC emacs-lisp
+  (add-to-list 'completion-styles 'initials t)
+
   (use-package company
     :ensure t
     :init
-    (setq company-idle-delay nil
+    (setq company-idle-delay 3.0
           company-selection-wrap-around t)
     :bind (("C-M-i" . company-complete)
            ("TAB" . company-indent-or-complete-common))
     :config
     (global-company-mode 1)
+    (dolist (backend '(company-eclim company-semantic))
+      (delq backend company-backends))
     (add-to-list 'company-backends 'company-elm))
 
   (use-package company-auctex
@@ -1242,88 +1249,101 @@ Using ~ag~ package for searches. This needs some OS support
 
 #+END_SRC
 
-** Outlining 
+*** Outlining 
 
-Some addditional outlining support to make more things work like org-mode!
-*** Narrow/widern
+Some addditional outlining support to make more things work like org-mode.
 
-#+begin_src emacs-lisp
-  (defun tx/narrow-or-widen-dwim (p)
-    "If the buffer is narrowed, it widens. Otherwise, it narrows
-  intelligently.  Intelligently means: region, org-src-block,
-  org-subtree, or defun, whichever applies first.  Narrowing to
-  org-src-block actually calls `org-edit-src-code'.
+**** Narrow/widern
 
-  With prefix P, don't widen, just narrow even if buffer is already
-  narrowed."
-    (interactive "P")
-    (declare (interactive-only))
-    (cond ((and (buffer-narrowed-p) (not p)) (widen))
-          ((and (boundp 'org-src-mode) org-src-mode (not p))
-           (org-edit-src-exit))
-          ((region-active-p)
-           (narrow-to-region (region-beginning) (region-end)))
-          ((derived-mode-p 'org-mode)
-           (cond ((ignore-errors (org-edit-src-code))
-                  (delete-other-windows))
-                 ((org-at-block-p)
-                  (org-narrow-to-block))
-                 (t (org-narrow-to-subtree))))
-          ((derived-mode-p 'prog-mode) (narrow-to-defun))
-          (t (error "Please select a region to narrow to"))))
+ #+begin_src emacs-lisp
+   (defun tx/narrow-or-widen-dwim (p)
+     "If the buffer is narrowed, it widens. Otherwise, it narrows
+   intelligently.  Intelligently means: region, org-src-block,
+   org-subtree, or defun, whichever applies first.  Narrowing to
+   org-src-block actually calls `org-edit-src-code'.
 
-  (eval-after-load 'org-src
-    '(bind-key "C-x C-s" 'org-edit-src-exit org-src-mode-map))
-#+end_src
+   With prefix P, don't widen, just narrow even if buffer is already
+   narrowed."
+     (interactive "P")
+     (declare (interactive-only))
+     (cond ((and (buffer-narrowed-p) (not p)) (widen))
+           ((and (boundp 'org-src-mode) org-src-mode (not p))
+            (org-edit-src-exit))
+           ((region-active-p)
+            (narrow-to-region (region-beginning) (region-end)))
+           ((derived-mode-p 'org-mode)
+            (cond ((ignore-errors (org-edit-src-code))
+                   (delete-other-windows))
+                  ((org-at-block-p)
+                   (org-narrow-to-block))
+                  (t (org-narrow-to-subtree))))
+           ((derived-mode-p 'prog-mode) (narrow-to-defun))
+           (t (error "Please select a region to narrow to"))))
 
-*** Outshine
+   (eval-after-load 'org-src
+     '(bind-key "C-x C-s" 'org-edit-src-exit org-src-mode-map))
+ #+end_src
 
-#+begin_src emacs-lisp :tangle no
-     (use-package outline
-       :config
-       (defvar outline-minor-mode-prefix "\M-#"))
+**** Outshine
 
-     (use-package outorg
-       :ensure t)
+ #+begin_src emacs-lisp :tangle no
+   (use-package outline
+     :config
+     (defvar outline-minor-mode-prefix "\M-#"))
 
-     (use-package outshine
-       :ensure t
-       :init
-       (setq outshine-use-speed-commands t)
-       :config
-       (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
-       (add-hook 'clojure-mode-hook 'outshine-mode)
-       (add-hook 'jst-mode-hook 'outshine-mode)
-       (add-hook 'message-mode-hook 'outshine-mode))
+   (use-package outorg
+     :ensure t)
 
-     (use-package navi-mode
-       :ensure t)
-
-#+end_src
-
-*** orgalist
-
-#+begin_src emacs-lisp 
-   (use-package orgalist
+   (use-package outshine
      :ensure t
      :init
-     (add-hook 'message-mode 'orgalist-mode))
+     (setq outshine-use-speed-commands t)
+     :config
+     (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
+     (add-hook 'clojure-mode-hook 'outshine-mode)
+     (add-hook 'jst-mode-hook 'outshine-mode)
+     (add-hook 'message-mode-hook 'outshine-mode))
 
-#+end_src
+   (use-package navi-mode
+     :ensure t)
 
-*** hideshow
+ #+end_src
 
-#+begin_src emacs-lisp
-  (use-package hideshow
-    :ensure t
-    :hook ((prog-mode . hs-minor-mode)))
+**** orgalist
 
-  (defun tx/toggle-fold ()
-    (interactive)
-    (save-excursion
-      (end-of-line)
-      (hs-toggle-hiding)))
-#+end_src
+ #+begin_src emacs-lisp 
+   ;; (use-package orgalist
+   ;;   :ensure t
+   ;;   :init
+   ;;   (add-hook 'message-mode 'orgalist-mode))
+
+ #+end_src
+
+**** hideshow
+
+ #+begin_src emacs-lisp
+   ;; (use-package hideshow
+   ;;   :ensure t
+   ;;   :hook ((prog-mode . hs-minor-mode)))
+
+   ;; (defun tx/toggle-fold ()
+   ;;   (interactive)
+   ;;   (save-excursion
+   ;;     (end-of-line)
+   ;;     (hs-toggle-hiding)))
+ #+end_src
+
+**** origami
+
+ #+begin_src emacs-lisp 
+   (use-package origami
+     :ensure t
+     :bind (:map origami-mode-map
+            ("C-c f" . origami-recursively-toggle-node)
+            ("C-c F" . origami-toggle-all-nodes))
+     :commands (origami-mode))
+
+ #+end_src
 * Programming Tweaks 
 Configuration relating to programming
 
@@ -1483,8 +1503,15 @@ Not sure I like this mode compared to paredit. Disabling it for now.
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
-    :init
+
+    (setq flycheck-display-errors-function
+          #'flycheck-display-error-messages-unless-error-list)
     (global-flycheck-mode))
+
+  (use-package flycheck-color-mode-line
+    :ensure t
+    :config
+    (add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode))
 
 #+END_SRC
 ** Highlight Indentation 
@@ -1760,6 +1787,12 @@ Setup version control stuff
   (use-package magit-popup
     :ensure t)
 
+  (use-package diff-hl
+    :ensure t
+    :config
+    (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+    (add-hook 'after-init-hook 'global-diff-hl-mode))
+
 #+END_SRC
 
 ** ERC
@@ -1999,9 +2032,10 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
                browse-url
                browse-url-of-file)
     :init
-    (if *is-a-mac*
-        (setq browse-url-browser-function 'browse-url-default-macosx-browser)
-      (setq browse-url-browser-function 'eww-browse-url))
+    ;; (if *is-a-mac*
+    ;;     (setq browse-url-browser-function 'browse-url-default-macosx-browser)
+    ;;   (setq browse-url-browser-function 'eww-browse-url))
+    (setq browse-url-browser-function 'eww-browse-url)
     (defhydra my-hydra-browse-url ()
       "Browse URL"
       ("." browse-url-at-point "at point")
@@ -2732,7 +2766,7 @@ have reached end-of-life!
 
 #+END_SRC
 
-*  Emacs Server
+* Emacs Server
 Start the emacs server so that we can use emacsclient
 
 ** Edit Server
