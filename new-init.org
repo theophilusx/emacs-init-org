@@ -105,7 +105,7 @@ then load it
           emacspeak-mail-alert nil
           emacspeak-play-emacspeak-startup-icon nil
           emacspeak-vm-use-raman-settings nil
-          emacspeak-play-program (expand-file "~/bin/play")
+          emacspeak-play-program (expand-file-name "~/bin/play")
           emacpseak-play-args nil
           mac-default-speech-rate 370        
           outloud-default-speech-rate 90
@@ -760,10 +760,12 @@ Set the default font
 
 #+BEGIN_SRC emacs-lisp
   (if *is-a-mac*
-      (set-face-attribute 'default nil
-                          :foundry nil
-                          :family "Source Code Pro"
-                          :height 340)
+      (progn
+        (set-face-attribute 'default nil
+                            :foundry nil
+                            :family "Fira Code"
+                            :height 361)
+        (mac-auto-operator-composition-mode))
     (set-face-attribute 'default nil
                         :foundry "PfEd"
                         :family "Ricty Diminished"
