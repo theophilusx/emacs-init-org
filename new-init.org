@@ -2484,7 +2484,6 @@ directory.
 #+END_SRC
 
 * Mail
-
 ** Google Contacts
 
 Ability to access google contacts is useful. 
@@ -2521,7 +2520,7 @@ First, setup some load paths.
 Next, load some additional packages we need.
 
 #+BEGIN_SRC emacs-lisp
-  (when *run_emacspeak*
+(when *run_emacspeak*
     (require 'emacspeak-mu4e))
 
   (require 'org-mu4e)
@@ -2732,7 +2731,7 @@ have reached end-of-life!
 
 #+END_SRC
 
-*  Emacs Server
+* Emacs Server
 Start the emacs server so that we can use emacsclient
 
 ** Edit Server
