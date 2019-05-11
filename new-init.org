@@ -767,9 +767,9 @@ Set the default font
                             :height 361)
         (mac-auto-operator-composition-mode))
     (set-face-attribute 'default nil
-                        :foundry "PfEd"
-                        :family "Ricty Diminished"
-                        :height 230))
+                        :foundry "CTDB"
+                        :family "Fira Code"
+                        :height 242))
 
 
 #+END_SRC
@@ -2451,12 +2451,26 @@ setup, comment out for now.
 #+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
-  (use-package solarized-theme
+  ;; (use-package solarized-theme
+  ;;   :ensure t
+  ;;   :init 
+  ;;   (setq-default custom-enabled-themes '(solarized-dark))
+  ;;   (setq solarized-distinct-fringe-background +1)
+  ;;   (setq solarized-use-more-italic t)
+  ;;   :config
+  ;;   (defun reapply-themes ()
+  ;;     "Forcibly load the themes listed in `custom-enabled-themes'."
+  ;;     (dolist (theme custom-enabled-themes)
+  ;;       (unless (custom-theme-p theme)
+  ;;         (load-theme theme)))
+  ;;     (custom-set-variables `(custom-enabled-themes
+  ;;                             (quote ,custom-enabled-themes))))
+  ;;   (add-hook 'after-init-hook 'reapply-themes))
+
+  (use-package night-owl-theme
     :ensure t
     :init 
-    (setq-default custom-enabled-themes '(solarized-dark))
-    (setq solarized-distinct-fringe-background +1)
-    (setq solarized-use-more-italic t)
+    (setq-default custom-enabled-themes '(night-owl))
     :config
     (defun reapply-themes ()
       "Forcibly load the themes listed in `custom-enabled-themes'."
@@ -2581,6 +2595,7 @@ Now setup mu4e.
           mu4e-view-fields '(:from :to :cc :subject :date :attachments)
           mu4e-view-scroll-to-next nil
           mu4e-view-show-addresses t
+          mu4e-view-use-gnus t
           mu4e-user-mail-address-list '("theophilusx@gmail.com"
                                         "tcross8@une.edu.au"
                                         "tcross@une.edu.au"
