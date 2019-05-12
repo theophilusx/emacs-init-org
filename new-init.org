@@ -767,9 +767,9 @@ Set the default font
                             :height 361)
         (mac-auto-operator-composition-mode))
     (set-face-attribute 'default nil
-                        :foundry "PfEd"
-                        :family "Ricty Diminished"
-                        :height 230))
+                        :foundry "CTDB"
+                        :family "Fira Code"
+                        :height 242))
 
 
 #+END_SRC
@@ -2534,7 +2534,6 @@ directory.
 #+END_SRC
 
 * Mail
-
 ** Google Contacts
 
 Ability to access google contacts is useful. 
@@ -2571,7 +2570,7 @@ First, setup some load paths.
 Next, load some additional packages we need.
 
 #+BEGIN_SRC emacs-lisp
-  (when *run_emacspeak*
+(when *run_emacspeak*
     (require 'emacspeak-mu4e))
 
   (require 'org-mu4e)
