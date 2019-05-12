@@ -107,7 +107,7 @@ then load it
           emacspeak-vm-use-raman-settings nil
           emacspeak-play-program (expand-file-name "~/bin/play")
           emacpseak-play-args nil
-          mac-default-speech-rate 370        
+          mac-default-speech-rate 360        
           outloud-default-speech-rate 90
           sox-play (if *is-a-mac*
                        "/usr/local/bin/play"
@@ -2451,12 +2451,26 @@ setup, comment out for now.
 #+END_SRC
 * Theme 
 #+BEGIN_SRC emacs-lisp
-  (use-package solarized-theme
+  ;; (use-package solarized-theme
+  ;;   :ensure t
+  ;;   :init 
+  ;;   (setq-default custom-enabled-themes '(solarized-dark))
+  ;;   (setq solarized-distinct-fringe-background +1)
+  ;;   (setq solarized-use-more-italic t)
+  ;;   :config
+  ;;   (defun reapply-themes ()
+  ;;     "Forcibly load the themes listed in `custom-enabled-themes'."
+  ;;     (dolist (theme custom-enabled-themes)
+  ;;       (unless (custom-theme-p theme)
+  ;;         (load-theme theme)))
+  ;;     (custom-set-variables `(custom-enabled-themes
+  ;;                             (quote ,custom-enabled-themes))))
+  ;;   (add-hook 'after-init-hook 'reapply-themes))
+
+  (use-package night-owl-theme
     :ensure t
     :init 
-    (setq-default custom-enabled-themes '(solarized-dark))
-    (setq solarized-distinct-fringe-background +1)
-    (setq solarized-use-more-italic t)
+    (setq-default custom-enabled-themes '(night-owl))
     :config
     (defun reapply-themes ()
       "Forcibly load the themes listed in `custom-enabled-themes'."
@@ -2582,6 +2596,7 @@ Now setup mu4e.
           mu4e-view-fields '(:from :to :cc :subject :date :attachments)
           mu4e-view-scroll-to-next nil
           mu4e-view-show-addresses t
+          mu4e-view-use-gnus t
           mu4e-user-mail-address-list '("theophilusx@gmail.com"
                                         "tcross8@une.edu.au"
                                         "tcross@une.edu.au"
