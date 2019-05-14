@@ -2359,6 +2359,9 @@ Setup ~clojure-mode~ and ~cider~.
     :config
     (add-hook 'js2-mode-hook #'prettier-js-mode))
 
+  (use-package json-mode
+    :ensure t)
+
   (use-package ng2-mode
     :ensure t)
 
