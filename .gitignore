@@ -25,3 +25,7 @@ linux-custom.el
 org-clock-save.el
 network-security.data
 oauth2.plstore
+emms
+emojis
+eww-bookmarks
+transient
