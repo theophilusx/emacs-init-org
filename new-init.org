@@ -70,6 +70,7 @@ facility, it is important that it is loaded as early as possible in the Emacs
 boot process.
 
 First, setup a constant which tells emacs where to look for the emacspeak distro
+
 ** Emacspeak Loading Constants
 
 #+BEGIN_SRC emacs-lisp 
@@ -84,7 +85,6 @@ First, setup a constant which tells emacs where to look for the emacspeak distro
                  (expand-file-name "info"  *emacspeak-src-dir*)))
 
 #+END_SRC
-
 
 ** Load Emacspeak
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
@@ -231,6 +231,7 @@ do the simple way
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
+
 * Org Mode
 Start by getting required package. I'm using the org-plus-contrib package from
 the org repository.
@@ -1528,6 +1529,13 @@ Highlight the indentation level in programming modes.
 
 #+END_SRC
 * Utility Modes 
+** Alert
+
+#+begin_src emacs-lisp
+  (use-package alert
+    :ensure t)
+#+end_src
+
 ** Spelling
 When running on OSX it is necessary to
 
@@ -1799,20 +1807,131 @@ Setup version control stuff
 
 ** ERC
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+BEGIN_SRC emacs-lisp 
   (use-package erc
     :commands 'erc
+    :preface
+    (defun tx/erc-browse-last-url ()
+      "Searchs backwards through an ERC buffer, looking for a URL. When a URL is
+       found, it prompts you to open it."
+      (interactive)
+      (save-excursion
+        (let ((ffap-url-regexp "\\(https?://\\)."))
+          (ffap-next-url t t))))
+
+    (defun tx/erc-count-users ()
+      "Displays the number of users and ops connected on the current channel."
+      (interactive)
+      (if (get-buffer "irc.freenode.net:6667")
+          (let ((channel (erc-default-target)))
+            (if (and channel (erc-channel-p channel))
+                (let ((hash-table (with-current-buffer (erc-server-buffer)
+                                    erc-server-users))
+                      (users 0)
+                      (ops 0))
+                  (maphash (lambda (k v)
+                             (when (member (current-buffer)
+                                           (erc-server-user-buffers v))
+                               (incf users))
+                             (when (erc-channel-user-op-p k)
+                               (incf ops)))
+                           hash-table)
+                  (message "%d users (%s ops) are online on %s" users ops channel))
+              (user-error "The current buffer is not a channel")))
+        (user-error "You must first be connected on IRC")))
+
+    (defun tx/erc-get-ops ()
+      "Displays the names of ops users on the current channel."
+      (interactive)
+      (if (get-buffer "irc.freenode.net:6667")
+          (let ((channel (erc-default-target)))
+            (if (and channel (erc-channel-p channel))
+                (let (ops)
+                  (maphash (lambda (nick cdata)
+                             (if (and (cdr cdata)
+                                      (erc-channel-user-op (cdr cdata)))
+                                 (setq ops (cons nick ops))))
+                           erc-channel-users)
+                  (if ops
+                      (message "The online ops users are: %s"  (mapconcat 'identity ops " "))
+                    (message "There are no ops users online on %s" channel)))
+              (user-error "The current buffer is not a channel")))
+        (user-error "You must first be connected on IRC")))
+
+    (defun tx/erc-notify (nickname message)
+      "Displays a notification message for ERC."
+      (let* ((channel (buffer-name))
+             (nick (erc-hl-nicks-trim-irc-nick nickname))
+             (title (if (string-match-p (concat "^" nickname) channel)
+                        nick
+                      (concat nick " (" channel ")")))
+             (msg (s-trim (s-collapse-whitespace message))))
+        (alert (concat nick ": " msg) :title title)))
+
+    (defun tx/erc-preprocess (string)
+      "Avoids channel flooding."
+      (setq str (string-trim (replace-regexp-in-string "\n+" " " str))))
+
+    (defun tx/erc-reset-track-mode ()
+      "Resets ERC track mode."
+      (interactive)
+      (setq erc-modified-channels-alist nil)
+      (erc-modified-channels-update)
+      (erc-modified-channels-display)
+      (force-mode-line-update))
+
+    (defun tx/erc-start-or-switch ()
+      "Connects to ERC, or switch to last active buffer."
+      (interactive)
+      (if (get-buffer "irc.freenode.net:6667")
+          (erc-track-switch-buffer 1)
+        (erc-tls :server "irc.freenode.net" :port 7070 :nick "theophilusx")))
+
+    :hook ((ercn-notify . tx/erc-notify)
+           (erc-send-pre . tx/erc-preprocess))
     :init
-    (setq erc-hide-list '("JOIN" "PART" "QUIT")
-          erc-insert-timestamp-function 'erc-insert-timestamp-left
+    (setq erc-autojoin-channels-alist '(("freenode.net" "#emacs" "#org-mode" 
+                                         "#stumpwm" "#clojure" "#clojurescript"
+                                         "#clojure-emacs"))
+          erc-autojoin-delay 60 
+          erc-autojoin-timing 'ident
+          erc-fill-variable-maximum-indentation 5
+          erc-hide-list '("JOIN" "PART" "QUIT")
+          erc-insert-away-timestamp-function 'erc-insert-timestamp-right
+          erc-insert-timestamp-function 'erc-insert-timestamp-right
+          erc-join-buffer 'bury
+          erc-kill-buffer-on-part t
+          erc-kill-queries-on-quit t
+          erc-kill-server-buffer-on-quit t
+          erc-lurker-hide-list '("JOIN" "PART" "QUIT")
+          erc-lurker-threshold-time 43200
+          erc-nick "theophilusx"
+          erc-prompt-for-nickserv-password nil
+          erc-server-reconnect-attempts 5
+          erc-server-reconnect-timeout 3
           erc-timestamp-format "[%H:%M] "
-          erc-timestamp-only-if-changed-flag nil
-          erc-truncate-mode t)
+          erc-timestamp-only-if-changed-flag t
+          erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT")
+          erc-truncate-mode t
+          erc-user-full-name "Tim X")
     :config
+    (add-to-list 'erc-modules 'notifications)
+    (add-to-list 'erc-modules 'spelling)
+    (add-to-list 'erc-modules 'autoaway)
+    (erc-services-mode 1)
+    (erc-update-modules)
     (add-hook
      'window-configuration-change-hook
      (lambda ()
        (setq erc-fill-column (- (window-width) 2)))))
+
+  (use-package erc-hl-nicks
+    :ensure t
+    :after erc)
+
+  (use-package erc-image
+    :ensure t
+    :after erc)
 #+END_SRC
 
 ** Eshell
@@ -1920,6 +2039,7 @@ Setup version control stuff
     :ensure t)
 
 #+END_SRC
+
 * Keymaps
 
 *** read-write-toggle
@@ -2422,24 +2542,28 @@ Moved back to Gnome from Stumpwn for now. Until time permits for full stumpwm
 setup, comment out for now.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (when (not *is-a-mac*)
-  ;;   (use-package slime
-  ;;     :ensure t
-  ;;     :init
-  ;;     (setq slime-contribs '(slime-fancy)
-  ;;           slime-complete-symbol-function 'slime-fuzzy-complete-symbol
-  ;;           slime-net-coding-system 'utf-8-unix
-  ;;           slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
-  ;;           slime-default-lisp 'sbcl)
-  ;;     :config
-  ;;     (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
-  ;;           common-lisp-hyperspec-symbols-table
-  ;;           (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
-  ;;           common-lisp-hyperspec-issuex-table
-  ;;           (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
-  ;;     (load (expand-file-name "~/quicklisp/slime-helper.el"))
-  ;;     (add-to-list 'Info-additional-directory-list
-  ;;              (expand-file-name "~/git/stumpwm"))))
+  (when (not *is-a-mac*)
+    (use-package slime
+      :ensure t
+      :init
+      (setq slime-contribs '(slime-fancy)
+            slime-complete-symbol-function 'slime-fuzzy-complete-symbol
+            slime-net-coding-system 'utf-8-unix
+            slime-lisp-implementations '((sbcl ("/usr/local/bin/sbcl" "--noinform")))
+            slime-default-lisp 'sbcl)
+      :config
+      (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
+            common-lisp-hyperspec-symbols-table
+            (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
+            common-lisp-hyperspec-issuex-table
+            (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
+      (load (expand-file-name "~/quicklisp/slime-helper.el"))
+      (add-to-list 'Info-additional-directory-list
+                   (expand-file-name "~/git/stumpwm")))
+    (use-package slime-company
+      :ensure t
+      :config
+      (slime-setup '(slime-company))))
 #+END_SRC
 ** Elm
 
