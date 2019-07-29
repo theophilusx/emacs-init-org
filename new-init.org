@@ -60,7 +60,9 @@ bit.
 ** Load Emacspeak
 
 #+begin_src emacs-lisp
-  (defconst *run_emacspeak* t)
+  (if (getenv "RUN_EMACSPEAK")
+      (defconst *run_emacspeak* t))
+
 #+end_src
 
 * Emacspeak
@@ -77,9 +79,11 @@ First, setup a constant which tells emacs where to look for the emacspeak distro
   (when *run_emacspeak*
     (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
       "Where emacs will find the emacspeak distro")
+  
     (if *is-a-mac*
         (defconst *emacspeak-server* "mac")
-      (defconst *emacspeak-server* "outloud"))
+      (defconst *emacspeak-server* (or (getenv "SPEECH_SERVER") "espeak")))
+  
     (require 'info)
     (add-to-list 'Info-additional-directory-list
                  (expand-file-name "info"  *emacspeak-src-dir*)))
@@ -2571,7 +2575,8 @@ setup, comment out for now.
             (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
             common-lisp-hyperspec-issuex-table
             (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
-      (load (expand-file-name "~/quicklisp/slime-helper.el"))
+      (when (file-exists-p (expand-file-name "~/quicklisp/slime-helper.el"))
+        (load (expand-file-name "~/quicklisp/slime-helper.el")))
       (add-to-list 'Info-additional-directory-list
                    (expand-file-name "~/git/stumpwm")))
     (use-package slime-company
@@ -2579,6 +2584,7 @@ setup, comment out for now.
       :config
       (slime-setup '(slime-company))))
 #+END_SRC
+
 ** Elm
 
 #+BEGIN_SRC emacs-lisp
@@ -2590,6 +2596,7 @@ setup, comment out for now.
           elm-format-on-save t))
 
 #+END_SRC
+
 * Theme 
 #+BEGIN_SRC emacs-lisp
   ;; (use-package solarized-theme
@@ -2716,7 +2723,7 @@ Next, load some additional packages we need.
 
   (require 'org-mu4e)
 
-  (use-package org-mime
+  (use-package "org-mime"
     :ensure t)
 
 
