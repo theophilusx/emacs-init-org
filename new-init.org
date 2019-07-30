@@ -2749,6 +2749,7 @@ Now setup mu4e.
           mu4e-view-scroll-to-next nil
           mu4e-view-show-addresses t
           mu4e-view-use-gnus t
+          mu4e-update-interval (* 60 10)
           mu4e-user-mail-address-list '("theophilusx@gmail.com"
                                         "tcross8@une.edu.au"
                                         "tcross@une.edu.au"
@@ -2763,15 +2764,15 @@ Now setup mu4e.
                              :key ?u)
                            ,(make-mu4e-bookmark
                              :name "Today's messages"
-                             :query "date:today..now"
+                             :query "date:today..now AND NOT flag:trashed"
                              :key ?t)
                            ,(make-mu4e-bookmark
                              :name "Last 7 days"
-                             :query "date:7d..now"
+                             :query "date:7d..now AND NOT flag:trashed"
                              :key ?w)
                            ,(make-mu4e-bookmark
                              :name "Messages with images"
-                             :query "mime:image/*"
+                             :query "mime:image/* AND NOT flag:trashed"
                              :key ?p)))
     (setq mu4e-contexts
           `(,(make-mu4e-context
