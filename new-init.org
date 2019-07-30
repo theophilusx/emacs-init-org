@@ -60,9 +60,7 @@ bit.
 ** Load Emacspeak
 
 #+begin_src emacs-lisp
-  (if (getenv "RUN_EMACSPEAK")
-      (defconst *run_emacspeak* t)
-    (defconst *run_emacspeak* nil))
+  (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
 
 #+end_src
 
@@ -78,12 +76,16 @@ First, setup a constant which tells emacs where to look for the emacspeak distro
 
 #+BEGIN_SRC emacs-lisp 
   (when *run_emacspeak*
-    (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
+    (defconst *emacspeak-src-dir* (if (getenv "EMACSPEAK_DIR")
+                                      (expand-file-name (getenv "EMACSPEAK_DIR"))
+                                    (expand-file-name "~/git/emacspeak/trunk"))
       "Where emacs will find the emacspeak distro")
-  
-    (if *is-a-mac*
-        (defconst *emacspeak-server* "mac")
-      (defconst *emacspeak-server* (or (getenv "SPEECH_SERVER") "espeak")))
+
+    (defconst *dtk-program* (if (getenv "DTK_PROGRAM")
+                                (getenv "DTK_PROGRAM")
+                              (if *is-a-mac*
+                                  "mac"
+                                "espeak")))
   
     (require 'info)
     (add-to-list 'Info-additional-directory-list
@@ -101,8 +103,8 @@ then load it
              (not (featurep 'emacspeak)))
     (add-to-list 'load-path *emacspeak-src-dir*)
     (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
-    (setenv "DTK_PROGRAM" *emacspeak-server*)
-    (setq dtk-program *emacspeak-server*
+    (setenv "DTK_PROGRAM" *dtk-program*)
+    (setq dtk-program *dtk-program*
           dtk-use-tones nil
           emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
           emacspeak-erc-my-nick "theophilusx"
@@ -121,11 +123,13 @@ then load it
                                         "/usr/local/bin/play -v 1.2 %s earwax &"
                                       "/usr/bin/play -v 1.2 %s earwax &")
           tts-default-speech-rate 90)
+
     (add-hook 'emacspeak-startup-hook
               (lambda ()
                 ;; (dtk-set-rate tts-default-speech-rate 1)
                 (dtk-interp-sync)
                 (emacspeak-sounds-select-theme "3d/")))
+
     (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
 #+END_SRC
 
