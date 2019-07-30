@@ -61,7 +61,8 @@ bit.
 
 #+begin_src emacs-lisp
   (if (getenv "RUN_EMACSPEAK")
-      (defconst *run_emacspeak* t))
+      (defconst *run_emacspeak* t)
+    (defconst *run_emacspeak* nil))
 
 #+end_src
 
