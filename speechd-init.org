@@ -44,14 +44,13 @@ Some ELISP packages don't necessarily define variables correctly and can
 generate warnings. This section lists such variables to quieten things down a
 bit.
 
-#+BEGIN_SRC emacs-lisp
-  (defvar url-http-extra-headers nil)
+#+BEGIN_SRC emacs-lisp  (defvar url-http-extra-headers nil)
   (defvar oauth--token-data nil)
   (defvar url-callback-function nil)
   (defvar url-callback-arguments nil)
-  (defvar ido-process-ignore-lists nil)
-  (defvar select-object nil)
-  (defvar *slime-inspector* nil)
+  (defvar url-http-method nil)
+  (defvar url-http-data nil)
+  (defvar url-http-extra-headers nil)
 
 #+END_SRC
 
@@ -74,18 +73,21 @@ tailored to individual needs.
   (require 'speechd-speak)
   (require 'speechd-mu4e)
 
-  ;; (setq speechd-out-active-drivers '(ssip)
-  ;;       speechd-speak-auto-speak-buffers '("*Help*" "*Info*" "*Article*")
-  ;;       speechd-speak-buffer-insertions 'whole-buffer
-  ;;       speechd-speak-buffer-name nil
-  ;;       speechd-speak-by-properties-on-movement nil
-  ;;       speechd-speak-on-minibuffer-exit nil
-  ;;       speechd-speak-signal-events '(empty minibuffer)
-  ;;       speechd-speak-state-changes nil)
+  (setq speechd-default-sound-priority 'notification
+        speechd-default-char-priority 'text
+        speechd-default-key-priority 'text
+        speechd-out-active-drivers '(ssip)
+        speechd-speak-auto-speak-buffers '("*Help*")
+        speechd-speak-buffer-insertions nil
+        speechd-speak-buffer-name t
+        speechd-speak-by-properties-on-movement nil
+        speechd-speak-on-minibuffer-exit nil
+        speechd-speak-read-command-keys nil
+        speechd-speak-signal-events '(empty minibuffer)
+        speechd-speak-state-changes nil)
 
   (add-hook 'speechd-speak-hook (lambda ()
-                                  (speechd-init-mu4e)
-                                  (speechd-set-rate 70)))
+                                  (speechd-set-rate 50)))
   (speechd-speak)
 
 #+end_src
