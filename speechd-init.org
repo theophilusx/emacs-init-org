@@ -87,7 +87,7 @@ tailored to individual needs.
         speechd-speak-state-changes nil)
 
   (add-hook 'speechd-speak-hook (lambda ()
-                                  (speechd-set-rate 50)))
+                                  (speechd-set-rate 70)))
   (speechd-speak)
 
 #+end_src
