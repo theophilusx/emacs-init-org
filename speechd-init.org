@@ -2669,7 +2669,7 @@ Now setup mu4e.
           mu4e-view-fields '(:from :to :cc :subject :date :attachments)
           mu4e-view-scroll-to-next nil
           mu4e-view-show-addresses t
-          ;; mu4e-view-use-gnus t
+          mu4e-view-use-gnus t
           mu4e-update-interval (* 60 10)
           mu4e-user-mail-address-list '("theophilusx@gmail.com"
                                         "tcross8@une.edu.au"
