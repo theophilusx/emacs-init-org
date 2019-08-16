@@ -1,4 +1,4 @@
-#+TITLE: Emacs init.el File
+#+TITEL: Emacs init.el File
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
@@ -17,6 +17,8 @@ repository go in the ~.emacs.d/lib~  subdirectory.
 I set a couple of constants which can then be used to control configuration
 settings in my init file.
 
+** Mac or Linux?
+
 I run emacs on both OSX and Linux. To handle differences in configuration
 settings for the two platforms, I set a constant which determines if emacs is
 running on OSX or not. 
@@ -25,6 +27,8 @@ running on OSX or not.
   (defconst *is-a-mac* (eq system-type 'darwin)
     "T if emacs is running under OSX, nil otherwise.")
 #+END_SRC
+
+** Do Spell Checking?
 
 Set a constant to determine if spell checking is to be enabled. Not sure if I
 really need this, but leaving it in place for now.
@@ -53,6 +57,13 @@ bit.
 
 #+END_SRC
 
+** Load Emacspeak
+
+#+begin_src emacs-lisp
+  (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
+
+#+end_src
+
 * Emacspeak
 
 Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
@@ -60,58 +71,50 @@ facility, it is important that it is loaded as early as possible in the Emacs
 boot process.
 
 First, setup a constant which tells emacs where to look for the emacspeak distro
-** Emacspeak loading
+
+** Emacspeak Loading Constants
 
 #+BEGIN_SRC emacs-lisp 
-  (defconst *emacspeak-src-dir* (expand-file-name "~/git/emacspeak/trunk")
-    "Where emacs will find the emacspeak distro")
+  (when *run_emacspeak*
+    (defconst *emacspeak-src-dir* (if (getenv "EMACSPEAK_DIR")
+                                      (expand-file-name (getenv "EMACSPEAK_DIR"))
+                                    (expand-file-name "~/git/emacspeak/trunk"))
+      "Where emacs will find the emacspeak distro")
+
+    (defconst *dtk-program* (if (getenv "DTK_PROGRAM")
+                                (getenv "DTK_PROGRAM")
+                              (if *is-a-mac*
+                                  "mac"
+                                "espeak")))
+  
+    (require 'info)
+    (add-to-list 'Info-additional-directory-list
+                 (expand-file-name "info"  *emacspeak-src-dir*)))
+
 #+END_SRC
 
-Need to load different speech servers depending on the platform
-
-#+BEGIN_SRC emacs-lisp 
-  (if *is-a-mac*
-      (defconst *emacspeak-server* "mac")
-    (defconst *emacspeak-server* "outloud"))
-#+END_SRC
-
-** Emacspeak Info Documentation
-
-Add the EmacsSpeak info documentation to the info search path. From within Info,
-you can hit ~g~ and then enter ~(emacspeak)~ at the prompt to open the Emacspeak
-info documentation
-
-#+BEGIN_SRC emacs-lisp 
-  (require 'info)
-  (add-to-list 'Info-additional-directory-list
-               (expand-file-name "info"  *emacspeak-src-dir*))
-#+END_SRC
-
+** Load Emacspeak
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
 then load it
 
-** Load Emacspeak
-
 #+BEGIN_SRC emacs-lisp 
-  (when (and (not noninteractive)
+  (when (and *run_emacspeak*
+             (not noninteractive)
              (not (featurep 'emacspeak)))
     (add-to-list 'load-path *emacspeak-src-dir*)
     (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
-    (setenv "DTK_PROGRAM" *emacspeak-server*)
-    (setq dtk-program *emacspeak-server*
+    (setenv "DTK_PROGRAM" *dtk-program*)
+    (setq dtk-program *dtk-program*
           dtk-use-tones nil
           emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
           emacspeak-erc-my-nick "theophilusx"
           emacspeak-erc-speak-all-participants t
           emacspeak-mail-alert nil
           emacspeak-play-emacspeak-startup-icon nil
-          emacspeak-play-program "/home/tcross/bin/play"
-          emacspeak-play-args nil
-          emacspeak-wizards-available-browsers (if *is-a-mac*
-                                                   '(eww-browse-url browse-url-default-macosx-browser)
-                                                 '(eww-browse-url browse-url-chrome))
           emacspeak-vm-use-raman-settings nil
-          mac-default-speech-rate 370        
+          emacspeak-play-program (expand-file-name "~/bin/play")
+          emacpseak-play-args nil
+          mac-default-speech-rate 360        
           outloud-default-speech-rate 90
           sox-play (if *is-a-mac*
                        "/usr/local/bin/play"
@@ -120,11 +123,13 @@ then load it
                                         "/usr/local/bin/play -v 1.2 %s earwax &"
                                       "/usr/bin/play -v 1.2 %s earwax &")
           tts-default-speech-rate 90)
+
     (add-hook 'emacspeak-startup-hook
               (lambda ()
                 ;; (dtk-set-rate tts-default-speech-rate 1)
                 (dtk-interp-sync)
                 (emacspeak-sounds-select-theme "3d/")))
+
     (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
 #+END_SRC
 
@@ -138,23 +143,23 @@ them.
 ** Emacspeak Key Bindings
 
 #+BEGIN_SRC emacs-lisp
+  (when *run_emacspeak*
+    (defun my-esp-bindings ()
+      (message "Loading my emacspeak key bindings...")
+      (unbind-key "<S-left>")
+      (unbind-key "<S-right>")
+      (unbind-key "<C-left>")
+      (unbind-key "<C-right>")
+      (unbind-key "<C-down>")
+      (unbind-key "<C-up>")
+      (unbind-key "<S-up>")
+      (unbind-key "<S-down>")
+      (bind-key "<f5>" 'my-hydra-window/body)
+      (bind-key "<f7>" 'my-hydra-wizards/body)
+      (bind-key "C-z" 'my-hydra-zoom/body))
 
-  (defun my-esp-bindings ()
-    (message "Loading my emacspeak key bindings...")
-    (unbind-key "<S-left>")
-    (unbind-key "<S-right>")
-    (unbind-key "<C-left>")
-    (unbind-key "<C-right>")
-    (unbind-key "<C-down>")
-    (unbind-key "<C-up>")
-    (unbind-key "<S-up>")
-    (unbind-key "<S-down>")
-    (bind-key "<f5>" 'my-hydra-window/body)
-    (bind-key "<f7>" 'my-hydra-wizards/body)
-    (bind-key "C-z" 'my-hydra-zoom/body))
+    (add-hook 'after-init-hook #'my-esp-bindings t))
 
-
-  (add-hook 'after-init-hook #'my-esp-bindings t)
 #+END_SRC
 
  I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
@@ -163,9 +168,10 @@ them.
 ** Experimental 
 
 #+BEGIN_SRC emacs-lisp
-  ;; Require my emacspeak-smartparens.el
+  ;;;Require my emacspeak-smartparens.el
   ;; (when (featurep 'emacspeak)
   ;;   (require 'emacspeak-smartparens))
+
 #+END_SRC
 
 * Custom 
@@ -203,6 +209,7 @@ package repositories. I add
 #+END_SRC
 
 * Use Package
+
 I just found John Wiegley's use-package macro, which I think is a really
 convenient way to manage the installation and configuration of ELPA
 packages. Therefore, I plan to migrate my configuration to use that package.
@@ -216,6 +223,7 @@ do the simple way
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'diminish)
+    (package-install 'delight)
     (package-install 'bind-key)
     (package-install 'use-package))
 
@@ -232,6 +240,7 @@ do the simple way
   (require 'diminish)
   (require 'bind-key)
 #+END_SRC
+
 * Org Mode
 Start by getting required package. I'm using the org-plus-contrib package from
 the org repository.
@@ -247,244 +256,245 @@ Then remove the repo package version and re-install. This will
 normally ensure a 'stable' environment.
 
 #+BEGIN_SRC emacs-lisp
-    (use-package org
-      :pin org
-      :ensure org-plus-contrib 
-      :init
-      (setq org-catch-invisible-edits 'smart
-            org-ctrl-k-protect-subtree t
-            org-default-notes-file "~/Dropbox/org/notes.org"
-            org-directory "~/Dropbox/org"
-            org-ellipsis "…"
-            org-list-allow-alphabetical t
-            org-list-indent-offset 2
-            org-pretty-entities t
-            org-startup-align-all-tables t
-            org-startup-with-inline-images (display-graphic-p)
-            org-support-shift-select t
-            org-use-sub-superscripts (quote {}))
-      (setq org-modules '(org-bibtex
-                          org-crypt
-                          org-docview
-                          org-eww
-                          org-info
-                          org-irc
-                          org-protocol))
-      (setq org-capture-templates
-            (quote
-             (("t" "todo" entry
-               (file "~/Dropbox/org/refile.org")
-               "* TODO %?\n\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("r" "respond" entry
-               (file "~/Dropbox/org/refile.org")
-               "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("n" "note" entry
-               (file "~/Dropbox/org/notes.org")
-               "* %? :NOTE:\n\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("j" "journal" entry
-               (file+olp+datetree "~/Dropbox/org/journal.org")
-               "* %?\n  "
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("p" "phone" entry
-               (file "~/Dropbox/org/refile.org")
-               "* PHONE %? :PHONE:\n  "
-               :empty-lines-after 1 :clock-in t :clock-resume t)
-              ("m" "mail" entry
-               (file "~/Dropbox/org/refile.org")
-               "* MAIL from %:from on %:subject\n\n  %a"
-               :empty-lines-after 1 :clock-in t :clock-resume t))))
-      (setq org-enforce-todo-checkbox-dependencies t
-            org-enforce-todo-dependencies t
-            org-log-done 'time
-            org-log-into-drawer t)
-      (setq org-todo-keywords
-            (quote
-             ((sequence "TODO(t)"
-                        "NEXT(n)"
-                        "STARTED(s!)"
-                        "DELEGATED(w@/!)"
-                        "HOLD(h@/!)"
-                        "|"
-                        "CANCELLED(c@)"
-                        "DONE(d!)"))))
-      (setq org-log-refile 'time
-            org-refile-allow-creating-parent-nodes 'confirm
-            org-refile-targets (quote ((nil :maxlevel . 5)
-                                       (org-agenda-files :maxlevel . 5)))
-            org-refile-use-outline-path (quote file))
-      (setq org-clock-in-resume t
-            org-clock-out-remove-zero-time-clocks t
-            org-clock-persist 'clock
-            org-time-clocksum-format '(:hours "%d" :require-hours t
-                                              :minutes ":%02d" :require-minutes t))
-      (setq org-agenda-files '("~/Dropbox/org")
-            org-agenda-remove-tags t)
+  (use-package org
+    :pin org
+    :ensure org-plus-contrib 
+    :init
+    (setq org-agenda-show-outline-path nil
+          org-catch-invisible-edits 'smart
+          org-ctrl-k-protect-subtree t
+          org-default-notes-file "~/Dropbox/org/notes.org"
+          org-directory "~/Dropbox/org"
+          org-ellipsis "…"
+          org-list-allow-alphabetical t
+          org-list-indent-offset 2
+          org-pretty-entities t
+          org-startup-align-all-tables t
+          org-startup-with-inline-images (display-graphic-p)
+          org-support-shift-select t
+          org-use-sub-superscripts (quote {}))
+    (setq org-modules '(org-bibtex
+                        org-crypt
+                        org-docview
+                        org-eww
+                        org-info
+                        org-irc
+                        org-protocol))
+    (setq org-capture-templates
+          (quote
+           (("t" "todo" entry
+             (file "~/Dropbox/org/refile.org")
+             "* TODO %?\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("r" "respond" entry
+             (file "~/Dropbox/org/refile.org")
+             "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("n" "note" entry
+             (file "~/Dropbox/org/notes.org")
+             "* %? :NOTE:\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("j" "journal" entry
+             (file+olp+datetree "~/Dropbox/org/journal.org")
+             "* %?\n  "
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("p" "phone" entry
+             (file "~/Dropbox/org/refile.org")
+             "* PHONE %? :PHONE:\n  "
+             :empty-lines-after 1 :clock-in t :clock-resume t)
+            ("m" "mail" entry
+             (file "~/Dropbox/org/refile.org")
+             "* MAIL from %:from on %:subject\n\n  %a"
+             :empty-lines-after 1 :clock-in t :clock-resume t))))
+    (setq org-enforce-todo-checkbox-dependencies t
+          org-enforce-todo-dependencies t
+          org-log-done 'time
+          org-log-into-drawer t)
+    (setq org-todo-keywords
+          (quote
+           ((sequence "TODO(t)"
+                      "NEXT(n)"
+                      "STARTED(s!)"
+                      "DELEGATED(w@/!)"
+                      "HOLD(h@/!)"
+                      "|"
+                      "CANCELLED(c@)"
+                      "DONE(d!)"))))
+    (setq org-log-refile 'time
+          org-refile-allow-creating-parent-nodes 'confirm
+          org-refile-targets (quote ((nil :maxlevel . 5)
+                                     (org-agenda-files :maxlevel . 5)))
+          org-refile-use-outline-path (quote file))
+    (setq org-clock-in-resume t
+          org-clock-out-remove-zero-time-clocks t
+          org-clock-persist 'clock
+          org-time-clocksum-format '(:hours "%d" :require-hours t
+                                            :minutes ":%02d" :require-minutes t))
+    (setq org-agenda-files '("~/Dropbox/org")
+          org-agenda-remove-tags t)
 
-      (setq org-agenda-custom-commands
-            (quote
-             (("n" "Agenda and all TODO's"
-               ((agenda "" nil)
-                (alltodo "" nil))
-               nil)
-              ("wr" "Weekly Report"
-               ((todo "DONE|CANCELLED"
-                      ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-                (todo "STARTED|NEXT"
-                      ((org-agenda-overriding-header "WIP")))
-                (todo "HOLD|DELEGATED"
-                      ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-                (todo "TODO"
-                      ((org-agenda-overriding-header "Task Backlog"))))
-               nil nil))))
-      (setq org-src-tab-acts-natively t
-            org-hide-block-startup t
-            org-src-window-setup 'current-window)
-      (setq org-confirm-babel-evaluate nil)
-      (setq org-babel-clojure-backend 'cider
-            org-babel-clojure-sync-nrepl-timeout 0)
-      (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
-            org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
-            org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
-      (setq org-export-backends '(ascii beamer html
-                                        latex texinfo
-                                        md odt org)
-            org-export-coding-system 'utf-8)
-      (setq org-latex-classes
-            '(("beamer"
-               "\\documentclass[presentation]{beamer}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("hitec-article"
-               "\\documentclass[12pt]{hitec}
-      [DEFAULT-PACKAGES]
-      [PACKAGES]
-      [NO-EXTRA]
-      \\settextfraction{0.95}\n"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("article" "\\documentclass[11pt]{article}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("korma-article" "\\documentclass[11pt]{scrartcl}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-              ("report"
-               "\\documentclass[11pt]{report}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("korma-report"
-               "\\documentclass[11pt]{scrreport}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("korma-book"
-               "\\documentclass[11pt]{scrbook}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-              ("book"
-               "\\documentclass[11pt]{book}"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
-      (setq org-latex-hyperref-template
-            "\\hypersetup{pdfauthor={%a},
-                          pdftitle={%t},
-                          pdfkeywords={%k},
-                          pdfsubject={%d},
-                          pdfcreator={%c},
-                          pdflang={%L},
-                          colorlinks=true,
-                          linkcolor=blue}")
-      (setq org-latex-listings t
-            org-latex-listings-options '(("basicstyle" "\\tiny")
-                                         ("frame" "single")
-                                         ("stringstyle" "\\color{orange}")
-                                         ("commentstyle" "\\color{cyan}")
-                                         ("keywordstyle" "\\color{blue}")
-                                         ("showstringspaces" "false")
-                                         ("breakatwhitespace" "false")
-                                         ("breaklines" "true")))
-      (setq org-latex-pdf-process
-            '("lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"
-              "lualatex -interaction nonstopmode -output-directory %o %f"))
-      (setq org-latex-packages-alist
-            '(("" "parskip")
-              ("" "xcolor")
-              ("" "listings")))
-      (setq org-html-checkbox-type 'unicode
-            org-html-html5-fancy t
-            org-html-doctype "html5")
-      (setq org-ascii-charset 'utf-8
-            org-ascii-text-width 79)
-      :config
-      (org-element-update-syntax)
-      (org-clock-persistence-insinuate)
+    (setq org-agenda-custom-commands
+          (quote
+           (("n" "Agenda and all TODO's"
+             ((agenda "" nil)
+              (alltodo "" nil))
+             nil)
+            ("wr" "Weekly Report"
+             ((todo "DONE|CANCELLED"
+                    ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+              (todo "STARTED|NEXT"
+                    ((org-agenda-overriding-header "WIP")))
+              (todo "HOLD|DELEGATED"
+                    ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+              (todo "TODO"
+                    ((org-agenda-overriding-header "Task Backlog"))))
+             nil nil))))
+    (setq org-src-tab-acts-natively t
+          org-hide-block-startup t
+          org-src-window-setup 'current-window)
+    (setq org-confirm-babel-evaluate nil)
+    (setq org-babel-clojure-backend 'cider
+          org-babel-clojure-sync-nrepl-timeout 0)
+    (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
+          org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
+          org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
+    (setq org-export-backends '(ascii beamer html
+                                      latex texinfo
+                                      md odt org)
+          org-export-coding-system 'utf-8)
+    (setq org-latex-classes
+          '(("beamer"
+             "\\documentclass[presentation]{beamer}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("hitec-article"
+             "\\documentclass[12pt]{hitec}
+    [DEFAULT-PACKAGES]
+    [PACKAGES]
+    [NO-EXTRA]
+    \\settextfraction{0.95}\n"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("article" "\\documentclass[11pt]{article}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("korma-article" "\\documentclass[11pt]{scrartcl}"
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+             ("\\paragraph{%s}" . "\\paragraph*{%s}")
+             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+            ("report"
+             "\\documentclass[11pt]{report}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("korma-report"
+             "\\documentclass[11pt]{scrreport}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("korma-book"
+             "\\documentclass[11pt]{scrbook}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+            ("book"
+             "\\documentclass[11pt]{book}"
+             ("\\part{%s}" . "\\part*{%s}")
+             ("\\chapter{%s}" . "\\chapter*{%s}")
+             ("\\section{%s}" . "\\section*{%s}")
+             ("\\subsection{%s}" . "\\subsection*{%s}")
+             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+    (setq org-latex-hyperref-template
+          "\\hypersetup{pdfauthor={%a},
+                        pdftitle={%t},
+                        pdfkeywords={%k},
+                        pdfsubject={%d},
+                        pdfcreator={%c},
+                        pdflang={%L},
+                        colorlinks=true,
+                        linkcolor=blue}")
+    (setq org-latex-listings t
+          org-latex-listings-options '(("basicstyle" "\\tiny")
+                                       ("frame" "single")
+                                       ("stringstyle" "\\color{orange}")
+                                       ("commentstyle" "\\color{cyan}")
+                                       ("keywordstyle" "\\color{blue}")
+                                       ("showstringspaces" "false")
+                                       ("breakatwhitespace" "false")
+                                       ("breaklines" "true")))
+    (setq org-latex-pdf-process
+          '("lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"
+            "lualatex -interaction nonstopmode -output-directory %o %f"))
+    (setq org-latex-packages-alist
+          '(("" "parskip")
+            ("" "xcolor")
+            ("" "listings")))
+    (setq org-html-checkbox-type 'unicode
+          org-html-html5-fancy t
+          org-html-doctype "html5")
+    (setq org-ascii-charset 'utf-8
+          org-ascii-text-width 79)
+    :config
+    (org-element-update-syntax)
+    (org-clock-persistence-insinuate)
 
-      (add-to-list 'org-structure-template-alist
-                   '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-                     "<src lang=\"python\">\n?\n</src>"))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
+    ;;                "<src lang=\"python\">\n?\n</src>"))
 
-      (add-to-list 'org-structure-template-alist
-                   '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-                     "<src lang=\"emacs-lisp\">\n?\n</src>"))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
+    ;;                "<src lang=\"emacs-lisp\">\n?\n</src>"))
 
-      (add-to-list 'org-structure-template-alist
-                   '("clj" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-                     "<src lang=\"clojure-mode\">\n?\n</src>"))
-      (add-to-list 'org-structure-template-alist
-                   '("cl" "#+BEGIN_SRC lisp\n?\n#+END_SRC"
-                     "<src lang=\"lisp-mode\">\n?\n</src>"))
-      (org-babel-do-load-languages
-       'org-babel-load-languages
-       '((emacs-lisp . t)
-         (clojure . t)
-         (css . t)
-         (dot . t)
-         (java . t)
-         (js . t)
-         (latex . t)
-         (ledger . t)
-         (lisp . t)
-         (makefile . t)
-         (org . t)
-         (perl . t)
-         (python . t)
-         (ruby . t)
-         (scheme . t)
-         (shell . t)
-         (sql . t)
-         (C . t)
-         (ditaa . t)
-         (plantuml . t)
-         (gnuplot . t)))
-      (bind-key "C-c l" 'org-store-link)
-      (bind-key "C-c a" 'org-agenda)
-      (bind-key "C-c b" 'org-switchb)
-      (bind-key "C-c r" 'org-capture))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("clj" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
+    ;;                "<src lang=\"clojure-mode\">\n?\n</src>"))
+    ;; (add-to-list 'org-structure-template-alist
+    ;;              '("cl" "#+BEGIN_SRC lisp\n?\n#+END_SRC"
+    ;;                "<src lang=\"lisp-mode\">\n?\n</src>"))
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (clojure . t)
+       (css . t)
+       (dot . t)
+       (java . t)
+       (js . t)
+       (latex . t)
+       (ledger . t)
+       (lisp . t)
+       (makefile . t)
+       (org . t)
+       (perl . t)
+       (python . t)
+       (ruby . t)
+       (scheme . t)
+       (shell . t)
+       (sql . t)
+       (C . t)
+       (ditaa . t)
+       (plantuml . t)
+       (gnuplot . t)))
+    (bind-key "C-c l" 'org-store-link)
+    (bind-key "C-c a" 'org-agenda)
+    (bind-key "C-c b" 'org-switchb)
+    (bind-key "C-c r" 'org-capture))
 
 
 #+END_SRC
@@ -535,19 +545,22 @@ normally ensure a 'stable' environment.
            (shrink-window arg)
          (enlarge-window arg)))
 
-     (defhydra my-hydra-wizards ()
-       "Emacspeak Wizards"
-       ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-       ;; ("b" emacspeak-wizards-cycle-browser "Browser")
-       ("e" emacspeak-wizards-eww-buffer-list "eww")
-       ("r" emacspeak-wizards-find-file-as-root "root")
-       ("g" emacspeak-wizards-find-grep "Grep")
-       ("f" emacspeak-wizards-finder-find "Find")
-       ("F" emacspeak-wizards-generate-finder "Finder")
-       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-       ("s" emacspeak-wizards-spot-words "Spot")
-       ("t" emacspeak-wizards-tramp-open-location "Tramp")
-       ("q" nil "Quit"))
+     (when *run_emacspeak*
+       (defhydra my-hydra-wizards ()
+         "Emacspeak Wizards"
+         ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
+         ;; ("b" emacspeak-wizards-cycle-browser "Browser")
+         ("e" emacspeak-wizards-eww-buffer-list "eww")
+         ("r" emacspeak-wizards-find-file-as-root "root")
+         ("g" emacspeak-wizards-find-grep "Grep")
+         ("f" emacspeak-wizards-finder-find "Find")
+         ("F" emacspeak-wizards-generate-finder "Finder")
+         ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
+         ("s" emacspeak-wizards-spot-words "Spot")
+         ("t" emacspeak-wizards-tramp-open-location "Tramp")
+         ("q" nil "Quit"))
+
+       )
 
      (defhydra my-hydra-zoom ()
        "zoom"
@@ -556,13 +569,14 @@ normally ensure a 'stable' environment.
        ("0" (text-scale-adjust 0) "reset")
        ("q" nil "quit" :color blue))
 
-     (defhydra my-hydra-error ()
-       "goto-error"
-       ("h" first-error "first")
-       ("j" next-error "next")
-       ("k" previous-error "prev")
-       ("v" recenter-top-bottom "recenter")
-       ("q" nil "quit"))
+     ;;  (defhydra my-hydra-error ()
+     ;;     "goto-error"
+     ;;     ("h" first-error "first")
+     ;;     ("j" next-error "next")
+     ;;     ("k" previous-error "prev")
+     ;;     ("v" recenter-top-bottom "recenter")
+     ;;     ("q" nil "quit"))
+     ;; -
      (require 'winner)
      (defhydra my-hydra-window (:color red :hint nil)
        "
@@ -735,6 +749,7 @@ Some basic defaults and customizations
         save-interprogram-paste-before-kill t
         show-paren-delay 0
         show-paren-style 'mixed
+        tab-always-indent 'complete
         truncate-lines t
         visible-bell t
         select-enable-clipboard t
@@ -750,26 +765,22 @@ Some basic defaults and customizations
                 tab-width 4)
 #+END_SRC
 
-** Coding System
-#+BEGIN_SRC emacs-lisp
-  (prefer-coding-system 'utf-8)
-  (when (display-graphic-p)
-    (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
-#+END_SRC
-
 * Fonts
 Set the default font
 
 #+BEGIN_SRC emacs-lisp
   (if *is-a-mac*
-      (set-face-attribute 'default nil
-                          :foundry nil
-                          :family "Source Code Pro"
-                          :height 340)
+      (progn
+        (set-face-attribute 'default nil
+                            :foundry nil
+                            :family "Fira Code"
+                            :height 361)
+        (mac-auto-operator-composition-mode))
     (set-face-attribute 'default nil
-                        :foundry "PfEd"
-                        :family "Ricty Diminished"
-                        :height 220))
+                        :foundry "CTDB"
+                        :family "Fira Code"
+                        :height 242))
+
 
 #+END_SRC
 
@@ -835,7 +846,8 @@ Set up the exec path for emacs
   (use-package undo-tree
     :ensure t
     :diminish undo-tree-mode
-    :config (global-undo-tree-mode))
+    :config
+    (global-undo-tree-mode))
 #+END_SRC
 
 ** Ido Mode
@@ -935,6 +947,20 @@ Set up the exec path for emacs
     (bind-key "C-x C-r" 'ido-recentf-open))
 #+END_SRC
 
+** Counsel
+
+#+begin_src emacs-lisp
+  (use-package counsel
+    :ensure t
+    :bind (("C-x C-m" . counsel-M-x)
+           ("C-h f" . counsel-describe-function)
+           ("C-h v" . counsel-describe-variable)
+           ("M-i" . counsel-imenu)
+           ("C-c i" . counsel.unicode-char)
+           :map read-expression-map
+           ("C-r" . counsel-expression-history)))
+#+end_src
+
 ** Swiper
 #+BEGIN_SRC emacs-lisp
   (use-package swiper
@@ -954,7 +980,7 @@ your emacs!
 #+END_SRC 
 
 * Editing 
-Text editing stuff
+  Text editing stuff
 
 ** Basic Tweaks 
 Some simple functions and bindings stolen from [[http://github.com/purcell/emacs.d]]
@@ -1020,7 +1046,7 @@ which adds some editing tweaks
 Display lines to show where page breaks are. Useful in making the
 browse-kill-ring mode look a little better. See [[https://github.com/purcell/page-break-lines][page-break-lines on GitHub]]
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package page-break-lines
     :ensure t
     :diminish page-break-lines-mode
@@ -1039,16 +1065,16 @@ While this seems like a really handy utility, I find I never seem to use it, so
 commenting it out for now.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package move-dup
-  ;;   :ensure t
-  ;;   :commands (md/move-lines-up
-  ;;             md/move-lines-down
-  ;;             md/duplicate-down
-  ;;             md/duplicate-up)
-  ;;   :bind (("M-S-<up>" . md/move-lines-up)
-  ;;          ("M-S-<down>" . md/move-lines-down)
-  ;;          ("C-c p" . md/duplicate-down)
-  ;;          ("C-c P" . md/duplicate-up)))
+  (use-package move-dup
+    :ensure t
+    :commands (md/move-lines-up
+              md/move-lines-down
+              md/duplicate-down
+              md/duplicate-up)
+    :bind (("M-S-<up>" . md/move-lines-up)
+           ("M-S-<down>" . md/move-lines-down)
+           ("C-c p" . md/duplicate-down)
+           ("C-c P" . md/duplicate-up)))
 #+END_SRC
 
 ** Whole Line or Region
@@ -1058,7 +1084,7 @@ defined.
 #+BEGIN_SRC emacs-lisp
   (use-package whole-line-or-region
     :ensure t
-    :diminish whole-line-or-region-mode
+    :delight
     :config
     (progn
       (whole-line-or-region-mode t)
@@ -1075,17 +1101,25 @@ defined.
     :ensure t
     :commands (unfill-paragraph unfill-region unfill-toggle))
 
-  ;; (use-package fill-column-indicator
-  ;;   :ensure t
-  ;;   :diminish fci-mode
-  ;;   :init
-  ;;   (setq fci-rule-width 3)
-  ;;   :config
-  ;;   (progn
-  ;;     (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
-  ;;     (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
-  ;;     (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
 #+END_SRC
+
+*** Fill Column Indicator
+
+Stopped using this package as it is not compatible with org src block editing
+
+#+begin_src emacs-lisp :tangle no
+    (use-package fill-column-indicator
+      :ensure t
+      :diminish fci-mode
+      :init
+      (setq fci-rule-width 3)
+      :config
+      (progn
+        (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
+        (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
+        (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
+
+#+end_src
 
 ** Whitespace Cleanup
 Cleanup whitespace
@@ -1103,17 +1137,15 @@ Cleanup whitespace
     (add-hook 'prog-mode-hook #'whitespace-cleanup-mode)
     (add-hook 'text-mode-hook #'whitespace-mode)
     (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
-    (add-hook 'org-mode-hook #'whitespace-mode)
-    ;; (global-whitespace-mode)
-    ;; (global-whitespace-cleanup-mode)
-    )
+    (add-hook 'org-mode-hook #'whitespace-mode))
 
 #+END_SRC
 
 ** Fix the mark
-Enable setting of mark without setting of transient mark mode
+Enable setting of mark without setting of transient mark mode. While this seems
+like a good idea, I don't seem to use it. Commenting it out for now.
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (defun push-mark-no-activate ()
     "Pushes `point' to `mark-ring' and does not activate the region
      Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
@@ -1180,20 +1212,19 @@ Using ~ag~ package for searches. This needs some OS support
 
 *** Company
 #+BEGIN_SRC emacs-lisp
+  (add-to-list 'completion-styles 'initials t)
+
   (use-package company
     :ensure t
     :init
-    (setq company-idle-delay nil
+    (setq company-idle-delay 3.0
           company-selection-wrap-around t)
     :bind (("C-M-i" . company-complete)
            ("TAB" . company-indent-or-complete-common))
     :config
     (global-company-mode 1)
-    (add-hook 'after-init-hook
-              (lambda ()
-                (setq company-frontends '(company-pseudo-tooltip-unless-just-one-frontend
-                                          company-preview-if-just-one-frontend
-                                          company-echo-metadata-frontend))))
+    (dolist (backend '(company-eclim company-semantic))
+      (delq backend company-backends))
     (add-to-list 'company-backends 'company-elm))
 
   (use-package company-auctex
@@ -1230,48 +1261,101 @@ Using ~ag~ package for searches. This needs some OS support
 
 #+END_SRC
 
-** Aok
+*** Outlining 
 
-Another package which sounds very useful, but which I never seem to use!
+Some addditional outlining support to make more things work like org-mode.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package aok
-  ;;   :ensure t)
-#+END_SRC
+**** Narrow/widern
 
-** Outlining 
+ #+begin_src emacs-lisp
+   (defun tx/narrow-or-widen-dwim (p)
+     "If the buffer is narrowed, it widens. Otherwise, it narrows
+   intelligently.  Intelligently means: region, org-src-block,
+   org-subtree, or defun, whichever applies first.  Narrowing to
+   org-src-block actually calls `org-edit-src-code'.
 
-Some addditional outlining support to make more things work like org-mode!
+   With prefix P, don't widen, just narrow even if buffer is already
+   narrowed."
+     (interactive "P")
+     (declare (interactive-only))
+     (cond ((and (buffer-narrowed-p) (not p)) (widen))
+           ((and (boundp 'org-src-mode) org-src-mode (not p))
+            (org-edit-src-exit))
+           ((region-active-p)
+            (narrow-to-region (region-beginning) (region-end)))
+           ((derived-mode-p 'org-mode)
+            (cond ((ignore-errors (org-edit-src-code))
+                   (delete-other-windows))
+                  ((org-at-block-p)
+                   (org-narrow-to-block))
+                  (t (org-narrow-to-subtree))))
+           ((derived-mode-p 'prog-mode) (narrow-to-defun))
+           (t (error "Please select a region to narrow to"))))
 
- #+BEGIN_SRC emacs-lisp
-   (defvar outline-minor-mode-prefix "\M-#")
+   (eval-after-load 'org-src
+     '(bind-key "C-x C-s" 'org-edit-src-exit org-src-mode-map))
+ #+end_src
 
-   (require 'outline)
+**** Outshine
+
+ #+begin_src emacs-lisp :tangle no
+   (use-package outline
+     :config
+     (defvar outline-minor-mode-prefix "\M-#"))
+
+   (use-package outorg
+     :ensure t)
 
    (use-package outshine
      :ensure t
      :init
      (setq outshine-use-speed-commands t)
      :config
-     (add-hook 'outline-minor-mode-hook 'outshine-hook-function))
-
-   (use-package outorg
-     :ensure t)
+     (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
+     (add-hook 'clojure-mode-hook 'outshine-mode)
+     (add-hook 'jst-mode-hook 'outshine-mode)
+     (add-hook 'message-mode-hook 'outshine-mode))
 
    (use-package navi-mode
      :ensure t)
 
-#+END_SRC
+ #+end_src
 
-** CUA Mode
+**** orgalist
 
-Lets try out CUA mode for a while and see if I can re-train my brain to use
-these bindings as it would make life easier with other applications. 
+ #+begin_src emacs-lisp 
+   ;; (use-package orgalist
+   ;;   :ensure t
+   ;;   :init
+   ;;   (add-hook 'message-mode 'orgalist-mode))
 
-#+BEGIN_SRC emacs-lisp
-  ;;(cua-mode)
+ #+end_src
 
-#+END_SRC
+**** hideshow
+
+ #+begin_src emacs-lisp
+   ;; (use-package hideshow
+   ;;   :ensure t
+   ;;   :hook ((prog-mode . hs-minor-mode)))
+
+   ;; (defun tx/toggle-fold ()
+   ;;   (interactive)
+   ;;   (save-excursion
+   ;;     (end-of-line)
+   ;;     (hs-toggle-hiding)))
+ #+end_src
+
+**** origami
+
+ #+begin_src emacs-lisp 
+   (use-package origami
+     :ensure t
+     :bind (:map origami-mode-map
+            ("C-c f" . origami-recursively-toggle-node)
+            ("C-c F" . origami-toggle-all-nodes))
+     :commands (origami-mode))
+
+ #+end_src
 * Programming Tweaks 
 Configuration relating to programming
 
@@ -1308,8 +1392,6 @@ Highlight symbols and enable navigation by symbol in programming modes. See
 Lets make addresses action buttons when we find them in comments in
 programming buffers
 
-Seems to be a problem with this mode and newest org-plus-contrib. Disabling for now.
-
 #+BEGIN_SRC emacs-lisp
   (dolist (hook (if (fboundp 'prog-mode)
                     '(prog-mode-hook ruby-mode-hook)
@@ -1321,6 +1403,7 @@ Seems to be a problem with this mode and newest org-plus-contrib. Disabling for 
 #+BEGIN_SRC emacs-lisp
   (use-package rainbow-mode
     :ensure t
+    :delight
     :config
     (add-hook 'prog-mode-hook 'rainbow-mode)
     (add-hook 'ielm-mode-hook 'rainbow-mode)
@@ -1332,6 +1415,7 @@ Seems to be a problem with this mode and newest org-plus-contrib. Disabling for 
 #+BEGIN_SRC emacs-lisp
   (use-package rainbow-delimiters 
     :ensure t
+    :delight
     :config
     (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
     (add-hook 'ielm-mode-hook 'rainbow-delimiters-mode)
@@ -1396,64 +1480,56 @@ to add some paredit specific advice to provide speech feedback for this mode.
 ** Smartparens
 Not sure I like this mode compared to paredit. Disabling it for now.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package smartparens-config
-  ;;     :ensure smartparens
-  ;;     :config
-  ;;     (progn
-  ;;       (sp-use-smartparens-bindings)
-  ;;       (smartparens-global-mode)
-  ;;       (show-smartparens-global-mode))
-  ;;     (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
-  ;;     (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package smartparens-config
+    :ensure smartparens
+    :config
+    (progn
+      (sp-use-smartparens-bindings)
+      (smartparens-global-mode)
+      (show-smartparens-global-mode))
+    (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
+    (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
 
 #+END_SRC
 
 ** Imenu
-Not sure if imenu is of any real value. Disabling it for now
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package imenu-anywhere
-  ;;   :ensure t)
+#+BEGIN_SRC emacs-lisp 
+  (use-package imenu-anywhere
+    :ensure t)
 #+END_SRC
 
 ** Line numbers
+
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package linum
-  ;;   :config
-  ;;   (add-hook 'prog-mode-hook 'linum-mode))
-
   (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-
 #+END_SRC
 
 ** flycheck
 
 #+BEGIN_SRC emacs-lisp
-  (use-package flycheck-pos-tip
-    :ensure t)
-
   (use-package flycheck
     :ensure t
     :config
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
-    (setq flycheck-display-errors-function #'flycheck-pos-tip-error-messages)
-    :init
+
+    (setq flycheck-display-errors-function
+          #'flycheck-display-error-messages-unless-error-list)
     (global-flycheck-mode))
+
+  (use-package flycheck-color-mode-line
+    :ensure t
+    :config
+    (add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode))
+
 #+END_SRC
 ** Highlight Indentation 
 Highlight the indentation level in programming modes.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package highlight-indent-guides
-  ;;   :ensure t
-  ;;   :init
-  ;;   (setq highlight-indent-guides-method 'character)
-  ;;   :config
-  ;;   (add-hook 'prog-mode-hook #'highlight-indent-guides-mode))
-
+#+BEGIN_SRC emacs-lisp 
   (use-package highlight-indentation
     :ensure t
     :config
@@ -1462,6 +1538,13 @@ Highlight the indentation level in programming modes.
 
 #+END_SRC
 * Utility Modes 
+** Alert
+
+#+begin_src emacs-lisp
+  (use-package alert
+    :ensure t)
+#+end_src
+
 ** Spelling
 When running on OSX it is necessary to
 
@@ -1551,7 +1634,7 @@ already built-in.
 ** Regex Tool
 Add the handy ~regex-tool~ package
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package regex-tool
     :ensure t
     :commands (regex-tool))
@@ -1593,6 +1676,7 @@ on GitHub]]
 #+END_SRC
 
 ** REST Client
+
 #+BEGIN_SRC emacs-lisp
   (use-package restclient
     :ensure t)
@@ -1600,7 +1684,8 @@ on GitHub]]
 #+END_SRC
 
 ** Alert
-#+BEGIN_SRC emacs-lisp
+
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package alert
     :ensure t
     :config
@@ -1611,9 +1696,11 @@ on GitHub]]
 #+END_SRC
 
 ** Write Good
-#+BEGIN_SRC emacs-lisp
+
+#+BEGIN_SRC emacs-lisp 
   (use-package writegood-mode
-    :ensure t)
+    :ensure t
+    :bind ("C-M-g" . writegood-mode))
 #+END_SRC
 
 ** Lorem Ipsum 
@@ -1679,18 +1766,17 @@ I like to have directories listed first. Easiest way to do this is use the
 When I'm a bit bored or want a break from my own problems, I sometimes like to
 look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub]].
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package sx
     :ensure t
-    ;; :commands (sx-bug-report sx-authenticate sx-inbox sx-inbox-notifications
-    ;;                          sx-org-get-link sx-ask sx-search
-    ;;                          sx-search-tag-at-point sx-tab-all-questions
-    ;;                          sx-tab-unanswered sx-tab-unanswered-my-tags
-    ;;                          sx-tab-featured sx-tab-starred
-    ;;                          sx-tab-frontpage sx-tab-newest
-    ;;                          sx-tab-topvoted sx-tab-hot
-    ;;                          sx-tab-week sx-tab-month)
-    )
+    :commands (sx-bug-report sx-authenticate sx-inbox sx-inbox-notifications
+                             sx-org-get-link sx-ask sx-search
+                             sx-search-tag-at-point sx-tab-all-questions
+                             sx-tab-unanswered sx-tab-unanswered-my-tags
+                             sx-tab-featured sx-tab-starred
+                             sx-tab-frontpage sx-tab-newest
+                             sx-tab-topvoted sx-tab-hot
+                             sx-tab-week sx-tab-month))
 
 #+END_SRC
 
@@ -1698,9 +1784,6 @@ look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub
 Setup version control stuff
 
 #+BEGIN_SRC emacs-lisp
-  (use-package gh
-    :ensure t)
-
   (use-package git-commit
     :ensure t)
     :config
@@ -1710,10 +1793,6 @@ Setup version control stuff
     :ensure t
     :commands (git-timemachine-toggle git-timemachine 
                git-timemachine-switch-browser))
-
-  (use-package github-browse-file
-    :ensure t
-    :commands (github-browse-file github-browse-file-blame))
 
   (use-package gitignore-mode
     :ensure t)
@@ -1727,26 +1806,145 @@ Setup version control stuff
   (use-package magit-popup
     :ensure t)
 
+  (use-package diff-hl
+    :ensure t
+    :config
+    (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+    (add-hook 'after-init-hook 'global-diff-hl-mode))
+
 #+END_SRC
 
 ** ERC
-#+BEGIN_SRC emacs-lisp
+
+#+BEGIN_SRC emacs-lisp 
   (use-package erc
     :commands 'erc
+    :preface
+    (defun tx/erc-browse-last-url ()
+      "Searchs backwards through an ERC buffer, looking for a URL. When a URL is
+       found, it prompts you to open it."
+      (interactive)
+      (save-excursion
+        (let ((ffap-url-regexp "\\(https?://\\)."))
+          (ffap-next-url t t))))
+
+    (defun tx/erc-count-users ()
+      "Displays the number of users and ops connected on the current channel."
+      (interactive)
+      (if (get-buffer "irc.freenode.net:6667")
+          (let ((channel (erc-default-target)))
+            (if (and channel (erc-channel-p channel))
+                (let ((hash-table (with-current-buffer (erc-server-buffer)
+                                    erc-server-users))
+                      (users 0)
+                      (ops 0))
+                  (maphash (lambda (k v)
+                             (when (member (current-buffer)
+                                           (erc-server-user-buffers v))
+                               (incf users))
+                             (when (erc-channel-user-op-p k)
+                               (incf ops)))
+                           hash-table)
+                  (message "%d users (%s ops) are online on %s" users ops channel))
+              (user-error "The current buffer is not a channel")))
+        (user-error "You must first be connected on IRC")))
+
+    (defun tx/erc-get-ops ()
+      "Displays the names of ops users on the current channel."
+      (interactive)
+      (if (get-buffer "irc.freenode.net:6667")
+          (let ((channel (erc-default-target)))
+            (if (and channel (erc-channel-p channel))
+                (let (ops)
+                  (maphash (lambda (nick cdata)
+                             (if (and (cdr cdata)
+                                      (erc-channel-user-op (cdr cdata)))
+                                 (setq ops (cons nick ops))))
+                           erc-channel-users)
+                  (if ops
+                      (message "The online ops users are: %s"  (mapconcat 'identity ops " "))
+                    (message "There are no ops users online on %s" channel)))
+              (user-error "The current buffer is not a channel")))
+        (user-error "You must first be connected on IRC")))
+
+    (defun tx/erc-notify (nickname message)
+      "Displays a notification message for ERC."
+      (let* ((channel (buffer-name))
+             (nick (erc-hl-nicks-trim-irc-nick nickname))
+             (title (if (string-match-p (concat "^" nickname) channel)
+                        nick
+                      (concat nick " (" channel ")")))
+             (msg (s-trim (s-collapse-whitespace message))))
+        (alert (concat nick ": " msg) :title title)))
+
+    (defun tx/erc-preprocess (string)
+      "Avoids channel flooding."
+      (setq str (string-trim (replace-regexp-in-string "\n+" " " str))))
+
+    (defun tx/erc-reset-track-mode ()
+      "Resets ERC track mode."
+      (interactive)
+      (setq erc-modified-channels-alist nil)
+      (erc-modified-channels-update)
+      (erc-modified-channels-display)
+      (force-mode-line-update))
+
+    (defun tx/erc-start-or-switch ()
+      "Connects to ERC, or switch to last active buffer."
+      (interactive)
+      (if (get-buffer "irc.freenode.net:6667")
+          (erc-track-switch-buffer 1)
+        (erc-tls :server "irc.freenode.net" :port 7070 :nick "theophilusx")))
+
+    :hook ((ercn-notify . tx/erc-notify)
+           (erc-send-pre . tx/erc-preprocess))
     :init
-    (setq erc-hide-list '("JOIN" "PART" "QUIT")
-          erc-insert-timestamp-function 'erc-insert-timestamp-left
+    (setq erc-autojoin-channels-alist '(("freenode.net" "#emacs" "#org-mode" 
+                                         "#stumpwm" "#clojure" "#clojurescript"
+                                         "#clojure-emacs"))
+          erc-autojoin-delay 60 
+          erc-autojoin-timing 'ident
+          erc-fill-variable-maximum-indentation 5
+          erc-hide-list '("JOIN" "PART" "QUIT")
+          erc-insert-away-timestamp-function 'erc-insert-timestamp-right
+          erc-insert-timestamp-function 'erc-insert-timestamp-right
+          erc-join-buffer 'bury
+          erc-kill-buffer-on-part t
+          erc-kill-queries-on-quit t
+          erc-kill-server-buffer-on-quit t
+          erc-lurker-hide-list '("JOIN" "PART" "QUIT")
+          erc-lurker-threshold-time 43200
+          erc-nick "theophilusx"
+          erc-prompt-for-nickserv-password nil
+          erc-server-reconnect-attempts 5
+          erc-server-reconnect-timeout 3
           erc-timestamp-format "[%H:%M] "
-          erc-timestamp-only-if-changed-flag nil
-          erc-truncate-mode t)
+          erc-timestamp-only-if-changed-flag t
+          erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT")
+          erc-truncate-mode t
+          erc-user-full-name "Tim X")
     :config
+    (add-to-list 'erc-modules 'notifications)
+    (add-to-list 'erc-modules 'spelling)
+    (add-to-list 'erc-modules 'autoaway)
+    (erc-services-mode 1)
+    (erc-update-modules)
     (add-hook
      'window-configuration-change-hook
      (lambda ()
        (setq erc-fill-column (- (window-width) 2)))))
+
+  (use-package erc-hl-nicks
+    :ensure t
+    :after erc)
+
+  (use-package erc-image
+    :ensure t
+    :after erc)
 #+END_SRC
 
 ** Eshell
+
 #+BEGIN_SRC emacs-lisp
   (use-package eshell
     :commands 'eshell
@@ -1850,11 +2048,83 @@ Setup version control stuff
     :ensure t)
 
 #+END_SRC
+
+* Keymaps
+
+*** read-write-toggle
+
+#+begin_src emacs-lisp
+  (defun tx/read-write-toggle ()
+    "Toggles read-only in any relevant mode: ag-mode, Dired, or
+  just any file at all."
+    (interactive)
+    (if (equal major-mode 'ag-mode)
+        ;; wgrep-ag can support ag-mode
+        (wgrep-change-to-wgrep-mode)
+      ;; dired-toggle-read-only has its own conditional:
+      ;; if the mode is Dired, it will make the directory writable
+      ;; if it is not, it will just toggle read only, as desired
+      (dired-toggle-read-only)))
+#+end_src
+
+*** Scratch
+
+#+begin_src emacs-lisp
+  (defun tx/scratch ()
+      (interactive)
+      (switch-to-buffer-other-window (get-buffer-create "*scratch*")))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun tx/make-org-scratch ()
+    (interactive)
+    (find-file "~/Dropbox/org/scratch.org"))
+#+end_src
+
+** Toggle Map
+
+#+begin_src emacs-lisp
+  (bind-keys :prefix-map toggle-map
+             :prefix "C-x t"
+             ("d" . toggle-debug-on-error)
+             ("f" . tx/toggle-fold)
+             ("l" . linum-mode)
+             ("n" . tx/narrow-or-widen-dwim)
+             ("o" . org-mode)
+             ("r" . tx/read-write-toggle)
+             ("t" . text-mode)
+             ("w" . whitespace-mode))
+#+end_src
+** Launcher Map
+
+#+begin_src emacs-lisp
+  (bind-keys :prefix-map launcher-map
+             :prefix "C-x l"
+             ("A" . terminal) ;; save "a" for open-agenda
+             ("c" . calc)
+             ("C" . calendar)
+             ("d" . ediff-buffers)
+             ("e" . eshell)
+             ("E" . eww)
+             ("h" . man)
+             ("P" . proced)
+             ("s" . tx/scratch)
+             ("S" . tx/make-org-scratch))
+
+  (if *is-a-mac*
+    (use-package counsel-osx-app
+      :bind (:map launcher-map
+                  ("." . counsel-osx-app)))
+    (bind-keys :map launcher-map
+               ("." . counsel-linux-app)))
+
+#+end_src
 * Projectile 
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
     :ensure t
-    :diminish projectile-mode
+    :delight '(:eval (concat " " (projectile-project-name)))
+    ;;:diminish projectile-mode
     ;; :commands (projectile-mode
     ;;            projectile-mode)
     :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
@@ -1893,9 +2163,10 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
                browse-url
                browse-url-of-file)
     :init
-    (if *is-a-mac*
-        (setq browse-url-browser-function 'browse-url-default-macosx-browser)
-      (setq browse-url-browser-function 'eww-browse-url))
+    ;; (if *is-a-mac*
+    ;;     (setq browse-url-browser-function 'browse-url-default-macosx-browser)
+    ;;   (setq browse-url-browser-function 'eww-browse-url))
+    (setq browse-url-browser-function 'eww-browse-url)
     (defhydra my-hydra-browse-url ()
       "Browse URL"
       ("." browse-url-at-point "at point")
@@ -2023,30 +2294,26 @@ Setup ~clojure-mode~ and ~cider~.
     (add-hook 'clojure-mode-hook #'subword-mode)
     (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
-  (use-package flycheck-clojure
-    :ensure t)
+  (use-package flycheck-joker
+     :ensure t)
 
   (use-package cider
     :ensure t
     :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
     :init
-    (setq cider-prompt-for-symbol nil
-          cider-font-lock-dynamically '(macro core function var)
-          cider-eldoc-display-for-symbol-at-point nil
-          eldoc-echo-area-use-multiline-p t
-          cider-overlays-use-font-lock t
-          cider-use-overlays t
-          cider-show-error-buffer nil
-          cider-repl-display-help-banner nil
-          cider-cljs-lein-repl"(do (require 'cljs.repl.node) (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)))"
-          cider-repl-history-file (expand-file-name "repl-history"
-                                                    user-emacs-directory))
+    (setq
+     ;; cider-prompt-for-symbol nil
+     ;; cider-font-lock-dynamically '(macro core function var)
+     cider-eldoc-display-for-symbol-at-point nil
+     eldoc-echo-area-use-multiline-p t
+     cider-overlays-use-font-lock t
+     cider-use-overlays t
+     cider-show-error-buffer nil
+     cider-repl-display-help-banner nil
+     cider-repl-history-file (expand-file-name "repl-history"))
     :config
     (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
-    (add-hook 'cider-mode-hook #'cider-hydra-mode)
-    (bind-key "C-c" 'clojure-cheatsheet cider-doc-map)
-    (bind-key "c" 'clojure-cheatsheet cider-doc-map)
-    (flycheck-clojure-setup))
+    (add-hook 'cider-mode-hook #'cider-hydra-mode))
 
   (use-package clj-refactor
     :ensure t
@@ -2057,13 +2324,12 @@ Setup ~clojure-mode~ and ~cider~.
     (add-hook 'clojure-mode-hook (lambda ()
                                    (clj-refactor-mode 1)
                                    ;; insert keybinding setup here
-                                   (cljr-add-keybindings-with-prefix "C-c C-m")))
-    )
+                                   (cljr-add-keybindings-with-prefix "C-c C-m"))))
 
 
-  (use-package inf-clojure
-    :ensure t
-    :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
+  ;; (use-package inf-clojure
+  ;;   :ensure t
+  ;;   :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
 #+END_SRC
 
 ** SQL
@@ -2154,6 +2420,7 @@ Setup ~clojure-mode~ and ~cider~.
 #+BEGIN_SRC emacs-lisp
   (use-package js2-mode
     :ensure t
+    :delight
     :mode "\\.js\\'"
     :interpreter ("node" . js2-mode)
     :init
@@ -2163,7 +2430,8 @@ Setup ~clojure-mode~ and ~cider~.
           js2-include-node-externs t
           js2-mode-assume-strict t
           js2-highlight-level 3
-          js2-global-externs '("describe" "it" "before" "after" "beforeEach" "afterEach"))
+          js2-global-externs '("describe" "it" "before"
+                               "after" "beforeEach" "afterEach"))
     :config
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (js2-imenu-extras-setup)
@@ -2171,6 +2439,7 @@ Setup ~clojure-mode~ and ~cider~.
 
   (use-package xref-js2
     :ensure t
+    :delight
     :config
     (add-hook 'js2-mode-hook
               (lambda ()
@@ -2186,6 +2455,7 @@ Setup ~clojure-mode~ and ~cider~.
 
   (use-package tern
     :ensure t
+    :delight
     :config
     (add-hook 'js2-mode-hook #'tern-mode))
 
@@ -2203,8 +2473,40 @@ Setup ~clojure-mode~ and ~cider~.
 
   (use-package indium
     :ensure t
+    :delight
+    ('indium-interaction-mode "JSI")
     :config
     (add-hook 'js2-mode-hook #'indium-interaction-mode))
+
+  (use-package prettier-js
+    :ensure t
+    :init
+    (setq prettier-js-args '("--print-width" "80"
+                             "--tab-width" "2"
+                             "--no-bracket-spacing")
+          prettier-js-width-mode 'fill)
+    :config
+    (add-hook 'js2-mode-hook #'prettier-js-mode))
+
+  (use-package json-mode
+    :ensure t)
+
+  (use-package ng2-mode
+    :ensure t)
+
+  (use-package js-doc
+    :ensure t
+    :init
+    (setq js-doc-mail-address "tcross8@une.edu.au"
+          js-doc-author (format "Tim Cross <%s>" js-doc-mail-address))
+    :config
+    (add-hook 'js2-mode-hook
+              (lambda ()
+                (define-key js2-mode-map "\C-ci" 'js-doc-insert-function-doc)
+                (define-key js2-mode-map "@" 'js-doc-insert-tag))))
+
+  (use-package tide
+    :ensure t)
 
 #+END_SRC
 
@@ -2263,25 +2565,31 @@ Moved back to Gnome from Stumpwn for now. Until time permits for full stumpwm
 setup, comment out for now.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (when (not *is-a-mac*)
-  ;;   (use-package slime
-  ;;     :ensure t
-  ;;     :init
-  ;;     (setq slime-contribs '(slime-fancy)
-  ;;           slime-complete-symbol-function 'slime-fuzzy-complete-symbol
-  ;;           slime-net-coding-system 'utf-8-unix
-  ;;           slime-lisp-implementations '((sbcl ("/usr/bin/sbcl" "--noinform")))
-  ;;           slime-default-lisp 'sbcl)
-  ;;     :config
-  ;;     (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
-  ;;           common-lisp-hyperspec-symbols-table
-  ;;           (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
-  ;;           common-lisp-hyperspec-issuex-table
-  ;;           (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
-  ;;     (load (expand-file-name "~/quicklisp/slime-helper.el"))
-  ;;     (add-to-list 'Info-additional-directory-list
-  ;;              (expand-file-name "~/git/stumpwm"))))
+  (when (not *is-a-mac*)
+    (use-package slime
+      :ensure t
+      :init
+      (setq slime-contribs '(slime-fancy)
+            slime-complete-symbol-function 'slime-fuzzy-complete-symbol
+            slime-net-coding-system 'utf-8-unix
+            slime-lisp-implementations '((sbcl ("/usr/local/bin/sbcl" "--noinform")))
+            slime-default-lisp 'sbcl)
+      :config
+      (setq common-lisp-hyperspec-root "/usr/share/doc/hyperspec/"
+            common-lisp-hyperspec-symbols-table
+            (concat common-lisp-hyperspec-root "Data/Map_Sym.txt")
+            common-lisp-hyperspec-issuex-table
+            (concat common-lisp-hyperspec-root "Data/Map_IssX.txt"))
+      (when (file-exists-p (expand-file-name "~/quicklisp/slime-helper.el"))
+        (load (expand-file-name "~/quicklisp/slime-helper.el")))
+      (add-to-list 'Info-additional-directory-list
+                   (expand-file-name "~/git/stumpwm")))
+    (use-package slime-company
+      :ensure t
+      :config
+      (slime-setup '(slime-company))))
 #+END_SRC
+
 ** Elm
 
 #+BEGIN_SRC emacs-lisp
@@ -2293,14 +2601,29 @@ setup, comment out for now.
           elm-format-on-save t))
 
 #+END_SRC
+
 * Theme 
 #+BEGIN_SRC emacs-lisp
-  (use-package solarized-theme
+  ;; (use-package solarized-theme
+  ;;   :ensure t
+  ;;   :init 
+  ;;   (setq-default custom-enabled-themes '(solarized-dark))
+  ;;   (setq solarized-distinct-fringe-background +1)
+  ;;   (setq solarized-use-more-italic t)
+  ;;   :config
+  ;;   (defun reapply-themes ()
+  ;;     "Forcibly load the themes listed in `custom-enabled-themes'."
+  ;;     (dolist (theme custom-enabled-themes)
+  ;;       (unless (custom-theme-p theme)
+  ;;         (load-theme theme)))
+  ;;     (custom-set-variables `(custom-enabled-themes
+  ;;                             (quote ,custom-enabled-themes))))
+  ;;   (add-hook 'after-init-hook 'reapply-themes))
+
+  (use-package night-owl-theme
     :ensure t
     :init 
-    (setq-default custom-enabled-themes '(solarized-dark))
-    (setq solarized-distinct-fringe-background +1)
-    (setq solarized-use-more-italic t)
+    (setq-default custom-enabled-themes '(night-owl))
     :config
     (defun reapply-themes ()
       "Forcibly load the themes listed in `custom-enabled-themes'."
@@ -2364,7 +2687,6 @@ directory.
 #+END_SRC
 
 * Mail
-
 ** Google Contacts
 
 Ability to access google contacts is useful. 
@@ -2401,8 +2723,14 @@ First, setup some load paths.
 Next, load some additional packages we need.
 
 #+BEGIN_SRC emacs-lisp
-  (require 'emacspeak-mu4e)
+  (when *run_emacspeak*
+      (require 'emacspeak-mu4e))
+
   (require 'org-mu4e)
+
+  (use-package "org-mime"
+    :ensure t)
+
 
 #+END_SRC
 
@@ -2421,7 +2749,11 @@ Now setup mu4e.
           mu4e-change-filenames-when-moving t
           mu4e-context-policy 'pick-first
           mu4e-compose-context-policy nil
+          mu4e-view-fields '(:from :to :cc :subject :date :attachments)
+          mu4e-view-scroll-to-next nil
           mu4e-view-show-addresses t
+          mu4e-view-use-gnus t
+          mu4e-update-interval (* 60 10)
           mu4e-user-mail-address-list '("theophilusx@gmail.com"
                                         "tcross8@une.edu.au"
                                         "tcross@une.edu.au"
@@ -2429,22 +2761,22 @@ Now setup mu4e.
     (setq org-mu4e-link-query-in-headers-mode nil)
     :config
     (add-hook 'message-mode-hook 'turn-on-orgtbl)
-    (add-hook 'message-mode-hook 'outline-minor-mode)
+    ;;(add-hook 'message-mode-hook 'outline-minor-mode)
     (setq mu4e-bookmarks `(,(make-mu4e-bookmark
                              :name  "Unread messages"
                              :query "flag:unread AND NOT flag:trashed"
                              :key ?u)
                            ,(make-mu4e-bookmark
                              :name "Today's messages"
-                             :query "date:today..now"
+                             :query "date:today..now AND NOT flag:trashed"
                              :key ?t)
                            ,(make-mu4e-bookmark
                              :name "Last 7 days"
-                             :query "date:7d..now"
+                             :query "date:7d..now AND NOT flag:trashed"
                              :key ?w)
                            ,(make-mu4e-bookmark
                              :name "Messages with images"
-                             :query "mime:image/*"
+                             :query "mime:image/* AND NOT flag:trashed"
                              :key ?p)))
     (setq mu4e-contexts
           `(,(make-mu4e-context
@@ -2585,29 +2917,30 @@ have archived on this system, so keeping it below for reference.
 Looks like there has been no work done on VM since 2016. Suspect the client may
 have reached end-of-life!
 
-#+BEGIN_SRC emacs-lisp
-  ;; (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
-  ;; (add-to-list 'Info-additional-directory-list
-  ;;              (expand-file-name "~/bzr/vm/new-trunk/info"))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
+  (add-to-list 'Info-additional-directory-list
+               (expand-file-name "~/bzr/vm/new-trunk/info"))
 
-  ;; (require 'vm-autoloads)
+  (require 'vm-autoloads)
 
-  ;; ;; Some hacks to make VM use shr for HTML messages
+  ;; Some hacks to make VM use shr for HTML messages
 
-  ;; (defun vm-mime-display-internal-shr-text/html (start end layout)
-  ;;   "Use shr to inline HTML mails in the VM presentation buffer."
-  ;;   (shr-render-region start (1- end))
-  ;;   (put-text-property start end
-  ;;                      'text-rendered-by-shr t))
+  (defun vm-mime-display-internal-shr-text/html (start end layout)
+    "Use shr to inline HTML mails in the VM presentation buffer."
+    (shr-render-region start (1- end))
+    (put-text-property start end
+                       'text-rendered-by-shr t))
 
-  ;; ;; has to be done indirectly
-  ;; ;; Fake emacs-w3m, though we actually use shr
+  ;; has to be done indirectly
+  ;; Fake emacs-w3m, though we actually use shr
 
-  ;; (defalias 'vm-mime-display-internal-emacs-w3m-text/html
-  ;;   'vm-mime-display-internal-shr-text/html)
+  (defalias 'vm-mime-display-internal-emacs-w3m-text/html
+       'vm-mime-display-internal-shr-text/html)
 
 #+END_SRC
-* Emacs Server 
+
+* Emacs Server
 Start the emacs server so that we can use emacsclient
 
 ** Edit Server
@@ -2632,23 +2965,32 @@ Start the emacs server so that we can use emacsclient
     (server-start))
 #+END_SRC
 
+* Coding System
+#+BEGIN_SRC emacs-lisp
+  (prefer-coding-system 'utf-8)
+  (when (display-graphic-p)
+    (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
+#+END_SRC
+
 * Startup Window
 My custom setup for initial window configuration. There is probably a better way
 to do this!
 
-#+BEGIN_SRC emacs-lisp
-  ;; (defun my-startup-window ()
-  ;;   (interactive)
-  ;;   (org-agenda nil "wr")
-  ;;   (delete-other-windows))
+#+BEGIN_SRC emacs-lisp :tangle no
+  (defun my-startup-window ()
+    (interactive)
+    (org-agenda nil "wr")
+    (delete-other-windows))
 
-  ;; (setq warning-minimum-level :error
-  ;;       warning-minimum-log-level :error)
+  (setq warning-minimum-level :error
+        warning-minimum-log-level :error)
 
-  ;; (add-hook 'after-init-hook 'my-startup-window t)
+  (add-hook 'after-init-hook 'my-startup-window t)
 
-  ;; (defun my-after-init-config ()
-  ;;   (require 'ido-fix))
+  (defun my-after-init-config ()
+    (require 'ido-fix))
 
-;;  (add-hook 'after-init-hook 'my-after-init-config)
+  (add-hook 'after-init-hook 'my-after-init-config)
+
 #+END_SRC
+
