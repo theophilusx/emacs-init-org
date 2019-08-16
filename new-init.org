@@ -233,6 +233,7 @@ then load it
           emacpseak-play-args nil
           mac-default-speech-rate 360        
           outloud-default-speech-rate 90
+          espeak-default-speech-rate 250
           sox-play (if *is-a-mac*
                        "/usr/local/bin/play"
                      "/usr/bin/play")
@@ -3321,6 +3322,7 @@ Now setup mu4e.
     (setq mu4e-maildir (expand-file-name "~/Maildir")
           mu4e-attachment-dir (expand-file-name "~/Desktop")
           mu4e-get-mail-command "mbsync -a"
+          mu4e-hide-index-messages t
           mu4e-headers-include-related nil
           mu4e-change-filenames-when-moving t
           mu4e-context-policy 'pick-first
