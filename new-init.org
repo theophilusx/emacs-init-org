@@ -1850,11 +1850,41 @@ Not sure I like this mode compared to paredit. Disabling it for now.
 
 Highlight the indentation level in programming modes.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+There are a few modes which provide this type of functionality. Experimenting
+with two of them ~highlight-indentation~ and ~highlight-indent-guide~. Problem
+is that highlight-indent-guide looks better, but causes some problems with some
+modes (like org's edit block mode). It can also be a pain with TTS. On the other
+hand ~highlight-indentation~ does not cause problems with other modes, but is
+ugly.
+
+
+Can't wait until Emacs has this as native functionality, which should be at a
+layer which does not mess with editing etc.
+
+#+begin_src emacs-lisp :tangle no
   (use-package highlight-indentation
     :ensure t
     :config
     (add-hook 'prog-mode-hook #'highlight-indentation-current-column-mode))
+
+#+end_src
+
+#+BEGIN_SRC emacs-lisp :tangle tangle-init.el
+
+  (use-package highlight-indent-guides
+    :ensure t
+    :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
+    :init
+    (setq highlight-indent-guides-method 'character)
+    :config
+    (add-hook 'focus-in-hook #'highlight-indent-guides-auto-set-faces)
+
+    (defun tx/indent-guides-disable-maybe ()
+      (when highlight-indent-guides-mode
+        (highlight-indent-guides-mode -1)))
+    ;; `highlight-indent-guides' breaks in these modes
+    (add-hook 'visual-line-mode-hook #'tx/indent-guides-disable-maybe)
+    (add-hook 'org-indent-mode-hook #'tx/indent-guides-disable-maybe))
 
 #+END_SRC
 
