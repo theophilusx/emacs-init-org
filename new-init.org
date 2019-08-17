@@ -1,4 +1,4 @@
-#+TITEL: Emacs init.el File
+#+TITLE: Emacs init.el File
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
@@ -986,7 +986,9 @@ Some basic defaults and customizations
 
 Set the default font
 
-#+BEGIN_SRC emacs-lisp :tangle tangle-init.el
+** Old font  config
+
+#+BEGIN_SRC emacs-lisp :tangle no
   (if *is-a-mac*
       (progn
         (set-face-attribute 'default nil
@@ -1000,6 +1002,61 @@ Set the default font
                         :height 200))
 
 #+END_SRC
+
+** Font Variables
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (defvar tx-font (font-spec :family "Fira Code" :size 22))
+  (defvar tx-variable-pitch-font (font-spec :family "Fira Sans"))
+  (defvar tx-serif-font (font-spec :family "DejaVu Serif"))
+
+  (defvar tx-unicode-font
+    (if *is-a-mac*
+        (font-spec :family "Apple Color Emoji")
+      (font-spec :family "Noto Color Emoji")))
+
+#+end_src
+
+** Set Fonts
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  ;; Fonts are specified by `doom-font', `doom-variable-pitch-font',
+  ;; `doom-serif-font' and `doom-unicode-font'."
+  ;; (condition-case e
+  ;;     (progn
+  ;;       (cond (tx-font
+  ;;              (add-to-list
+  ;;               'default-frame-alist
+  ;;               (cons 'font
+  ;;                     (cond ((stringp tx-font) tx-font)
+  ;;                           ((fontp tx-font) (font-xlfd-name tx-font))
+  ;;                           ((signal 'wrong-type-argument
+  ;;                                    (list '(fontp stringp) tx-font)))))))
+  ;;             ((display-graphic-p)
+  ;;              (setq tx-font (face-attribute 'default :font))))
+  ;;       (when tx-serif-font
+  ;;         (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font))
+  ;;       (when tx-variable-pitch-font
+  ;;         (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)))
+  ;;   ((debug error)
+  ;;    (if (string-prefix-p "Font not available: " (error-message-string e))
+  ;;        (message "Could not find the '%s' font, falling back to system font"
+  ;;                 (font-get (caddr e) :family))
+  ;;      (signal 'doom-error e))))
+
+  (set-face-attribute 'default nil :font tx-font)
+  (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font)
+  (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)
+  (set-fontset-font t 'unicode tx-unicode-font nil 'prepend)
+
+  ;; (defun tx-init-emoji-fonts (frame)
+  ;;   "Set up unicode fonts (if `doom-unicode-font' is set).
+
+  ;; By default, this uses Apple Color Emoji on MacOS and Symbola on Linux."
+  ;;   (when tx-unicode-font
+  ;;     ))
+
+#+end_src
 
 Setup some font scaling support
 
@@ -1823,16 +1880,33 @@ Not sure I like this mode compared to paredit. Disabling it for now.
 *** flycheck
 
 #+BEGIN_SRC emacs-lisp :tangle tangle-init.el
+  (defvar tx-flycheck-lazy-idle-delay 3.0
+    "The delay before flycheck checks the buffer, after a check that produces no
+  errors.")
+
   (use-package flycheck
     :ensure t
+    :commands (flycheck-list-errors flycheck-buffer)
     :config
+    (setq flycheck-check-syntax-automatically
+          (delq 'new-line flycheck-check-syntax-automatically))
+
+    (defun tx-flycheck-adjust-syntax-check-eagerness ()
+      "Check for errors less often when there aren't any."
+      (if flycheck-current-errors
+          (kill-local-variable 'flycheck-idle-change-delay)
+        (setq-local flycheck-idle-change-delay tx-flycheck-lazy-idle-delay)))
+  
+    (add-hook 'flycheck-after-syntax-check-hook
+              #'+flycheck|adjust-syntax-check-eagerness)
+
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
 
     (setq flycheck-display-errors-function
           #'flycheck-display-error-messages-unless-error-list)
-    (global-flycheck-mode))
+    (global-flycheck-mode +1))
 
 #+END_SRC
 
@@ -1841,6 +1915,7 @@ Not sure I like this mode compared to paredit. Disabling it for now.
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package flycheck-color-mode-line
     :ensure t
+
     :config
     (add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode))
 
@@ -3211,21 +3286,6 @@ setup, comment out for now.
 * Theme 
 
 #+BEGIN_SRC emacs-lisp :tangle tangle-init.el
-  ;; (use-package solarized-theme
-  ;;   :ensure t
-  ;;   :init 
-  ;;   (setq-default custom-enabled-themes '(solarized-dark))
-  ;;   (setq solarized-distinct-fringe-background +1)
-  ;;   (setq solarized-use-more-italic t)
-  ;;   :config
-  ;;   (defun reapply-themes ()
-  ;;     "Forcibly load the themes listed in `custom-enabled-themes'."
-  ;;     (dolist (theme custom-enabled-themes)
-  ;;       (unless (custom-theme-p theme)
-  ;;         (load-theme theme)))
-  ;;     (custom-set-variables `(custom-enabled-themes
-  ;;                             (quote ,custom-enabled-themes))))
-  ;;   (add-hook 'after-init-hook 'reapply-themes))
 
   (use-package night-owl-theme
     :ensure t
@@ -3239,7 +3299,8 @@ setup, comment out for now.
           (load-theme theme)))
       (custom-set-variables `(custom-enabled-themes
                               (quote ,custom-enabled-themes))))
-    (add-hook 'after-init-hook 'reapply-themes))
+    ;;(add-hook 'after-init-hook 'reapply-themes)
+    )
 
 #+END_SRC
 
@@ -3394,34 +3455,6 @@ Now setup mu4e.
     (setq mu4e-contexts '())
     (add-to-list 'mu4e-contexts
                  (make-mu4e-context
-                  :name "Private"
-                  :enter-func (lambda ()
-                                (mu4e-message "Entering Private context"))
-                  :leave-func
-                  (lambda ()
-                    (mu4e-message "Leaving Private context"))
-                  ;; we match based on the contact-fields of the message
-                  :match-func
-                  (lambda (msg)
-                    (when msg
-                      (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
-                  :vars '((user-mail-address . "theophilusx@gmail.com")
-                          (user-full-name . "Tim Cross")
-                          (mu4e-compose-signature . (concat "Tim Cross\n"))
-                          (mu4e-drafts-folder . "/gmail/Drafts")
-                          (mu4e-sent-folder . "/gmail/Sent Mail")
-                          (mu4e-trash-folder . "/gmail/Bin")
-                          (mu4e-refile-folder . "/gmail/All Mail")
-                          (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
-                                                     ("/gmail/Sent Mail" . ?s)
-                                                     ("/gmail/All Mail" . ?a)
-                                                     ("/gmail/Drafts" . ?d)
-                                                     ("/gmail/Starred" . ?f)))
-                          (smtpmail-smtp-server . "smtp.gmail.com")
-                          (smtpmail-smtp-service . 587)
-                          (mu4e-sent-messages-behavior . delete))))
-    (add-to-list 'mu4e-contexts
-                 (make-mu4e-context
                   :name "Outlook"
                   :enter-func
                   (lambda ()
@@ -3446,6 +3479,34 @@ Now setup mu4e.
                                                      ("/outlook/Archive" . ?a)
                                                      ("/outlook/Drafts" . ?d)))
                           (smtpmail-smtp-server . "smtp-mail.outlook.com")
+                          (smtpmail-smtp-service . 587)
+                          (mu4e-sent-messages-behavior . delete))))
+    (add-to-list 'mu4e-contexts
+                 (make-mu4e-context
+                  :name "Private"
+                  :enter-func (lambda ()
+                                (mu4e-message "Entering Private context"))
+                  :leave-func
+                  (lambda ()
+                    (mu4e-message "Leaving Private context"))
+                  ;; we match based on the contact-fields of the message
+                  :match-func
+                  (lambda (msg)
+                    (when msg
+                      (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
+                  :vars '((user-mail-address . "theophilusx@gmail.com")
+                          (user-full-name . "Tim Cross")
+                          (mu4e-compose-signature . (concat "Tim Cross\n"))
+                          (mu4e-drafts-folder . "/gmail/Drafts")
+                          (mu4e-sent-folder . "/gmail/Sent Mail")
+                          (mu4e-trash-folder . "/gmail/Bin")
+                          (mu4e-refile-folder . "/gmail/All Mail")
+                          (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
+                                                     ("/gmail/Sent Mail" . ?s)
+                                                     ("/gmail/All Mail" . ?a)
+                                                     ("/gmail/Drafts" . ?d)
+                                                     ("/gmail/Starred" . ?f)))
+                          (smtpmail-smtp-server . "smtp.gmail.com")
                           (smtpmail-smtp-service . 587)
                           (mu4e-sent-messages-behavior . delete)))))
 
