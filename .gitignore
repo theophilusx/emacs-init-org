@@ -29,3 +29,6 @@ emms
 emojis
 eww-bookmarks
 transient
+early-init.el*
+init.el*
+savehist
