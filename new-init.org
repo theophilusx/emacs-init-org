@@ -1058,6 +1058,8 @@ Set the default font
 
 #+end_src
 
+** Font Scaling
+
 Setup some font scaling support
 
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -1069,9 +1071,11 @@ Setup some font scaling support
 
 #+END_SRC
 
+** Emoji
+
 Setup emoji support
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+BEGIN_SRC emacs-lisp :tangle tangle-init.el
   (use-package emojify
     :ensure t
     :config
@@ -3017,7 +3021,7 @@ Setup ~clojure-mode~ and ~cider~.
 
 *** emmet-mode
 
-#+begin_src emacs-lisp :tanble tangle-init.el
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package emmet-mode
     :ensure t)
 
@@ -3391,7 +3395,7 @@ First, setup some load paths.
 
 Next, load some additional packages we need.
 
-#+BEGIN_SRC emacs-lisp :tangle-init.el
+#+BEGIN_SRC emacs-lisp :tangle tangle-init.el
   (when *run_emacspeak*
       (require 'emacspeak-mu4e))
 
