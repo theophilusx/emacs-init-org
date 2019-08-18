@@ -990,12 +990,15 @@ Set the default font
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (defvar tx-font (font-spec :family "Fira Code" :size 22))
-  (defvar tx-variable-pitch-font (if (string= system-name "tim-desktop")
-                                     (font-spec :family "Noto Sans")
-                                   (font-spec :family "Fira Sans")))
-  (defvar tx-serif-font (if (string= system-name "tim-desktop")
-                            (font-spec :family "Noto Serif Display")
-                          (font-spec :family "DejaVu Serif")))
+  (defvar tx-variable-pitch-font (cond
+                                  (*is-a-mac* (font-spec :family "Helvetica"))
+                                  ((string= system-name "tim-desktop") (font-spec :family "Noto Sans"))
+                                  (t (font-spec :family "DejaVu Serif"))))
+
+  (defvar tx-serif-font (cond
+                         (*is-a-mac* (font-spec :family "Times"))
+                         ((string= system-name "tim-desktop") (font-spec :family "Noto Serif Display"))
+                         (t (font-spec :family "DejaVu Serif"))))
 
   (defvar tx-unicode-font
     (if *is-a-mac*
