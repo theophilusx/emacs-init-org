@@ -1079,7 +1079,10 @@ Setup emoji support
   (use-package emojify
     :ensure t
     :config
-    (setq emojify-program-contexts '(comments string))
+    (setq
+     emojify-company-tooltips-p nil
+     emojify-display-style 'unicode
+     emojify-program-contexts '(comments string))
     :init
     (add-hook 'after-init-hook #'global-emojify-mode))
 
