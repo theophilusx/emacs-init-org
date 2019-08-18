@@ -3502,37 +3502,38 @@ Now setup mu4e.
                           (smtpmail-smtp-service . 587)
                           (mu4e-sent-messages-behavior . delete))))
     (if (string= system-name "tim-desktop")
-        (make-mu4e-context
-                :name "Sheep"
-                :enter-func
-                (lambda ()
-                  (mu4e-message "Entering Sheep context"))
-                :leave-func
-                (lambda ()
-                  (mu4e-message "Leaving Sheep context"))
-                ;; we match based on the contact-fields of the message
-                :match-func
-                (lambda (msg)
-                  (when msg
-                    (mu4e-message-contact-field-matches msg :to "tcross8@une.edu.au")))
-                :vars '((user-mail-address . "tcross8@une.edu.au")
-                        (user-full-name . "Tim Cross")
-                        (mu4e-compose-signature . (concat
-                                                   "Tim Cross\n"
-                                                   "DBA/Developer - Livestock App Building\n"
-                                                   "School of Science and Technology\n"
-                                                   "Room 253 Booth Block (C027), Univrsity of New England\n"))
-                        (mu4e-drafts-folder . "/sheep/Drafts")
-                        (mu4e-sent-folder . "/sheep/Sent Items")
-                        (mu4e-trash-folder . "/sheep/Deleted Items")
-                        (mu4e-refile-folder . "/sheep/Archive")
-                        (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
-                                                   ("/sheep/Sent Items" . ?s)
-                                                   ("/sheep/Archive" . ?a)
-                                                   ("/sheep/Drafts" . ?d)))
-                        (smtpmail-smtp-server . "mailhub.une.edu.au")
-                        (smtpmail-smtp-service . 25)
-                        (mu4e-sent-messages-behavior . sent))))
+        (add-to-list 'mu4e-contexts
+                     (make-mu4e-context
+                      :name "Sheep"
+                      :enter-func
+                      (lambda ()
+                        (mu4e-message "Entering Sheep context"))
+                      :leave-func
+                      (lambda ()
+                        (mu4e-message "Leaving Sheep context"))
+                      ;; we match based on the contact-fields of the message
+                      :match-func
+                      (lambda (msg)
+                        (when msg
+                          (mu4e-message-contact-field-matches msg :to "tcross8@une.edu.au")))
+                      :vars '((user-mail-address . "tcross8@une.edu.au")
+                              (user-full-name . "Tim Cross")
+                              (mu4e-compose-signature . (concat
+                                                         "Tim Cross\n"
+                                                         "DBA/Developer - Livestock App Building\n"
+                                                         "School of Science and Technology\n"
+                                                         "Room 253 Booth Block (C027), Univrsity of New England\n"))
+                              (mu4e-drafts-folder . "/sheep/Drafts")
+                              (mu4e-sent-folder . "/sheep/Sent Items")
+                              (mu4e-trash-folder . "/sheep/Deleted Items")
+                              (mu4e-refile-folder . "/sheep/Archive")
+                              (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
+                                                         ("/sheep/Sent Items" . ?s)
+                                                         ("/sheep/Archive" . ?a)
+                                                         ("/sheep/Drafts" . ?d)))
+                              (smtpmail-smtp-server . "mailhub.une.edu.au")
+                              (smtpmail-smtp-service . 25)
+                              (mu4e-sent-messages-behavior . sent)))))
     (add-to-list 'mu4e-contexts
                  (make-mu4e-context
                   :name "Private"
