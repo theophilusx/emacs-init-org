@@ -3501,7 +3501,7 @@ Now setup mu4e.
                           (smtpmail-smtp-server . "smtp-mail.outlook.com")
                           (smtpmail-smtp-service . 587)
                           (mu4e-sent-messages-behavior . delete))))
-    (if (string= "tim-desktop")
+    (if (string= system-name "tim-desktop")
         (make-mu4e-context
                 :name "Sheep"
                 :enter-func
