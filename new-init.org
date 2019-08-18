@@ -3314,16 +3314,26 @@ setup, comment out for now.
     :ensure t
     :init 
     (setq-default custom-enabled-themes '(night-owl))
+    (setq
+     night-owl-background "#011627"
+     night-owl-doc-face-as-comment t
+     night-owl-foreground "goldenrod3"
+     night-owl-foreground-muted "OrangeRed3"
+     night-owl-foreground-slightly-muted "goldenrod4"
+     night-owl-highlight "#1D1053"
+     night-owl-highlight-alt "#3C0074"
+     night-owl-highlight-line "#010F1D"
+     night-owl-use-variable-pitch t)
     :config
-    (defun reapply-themes ()
-      "Forcibly load the themes listed in `custom-enabled-themes'."
-      (dolist (theme custom-enabled-themes)
-        (unless (custom-theme-p theme)
-          (load-theme theme)))
-      (custom-set-variables `(custom-enabled-themes
-                              (quote ,custom-enabled-themes))))
-    ;;(add-hook 'after-init-hook 'reapply-themes)
-    )
+    ;; (defun reapply-themes ()
+    ;;   "Forcibly load the themes listed in `custom-enabled-themes'."
+    ;;   (dolist (theme custom-enabled-themes)
+    ;;     (unless (custom-theme-p theme)
+    ;;       (load-theme theme)))
+    ;;   (custom-set-variables `(custom-enabled-themes
+    ;;                           (quote ,custom-enabled-themes))))
+    ;; (add-hook 'after-init-hook 'reapply-themes)
+    (load-theme 'night-owl))
 
 #+END_SRC
 
