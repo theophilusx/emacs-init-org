@@ -986,23 +986,6 @@ Some basic defaults and customizations
 
 Set the default font
 
-** Old font  config
-
-#+BEGIN_SRC emacs-lisp :tangle no
-  (if *is-a-mac*
-      (progn
-        (set-face-attribute 'default nil
-                            :foundry nil
-                            :family "Fira Code"
-                            :height 361)
-        (mac-auto-operator-composition-mode))
-    (set-face-attribute 'default nil
-                        :foundry "CTDB"
-                        :family "Fira Code"
-                        :height 200))
-
-#+END_SRC
-
 ** Font Variables
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -1020,41 +1003,13 @@ Set the default font
 ** Set Fonts
 
 #+begin_src emacs-lisp :tangle tangle-init.el
-  ;; Fonts are specified by `doom-font', `doom-variable-pitch-font',
-  ;; `doom-serif-font' and `doom-unicode-font'."
-  ;; (condition-case e
-  ;;     (progn
-  ;;       (cond (tx-font
-  ;;              (add-to-list
-  ;;               'default-frame-alist
-  ;;               (cons 'font
-  ;;                     (cond ((stringp tx-font) tx-font)
-  ;;                           ((fontp tx-font) (font-xlfd-name tx-font))
-  ;;                           ((signal 'wrong-type-argument
-  ;;                                    (list '(fontp stringp) tx-font)))))))
-  ;;             ((display-graphic-p)
-  ;;              (setq tx-font (face-attribute 'default :font))))
-  ;;       (when tx-serif-font
-  ;;         (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font))
-  ;;       (when tx-variable-pitch-font
-  ;;         (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)))
-  ;;   ((debug error)
-  ;;    (if (string-prefix-p "Font not available: " (error-message-string e))
-  ;;        (message "Could not find the '%s' font, falling back to system font"
-  ;;                 (font-get (caddr e) :family))
-  ;;      (signal 'doom-error e))))
-
   (set-face-attribute 'default nil :font tx-font)
   (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font)
   (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)
   (set-fontset-font t 'unicode tx-unicode-font nil 'prepend)
 
-  ;; (defun tx-init-emoji-fonts (frame)
-  ;;   "Set up unicode fonts (if `doom-unicode-font' is set).
-
-  ;; By default, this uses Apple Color Emoji on MacOS and Symbola on Linux."
-  ;;   (when tx-unicode-font
-  ;;     ))
+  (when *is-a-mac*
+    (mac-auto-operator-composition-mode))
 
 #+end_src
 
@@ -2003,6 +1958,60 @@ layer which does not mess with editing etc.
     (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
     (add-hook 'dired-mode-hook 'diff-hl-dir-mode)
     (add-hook 'after-init-hook 'global-diff-hl-mode))
+
+#+end_src
+
+** Quickrun
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package quickrun
+    :ensure t
+    :commands (quickrun)
+    :init
+    (setq
+     eval-expression-print-length nil
+     eval-expression-print-level  nil)
+    :config
+    (setq quickrun-focus-p nil)
+
+    (defun tx-quickrun-auto-close (&rest _)
+      "Allows us to silently re-run quickrun from within the quickrun buffer."
+      (when-let (win (get-buffer-window quickrun--buffer-name))
+        (let ((inhibit-message t))
+          (quickrun--kill-running-process)
+          (message ""))
+        (delete-window win)))
+    (advice-add #'quickrun :before #'tx-quickrun-auto-close)
+    (advice-add #'quickrun-region :before #'tx-quickrun-auto-close)
+
+    (defun tx-quickrun--outputter-replace-region ()
+      "Make `quickrun-replace-region' recognize evil visual selections."
+      (let ((output (buffer-substring-no-properties (point-min) (point-max))))
+        (with-current-buffer quickrun--original-buffer
+          (cl-destructuring-bind (beg . end)
+              ;; Because `deactivate-mark', the function, was used in
+              ;; `quickrun--region-command-common' instead of `deactivate-mark',
+              ;; the variable, the selection is disabled by this point.
+              (cons (region-beginning) (region-end))
+            (delete-region beg end)
+            (insert output))
+          (setq quickrun-option-outputter quickrun--original-outputter))))
+    (advice-add #'quickrun--outputter-replace-region :override
+                #'tx-quickrun--outputter-replace-region)
+    (defun tx-quickrun-shrink-window ()
+      "Shrink the quickrun output window once code evaluation is complete."
+      (when-let (win (get-buffer-window quickrun--buffer-name))
+        (with-selected-window (get-buffer-window quickrun--buffer-name)
+          (let ((ignore-window-parameters t))
+            (shrink-window-if-larger-than-buffer)))))
+    (add-hook 'quickrun-after-run-hook #'tx-quickrun-shrink-window)
+
+    (defun tx-quickrun-scroll-to-bof ()
+      "Ensures window is scrolled to BOF on invocation."
+      (when-let (win (get-buffer-window quickrun--buffer-name))
+        (with-selected-window win
+          (goto-char (point-min)))))
+    (add-hook 'quickrun-after-run-hook #'tx-quickrun-scroll-to-bof))
 
 #+end_src
 
@@ -3488,6 +3497,38 @@ Now setup mu4e.
                           (smtpmail-smtp-server . "smtp-mail.outlook.com")
                           (smtpmail-smtp-service . 587)
                           (mu4e-sent-messages-behavior . delete))))
+    (if (string= "tim-desktop")
+        (make-mu4e-context
+                :name "Sheep"
+                :enter-func
+                (lambda ()
+                  (mu4e-message "Entering Sheep context"))
+                :leave-func
+                (lambda ()
+                  (mu4e-message "Leaving Sheep context"))
+                ;; we match based on the contact-fields of the message
+                :match-func
+                (lambda (msg)
+                  (when msg
+                    (mu4e-message-contact-field-matches msg :to "tcross8@une.edu.au")))
+                :vars '((user-mail-address . "tcross8@une.edu.au")
+                        (user-full-name . "Tim Cross")
+                        (mu4e-compose-signature . (concat
+                                                   "Tim Cross\n"
+                                                   "DBA/Developer - Livestock App Building\n"
+                                                   "School of Science and Technology\n"
+                                                   "Room 253 Booth Block (C027), Univrsity of New England\n"))
+                        (mu4e-drafts-folder . "/sheep/Drafts")
+                        (mu4e-sent-folder . "/sheep/Sent Items")
+                        (mu4e-trash-folder . "/sheep/Deleted Items")
+                        (mu4e-refile-folder . "/sheep/Archive")
+                        (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
+                                                   ("/sheep/Sent Items" . ?s)
+                                                   ("/sheep/Archive" . ?a)
+                                                   ("/sheep/Drafts" . ?d)))
+                        (smtpmail-smtp-server . "mailhub.une.edu.au")
+                        (smtpmail-smtp-service . 25)
+                        (mu4e-sent-messages-behavior . sent))))
     (add-to-list 'mu4e-contexts
                  (make-mu4e-context
                   :name "Private"
