@@ -26,9 +26,13 @@ initialization, so we must prevent Emacs from doing it early!
 Prevent the glimpse of un-styled Emacs by setting these early.
 
 #+begin_src emacs-lisp :tangle tangle-early-init.el
-(add-to-list 'default-frame-alist '(tool-bar-lines . 0))
-(add-to-list 'default-frame-alist '(menu-bar-lines . 0))
-(add-to-list 'default-frame-alist '(vertical-scroll-bars))
+  (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
+  (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
+  (add-to-list 'default-frame-alist '(vertical-scroll-bars))
+  (add-to-list 'default-frame-alist '(top . 10))
+  (add-to-list 'default-frame-alist '(left . 10))
+  (add-to-list 'default-frame-alist '(width . 90))
+  (add-to-list `default-frame-alist '(height . 30))
 
 #+end_src
 
@@ -119,6 +123,22 @@ Set things for fast load
     (add-hook 'after-init-hook #'tx-restore-startup-optimizations))
 
   (setq load-prefer-newer noninteractive)
+
+#+end_src
+
+* Emacs < 27 stuff
+
+Emacs < 27 does not have the early init file.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when (< emacs-major-version 27)
+    (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
+    (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
+    (add-to-list 'default-frame-alist '(vertical-scroll-bars))
+    (add-to-list 'default-frame-alist '(top . 10))
+    (add-to-list 'default-frame-alist '(left . 10))
+    (add-to-list 'default-frame-alist '(width . 90))
+    (add-to-list `default-frame-alist '(height . 30)))
 
 #+end_src
 
@@ -909,7 +929,6 @@ Some basic defaults and customizations
    apropos-do-all t
    auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
    backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
-   default-frame-alist '((top . 10) (left . 10) (width . 90) (height . 30))
    delete-by-moving-to-trash t
    ediff-window-setup-function 'ediff-setup-windows-plain
    eldoc-idle-delay 1.5
