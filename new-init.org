@@ -39,6 +39,13 @@ One less file to load at startup
 
 #+end_src
 
+Silence the package warnings for now
+
+#+begin_src emacs-lisp :tangle tangle-early-init.el
+  (setq warning-suppress-log-types '((package reinitialization)))
+
+#+end_src
+
 * GC Settings
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -326,7 +333,8 @@ package repositories. I add
 
   (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
   (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-  (package-initialize)
+  (when (< emacs-major-version 27)
+    (package-initialize))
 
 #+END_SRC
 
