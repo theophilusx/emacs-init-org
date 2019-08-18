@@ -905,31 +905,29 @@ Some basic defaults and customizations
 ** Set some setq defaults
 
 #+BEGIN_SRC emacs-lisp :tangle tangle-init.el
-  (setq apropos-do-all t
-        auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
-        backup-directory-alist `(("." . ,(concat user-emacs-directory
-                                                 "backups")))
-        blink-matching-paren nil
-        default-frame-alist '((top . 10) (left . 10) (width . 90) (height . 30))
-        delete-by-moving-to-trash t
-        ediff-window-setup-function 'ediff-setup-windows-plain
-        eldoc-idle-delay 1.5
-        inhibit-startup-message t
-        initial-fram-alist '((top . 10) (left . 10) (width . 90) (height . 30))
-        line-move-visual nil
-        load-prefer-newer t
-       ;; max-mini-window-height 0.50
-        message-log-max 2048
-        mouse-yank-at-point t
-        require-final-newline t
-        save-interprogram-paste-before-kill t
-        show-paren-delay 0
-        show-paren-style 'mixed
-        tab-always-indent 'complete
-        truncate-lines t
-        visible-bell t
-        select-enable-clipboard t
-        select-enable-primary t)
+  (setq
+   apropos-do-all t
+   auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
+   backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
+   default-frame-alist '((top . 10) (left . 10) (width . 90) (height . 30))
+   delete-by-moving-to-trash t
+   ediff-window-setup-function 'ediff-setup-windows-plain
+   eldoc-idle-delay 1.5
+   inhibit-startup-message t
+   initial-fram-alist '((top . 10) (left . 10) (width . 90) (height . 30))
+   line-move-visual nil
+   load-prefer-newer t
+   ;; max-mini-window-height 0.50
+   message-log-max 2048
+   require-final-newline t
+   save-interprogram-paste-before-kill t
+   visible-bell t
+   select-enable-clipboard t
+   select-enable-primary t
+   show-paren-delay 0
+   show-paren-style 'mixed
+   tab-always-indent 'complete
+   truncate-lines t)
 
 #+END_SRC
 
@@ -944,8 +942,6 @@ Some basic defaults and customizations
    compilation-ask-about-save nil   ; save all buffers on `compile'
    compilation-scroll-output 'first-error
    confirm-nonexistent-file-or-buffer t
-   cursor-in-non-selected-windows nil ; hide cursors in other windows
-   display-line-numbers-width 3
    fill-column 80
    frame-inhibit-implied-resize t
    frame-resize-pixelwise t
@@ -1847,8 +1843,10 @@ Not sure I like this mode compared to paredit. Disabling it for now.
 
 ** Line numbers
 
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'prog-mode-hook 'display-line-numbers-mode)
+#+BEGIN_SRC emacs-lisp :tangle tangle-init.el
+  (add-hook 'prog-mode-hook (lambda ()
+                              (display-line-numbers-mode)
+                              (line-number-mode)))
 
 #+END_SRC
 
