@@ -393,6 +393,7 @@ do the simple way
 #+end_src
 
 * Org Mode
+
 Start by getting required package. I'm using the org-plus-contrib package from
 the org repository.
 
@@ -411,109 +412,115 @@ normally ensure a 'stable' environment.
     :pin org
     :ensure org-plus-contrib 
     :init
-    (setq org-agenda-show-outline-path nil
-          org-catch-invisible-edits 'smart
-          org-ctrl-k-protect-subtree t
-          org-default-notes-file "~/Dropbox/org/notes.org"
-          org-directory "~/Dropbox/org"
-          org-ellipsis "…"
-          org-list-allow-alphabetical t
-          org-list-indent-offset 2
-          org-pretty-entities t
-          org-startup-align-all-tables t
-          org-startup-with-inline-images (display-graphic-p)
-          org-support-shift-select t
-          org-use-sub-superscripts (quote {}))
-    (setq org-modules '(org-bibtex
-                        org-crypt
-                        org-docview
-                        org-eww
-                        org-info
-                        org-irc
-                        org-protocol))
-    (setq org-capture-templates
-          (quote
-           (("t" "todo" entry
-             (file "~/Dropbox/org/refile.org")
-             "* TODO %?\n\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("r" "respond" entry
-             (file "~/Dropbox/org/refile.org")
-             "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("n" "note" entry
-             (file "~/Dropbox/org/notes.org")
-             "* %? :NOTE:\n\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("j" "journal" entry
-             (file+olp+datetree "~/Dropbox/org/journal.org")
-             "* %?\n  "
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("p" "phone" entry
-             (file "~/Dropbox/org/refile.org")
-             "* PHONE %? :PHONE:\n  "
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("m" "mail" entry
-             (file "~/Dropbox/org/refile.org")
-             "* MAIL from %:from on %:subject\n\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t))))
-    (setq org-enforce-todo-checkbox-dependencies t
-          org-enforce-todo-dependencies t
-          org-log-done 'time
-          org-log-into-drawer t)
-    (setq org-todo-keywords
-          (quote
-           ((sequence "TODO(t)"
-                      "NEXT(n)"
-                      "STARTED(s!)"
-                      "DELEGATED(w@/!)"
-                      "HOLD(h@/!)"
-                      "|"
-                      "CANCELLED(c@)"
-                      "DONE(d!)"))))
-    (setq org-log-refile 'time
-          org-refile-allow-creating-parent-nodes 'confirm
-          org-refile-targets (quote ((nil :maxlevel . 5)
-                                     (org-agenda-files :maxlevel . 5)))
-          org-refile-use-outline-path (quote file))
-    (setq org-clock-in-resume t
-          org-clock-out-remove-zero-time-clocks t
-          org-clock-persist 'clock
-          org-time-clocksum-format '(:hours "%d" :require-hours t
-                                            :minutes ":%02d" :require-minutes t))
-    (setq org-agenda-files '("~/Dropbox/org")
-          org-agenda-remove-tags t)
+    (setq
+     org-agenda-files '("~/Dropbox/org")
+     org-agenda-remove-tags t
+     org-agenda-show-outline-path nil
+     org-babel-clojure-backend 'cider
+     org-babel-clojure-sync-nrepl-timeout 0
+     org-catch-invisible-edits 'smart
+     org-clock-in-resume t
+     org-clock-out-remove-zero-time-clocks t
+     org-clock-persist 'clock
+     org-confirm-babel-evaluate nil
+     org-ctrl-k-protect-subtree t
+     org-default-notes-file "~/Dropbox/org/notes.org"
+     org-directory "~/Dropbox/org"
+     org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
+     org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar")
+     org-ellipsis "…"
+     org-enforce-todo-checkbox-dependencies t
+     org-enforce-todo-dependencies t
+     org-export-backends '(ascii beamer html
+                                 latex texinfo
+                                 md odt org)
+     org-export-coding-system 'utf-8
+     org-hide-block-startup t
+     org-log-done 'time
+     org-log-into-drawer t
+     org-list-allow-alphabetical t
+     org-list-indent-offset 2
+     org-log-refile 'time
+     org-modules '(org-bibtex
+                   org-crypt
+                   org-docview
+                   org-eww
+                   org-info
+                   org-irc
+                   org-protocol)
+     org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
+     org-pretty-entities t
+     org-refile-allow-creating-parent-nodes 'confirm
+     org-refile-targets (quote ((nil :maxlevel . 5)
+                                (org-agenda-files :maxlevel . 5)))
+     org-refile-use-outline-path (quote file)
+     org-src-tab-acts-natively t
+     org-src-window-setup 'current-window
+     org-startup-align-all-tables t
+     org-startup-with-inline-images (display-graphic-p)
+     org-support-shift-select t
+     org-time-clocksum-format '(:hours "%d" :require-hours t
+                                       :minutes ":%02d" :require-minutes t)
+     org-use-sub-superscripts (quote {}))
+  
+    (setq
+     org-capture-templates
+     (quote
+      (("t" "todo" entry
+        (file "~/Dropbox/org/refile.org")
+        "* TODO %?\n\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("r" "respond" entry
+        (file "~/Dropbox/org/refile.org")
+        "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("n" "note" entry
+        (file "~/Dropbox/org/notes.org")
+        "* %? :NOTE:\n\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("j" "journal" entry
+        (file+olp+datetree "~/Dropbox/org/journal.org")
+        "* %?\n  "
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("p" "phone" entry
+        (file "~/Dropbox/org/refile.org")
+        "* PHONE %? :PHONE:\n  "
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("m" "mail" entry
+        (file "~/Dropbox/org/refile.org")
+        "* MAIL from %:from on %:subject\n\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t))))
 
-    (setq org-agenda-custom-commands
-          (quote
-           (("n" "Agenda and all TODO's"
-             ((agenda "" nil)
-              (alltodo "" nil))
-             nil)
-            ("wr" "Weekly Report"
-             ((todo "DONE|CANCELLED"
-                    ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-              (todo "STARTED|NEXT"
-                    ((org-agenda-overriding-header "WIP")))
-              (todo "HOLD|DELEGATED"
-                    ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-              (todo "TODO"
-                    ((org-agenda-overriding-header "Task Backlog"))))
-             nil nil))))
-    (setq org-src-tab-acts-natively t
-          org-hide-block-startup t
-          org-src-window-setup 'current-window)
-    (setq org-confirm-babel-evaluate nil)
-    (setq org-babel-clojure-backend 'cider
-          org-babel-clojure-sync-nrepl-timeout 0)
-    (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
-          org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
-          org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
-    (setq org-export-backends '(ascii beamer html
-                                      latex texinfo
-                                      md odt org)
-          org-export-coding-system 'utf-8)
-    (setq org-latex-classes
+    (setq
+     org-todo-keywords (quote
+                        ((sequence "TODO(t)"
+                                   "NEXT(n)"
+                                   "STARTED(s!)"
+                                   "DELEGATED(w@/!)"
+                                   "HOLD(h@/!)"
+                                   "|"
+                                   "CANCELLED(c@)"
+                                   "DONE(d!)"))))
+
+    (setq
+     org-agenda-custom-commands
+     (quote
+      (("n" "Agenda and all TODO's"
+        ((agenda "" nil)
+         (alltodo "" nil))
+        nil)
+       ("wr" "Weekly Report"
+        ((todo "DONE|CANCELLED"
+               ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+         (todo "STARTED|NEXT"
+               ((org-agenda-overriding-header "WIP")))
+         (todo "HOLD|DELEGATED"
+               ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+         (todo "TODO"
+               ((org-agenda-overriding-header "Task Backlog"))))
+        nil nil))))
+
+     (setq org-latex-classes
           '(("beamer"
              "\\documentclass[presentation]{beamer}"
              ("\\section{%s}" . "\\section*{%s}")
@@ -605,20 +612,6 @@ normally ensure a 'stable' environment.
     (org-element-update-syntax)
     (org-clock-persistence-insinuate)
 
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("p" "#+begin_src python\n?\n#+end_src"
-    ;;                "<src lang=\"python\">\n?\n</src>"))
-
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("el" "#+begin_src emacs-lisp\n?\n#+end_src"
-    ;;                "<src lang=\"emacs-lisp\">\n?\n</src>"))
-
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("clj" "#+begin_src clojure-mode\n?\n#+end_src"
-    ;;                "<src lang=\"clojure-mode\">\n?\n</src>"))
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("cl" "#+begin_src lisp\n?\n#+end_src"
-    ;;                "<src lang=\"lisp-mode\">\n?\n</src>"))
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((emacs-lisp . t)
@@ -1001,7 +994,9 @@ Some basic defaults and customizations
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package doom-modeline
     :ensure t
-    :hook (after-init . doom-modeline-mode))
+    :hook (after-init . doom-modeline-mode)
+    :config
+    (setq  doom-modeline-height 20))
 
 #+end_src
 
@@ -1938,8 +1933,7 @@ layer which does not mess with editing etc.
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-
+#+begin_src emacs-lisp :tangle no
   (use-package highlight-indent-guides
     :ensure t
     :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
@@ -3334,7 +3328,6 @@ setup, comment out for now.
 * Theme 
 
 #+begin_src emacs-lisp :tangle tangle-init.el
-
   (use-package night-owl-theme
     :ensure t
     :init 
@@ -3350,14 +3343,6 @@ setup, comment out for now.
      night-owl-highlight-line "#010F1D"
      night-owl-use-variable-pitch t)
     :config
-    ;; (defun reapply-themes ()
-    ;;   "Forcibly load the themes listed in `custom-enabled-themes'."
-    ;;   (dolist (theme custom-enabled-themes)
-    ;;     (unless (custom-theme-p theme)
-    ;;       (load-theme theme)))
-    ;;   (custom-set-variables `(custom-enabled-themes
-    ;;                           (quote ,custom-enabled-themes))))
-    ;; (add-hook 'after-init-hook 'reapply-themes)
     (load-theme 'night-owl))
 
 #+end_src
@@ -3387,19 +3372,6 @@ mode-line. See [[https://github.com/myrjola/diminish.el][diminish on GitHub]]
       (diminish 'whitespace-newline-mode)
       (diminish 'whitespace-mode)
       (diminish 'guide-key-mode)))
-
-#+end_src
-
-** Mode Line
-
-#+begin_src emacs-lisp :tangle no
-  (use-package powerline
-    :ensure t
-    :init
-    (setq powerline-display-mule-info nil
-          powerline-display-buffer-size nil)
-    :config
-    (powerline-default-theme))
 
 #+end_src
 
@@ -3460,6 +3432,27 @@ Next, load some additional packages we need.
 
 #+end_src
 
+Setup mu4e alert
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package mu4e-alert
+    :ensure t
+    :config
+    (setq mu4e-alert-interesting-mail-query
+          (if (string= system-name "arch-vbox")
+              (concat
+               "(maildir:/gmail/INBOX OR "
+               "maildir:/outlook/INBOX) AND "
+               "flag:unread AND NOT flag:trashed")
+            (concat
+             "(maildir:/gmail/INBOX OR "
+             "maildir:/outlook/INBOX OR "
+             "maildir:/sheep/INBOX) AND "
+             "flag:unread AND NOT flag:trashed")))
+    (mu4e-alert-enable-mode-line-display))
+
+#+end_src
+
 Now setup mu4e.
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -3492,24 +3485,31 @@ Now setup mu4e.
     (setq mu4e-bookmarks '())
     (add-to-list 'mu4e-bookmarks
                  (make-mu4e-bookmark
-                             :name  "Unread messages"
-                             :query "flag:unread AND NOT flag:trashed"
-                             :key ?u))
+                  :name "Last 7 days"
+                  :query "date:7d..now AND NOT flag:trashed"
+                  :key ?w))
     (add-to-list 'mu4e-bookmarks
                  (make-mu4e-bookmark
-                             :name "Today's messages"
-                             :query "date:today..now AND NOT flag:trashed"
-                             :key ?t))
+                  :name "Messages with images"
+                  :query "mime:image/* AND NOT flag:trashed"
+                  :key ?p))
     (add-to-list 'mu4e-bookmarks
                  (make-mu4e-bookmark
-                             :name "Last 7 days"
-                             :query "date:7d..now AND NOT flag:trashed"
-                             :key ?w))
+                  :name "Today's messages"
+                  :query "date:today..now AND NOT flag:trashed"
+                  :key ?t))
     (add-to-list 'mu4e-bookmarks
                  (make-mu4e-bookmark
-                             :name "Messages with images"
-                             :query "mime:image/* AND NOT flag:trashed"
-                             :key ?p))
+                  :name  "Unread messages"
+                  :query (if (string= system-name "arch-vbox")
+                             (concat "(maildir:/gmail/INBOX OR "
+                                     "maildir:/outlook/INBOX) AND "
+                                     "flag:unread AND NOT flag:trashed")
+                           (concat "(maildir:/gmail/INBOX OR "
+                                   "maildir:/outlook/INBOX OR "
+                                   "maildir:/sheep/INBOX) AND "
+                                   "flag:unread AND NOT flag:trashed"))
+                  :key ?u))
     (setq mu4e-contexts '())
     (add-to-list 'mu4e-contexts
                  (make-mu4e-context
@@ -3524,7 +3524,9 @@ Now setup mu4e.
                   :match-func
                   (lambda (msg)
                     (when msg
-                      (mu4e-message-contact-field-matches msg :to "blind-bat@hotmail.com")))
+                      (mu4e-message-contact-field-matches msg
+                                                          :to
+                                                          "blind-bat@hotmail.com")))
                   :vars '((user-mail-address . "blind-bat@hotmail.com")
                           (user-full-name . "Tim Cross")
                           (mu4e-compose-signature . (concat "Tim Cross\n"))
@@ -3553,25 +3555,32 @@ Now setup mu4e.
                       :match-func
                       (lambda (msg)
                         (when msg
-                          (mu4e-message-contact-field-matches msg :to "tcross8@une.edu.au")))
-                      :vars '((user-mail-address . "tcross8@une.edu.au")
-                              (user-full-name . "Tim Cross")
-                              (mu4e-compose-signature . (concat
-                                                         "Tim Cross\n"
-                                                         "DBA/Developer - Livestock App Building\n"
-                                                         "School of Science and Technology\n"
-                                                         "Room 253 Booth Block (C027), Univrsity of New England\n"))
-                              (mu4e-drafts-folder . "/sheep/Drafts")
-                              (mu4e-sent-folder . "/sheep/Sent Items")
-                              (mu4e-trash-folder . "/sheep/Deleted Items")
-                              (mu4e-refile-folder . "/sheep/Archive")
-                              (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
-                                                         ("/sheep/Sent Items" . ?s)
-                                                         ("/sheep/Archive" . ?a)
-                                                         ("/sheep/Drafts" . ?d)))
-                              (smtpmail-smtp-server . "mailhub.une.edu.au")
-                              (smtpmail-smtp-service . 25)
-                              (mu4e-sent-messages-behavior . sent)))))
+                          (mu4e-message-contact-field-matches msg
+                                                              :to
+                                                              "tcross8@une.edu.au")))
+                      :vars
+                      '((user-mail-address . "tcross8@une.edu.au")
+                        (user-full-name . "Tim Cross")
+                        (mu4e-compose-signature .
+                                                (concat
+                                                 "Tim Cross\n"
+                                                 "DBA/Developer - "
+                                                 "Livestock App Building\n"
+                                                 "School of Science and "
+                                                 "Technology\n"
+                                                 "Room 253 Booth Block (C027), "
+                                                 "Univrsity of New England\n"))
+                        (mu4e-drafts-folder . "/sheep/Drafts")
+                        (mu4e-sent-folder . "/sheep/Sent Items")
+                        (mu4e-trash-folder . "/sheep/Deleted Items")
+                        (mu4e-refile-folder . "/sheep/Archive")
+                        (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
+                                                   ("/sheep/Sent Items" . ?s)
+                                                   ("/sheep/Archive" . ?a)
+                                                   ("/sheep/Drafts" . ?d)))
+                        (smtpmail-smtp-server . "mailhub.une.edu.au")
+                        (smtpmail-smtp-service . 25)
+                        (mu4e-sent-messages-behavior . sent)))))
     (add-to-list 'mu4e-contexts
                  (make-mu4e-context
                   :name "Private"
@@ -3585,21 +3594,22 @@ Now setup mu4e.
                   (lambda (msg)
                     (when msg
                       (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
-                  :vars '((user-mail-address . "theophilusx@gmail.com")
-                          (user-full-name . "Tim Cross")
-                          (mu4e-compose-signature . (concat "Tim Cross\n"))
-                          (mu4e-drafts-folder . "/gmail/Drafts")
-                          (mu4e-sent-folder . "/gmail/Sent Mail")
-                          (mu4e-trash-folder . "/gmail/Bin")
-                          (mu4e-refile-folder . "/gmail/All Mail")
-                          (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
-                                                     ("/gmail/Sent Mail" . ?s)
-                                                     ("/gmail/All Mail" . ?a)
-                                                     ("/gmail/Drafts" . ?d)
-                                                     ("/gmail/Starred" . ?f)))
-                          (smtpmail-smtp-server . "smtp.gmail.com")
-                          (smtpmail-smtp-service . 587)
-                          (mu4e-sent-messages-behavior . delete)))))
+                  :vars
+                  '((user-mail-address . "theophilusx@gmail.com")
+                    (user-full-name . "Tim Cross")
+                    (mu4e-compose-signature . (concat "Tim Cross\n"))
+                    (mu4e-drafts-folder . "/gmail/Drafts")
+                    (mu4e-sent-folder . "/gmail/Sent Mail")
+                    (mu4e-trash-folder . "/gmail/Bin")
+                    (mu4e-refile-folder . "/gmail/All Mail")
+                    (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
+                                               ("/gmail/Sent Mail" . ?s)
+                                               ("/gmail/All Mail" . ?a)
+                                               ("/gmail/Drafts" . ?d)
+                                               ("/gmail/Starred" . ?f)))
+                    (smtpmail-smtp-server . "smtp.gmail.com")
+                    (smtpmail-smtp-service . 587)
+                    (mu4e-sent-messages-behavior . delete)))))
 
 #+end_src
 
