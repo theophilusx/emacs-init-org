@@ -1860,7 +1860,8 @@ Not sure I like this mode compared to paredit. Disabling it for now.
 #+begin_src emacs-lisp :tangle tangle-init.el
   (add-hook 'prog-mode-hook (lambda ()
                               (display-line-numbers-mode)
-                              (line-number-mode)))
+                              (line-number-mode)
+                              (column-number-mode)))
 
 #+end_src
 
@@ -1878,14 +1879,15 @@ Not sure I like this mode compared to paredit. Disabling it for now.
     :commands (flycheck-list-errors flycheck-buffer)
     :config
     (setq flycheck-check-syntax-automatically
-          (delq 'new-line flycheck-check-syntax-automatically))
+          (delq 'new-line flycheck-check-syntax-automatically)
+          flycheck-emacs-lisp-load-path 'inherit)
 
     (defun tx-flycheck-adjust-syntax-check-eagerness ()
       "Check for errors less often when there aren't any."
       (if flycheck-current-errors
           (kill-local-variable 'flycheck-idle-change-delay)
         (setq-local flycheck-idle-change-delay tx-flycheck-lazy-idle-delay)))
-  
+
     (add-hook 'flycheck-after-syntax-check-hook
               #'+flycheck|adjust-syntax-check-eagerness)
 
@@ -1989,7 +1991,7 @@ layer which does not mess with editing etc.
 
 ** Quickrun
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package quickrun
     :ensure t
     :commands (quickrun)
@@ -2009,21 +2011,7 @@ layer which does not mess with editing etc.
         (delete-window win)))
     (advice-add #'quickrun :before #'tx-quickrun-auto-close)
     (advice-add #'quickrun-region :before #'tx-quickrun-auto-close)
-
-    (defun tx-quickrun--outputter-replace-region ()
-      "Make `quickrun-replace-region' recognize evil visual selections."
-      (let ((output (buffer-substring-no-properties (point-min) (point-max))))
-        (with-current-buffer quickrun--original-buffer
-          (cl-destructuring-bind (beg . end)
-              ;; Because `deactivate-mark', the function, was used in
-              ;; `quickrun--region-command-common' instead of `deactivate-mark',
-              ;; the variable, the selection is disabled by this point.
-              (cons (region-beginning) (region-end))
-            (delete-region beg end)
-            (insert output))
-          (setq quickrun-option-outputter quickrun--original-outputter))))
-    (advice-add #'quickrun--outputter-replace-region :override
-                #'tx-quickrun--outputter-replace-region)
+  
     (defun tx-quickrun-shrink-window ()
       "Shrink the quickrun output window once code evaluation is complete."
       (when-let (win (get-buffer-window quickrun--buffer-name))
@@ -2057,8 +2045,25 @@ layer which does not mess with editing etc.
 
  #+end_src
 
-* Utility Modes 
+** lsp-mode
 
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package lsp-mode
+    :ensure t
+    :hook (prog-mode-hook . lsp-deferred)
+    :commands (lsp lsp-deferred)
+    :config
+    (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
+    :init
+    (setq lsp-enable-indentation nil))
+
+  (use-package company-lsp
+    :ensure t
+    :commands company-lsp)
+
+#+end_src
+
+* Utility Modes 
 ** Spelling
 
 When running on OSX it is necessary to
