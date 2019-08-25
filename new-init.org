@@ -926,7 +926,6 @@ Some basic defaults and customizations
    ediff-window-setup-function 'ediff-setup-windows-plain
    eldoc-idle-delay 1.5
    inhibit-startup-message t
-   initial-fram-alist '((top . 10) (left . 10) (width . 90) (height . 30))
    line-move-visual nil
    load-prefer-newer t
    ;; max-mini-window-height 0.50
@@ -955,7 +954,6 @@ Some basic defaults and customizations
    compilation-scroll-output 'first-error
    confirm-nonexistent-file-or-buffer t
    fill-column 80
-   frame-inhibit-implied-resize t
    frame-resize-pixelwise t
    image-animate-loop t
    indent-tabs-mode nil
@@ -972,7 +970,6 @@ Some basic defaults and customizations
    tab-width 4
    use-dialog-box nil              ; always avoid GUI
    visible-bell nil
-   window-resize-pixelwise t
    x-stretch-cursor nil)
 
 #+end_src
@@ -996,7 +993,8 @@ Some basic defaults and customizations
     :ensure t
     :hook (after-init . doom-modeline-mode)
     :config
-    (setq  doom-modeline-height 20))
+    (setq  doom-modeline-height 20
+           doom-modeline-buffer-file-name-style 'truncate-all))
 
 #+end_src
 
