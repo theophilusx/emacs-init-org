@@ -833,7 +833,7 @@ Some basic defaults and customizations
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package uniquify
     :demand t
-    :init (setq uniquify-buffer-name-style 'forward))
+    :init (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
 
 #+end_src
 
