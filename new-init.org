@@ -7,12 +7,69 @@
 Emacs 27 introduces an early init file. This is a good place to set some frame defaults and tweak the gc to speed up init process
 The below has been borrowed from Doom Emacs.
 
+** Set Some Constants
+ I set a couple of constants which can then be used to control configuration
+ settings in my init file.
+
+*** Mac or Linux?
+
+ I run emacs on both OSX and Linux. To handle differences in configuration
+ settings for the two platforms, I set a constant which determines if emacs is
+ running on OSX or not. 
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *is-a-mac* (eq system-type 'darwin)
+     "T if emacs is running under OSX, nil otherwise.")
+
+ #+end_src
+
+*** Do Spell Checking?
+
+ Set a constant to determine if spell checking is to be enabled. Not sure if I
+ really need this, but leaving it in place for now.
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *spell-check-support-enabled* t
+     "T if we want spell checking support enabled, nil otherwise.")
+
+ #+end_src
+
+*** Silence Warnings
+
+ Some ELISP packages don't necessarily define variables correctly and can
+ generate warnings. This section lists such variables to quieten things down a
+ bit.
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defvar url-http-extra-headers nil)
+   (defvar oauth--token-data nil)
+   (defvar url-callback-function nil)
+   (defvar url-callback-arguments nil)
+   (defvar emacspeak-we-url-executor nil)
+   (defvar org-ans2 nil)
+   (defvar ido-process-ignore-lists nil)
+   (defvar select-object nil)
+   (defvar *slime-inspector* nil)
+
+ #+end_src
+
+*** Load Emacspeak
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
+
+ #+end_src
+
+** GC
+
 Defer garbage collection further back in the startup process
 
 #+begin_src emacs-lisp :tangle tangle-early-init.el
   (setq gc-cons-threshold 268435456)
 
 #+end_src
+
+** Package 
 
 Package initialize occurs automatically, before `user-init-file' is
 loaded, but after `early-init-file'. We handles package
@@ -23,30 +80,43 @@ initialization, so we must prevent Emacs from doing it early!
 
 #+end_src
 
+Silence the package warnings for now
+
+#+begin_src emacs-lisp :tangle tangle-early-init.el
+  (setq warning-suppress-log-types '((package reinitialization)))
+
+#+end_src
+
+** Frames
+
 Prevent the glimpse of un-styled Emacs by setting these early.
 
 #+begin_src emacs-lisp :tangle tangle-early-init.el
-  (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
-  (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
-  (add-to-list 'default-frame-alist '(vertical-scroll-bars))
-  (add-to-list 'default-frame-alist '(top . 10))
-  (add-to-list 'default-frame-alist '(left . 10))
-  (add-to-list 'default-frame-alist '(width . 90))
-  (add-to-list `default-frame-alist '(height . 30))
+  (setq initial-frame-alist '((vertical-scroll-bars)
+                               (horizontal-scroll-bars)
+                               (tool-bar-lines . 0)
+                               (menu-bar-lines . 0)
+                               (width . 90)
+                               (height . 34)))
+  (setq default-frame-alist '((tool-bar-lines . 0)
+                               (menu-bar-lines . 0)
+                               (vertical-scroll-bars)
+                               (top . 10)
+                               (left . 10)
+                               (width . 90)
+                               (height . 34)))
+
+  (if *is-a-mac*
+      (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
 
 #+end_src
+
+** site-run
 
 One less file to load at startup
 
 #+begin_src emacs-lisp :tangle tangle-early-init.el
 (setq site-run-file nil)
-
-#+end_src
-
-Silence the package warnings for now
-
-#+begin_src emacs-lisp :tangle tangle-early-init.el
-  (setq warning-suppress-log-types '((package reinitialization)))
 
 #+end_src
 
@@ -132,13 +202,40 @@ Emacs < 27 does not have the early init file.
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (when (< emacs-major-version 27)
-    (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
-    (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
-    (add-to-list 'default-frame-alist '(vertical-scroll-bars))
-    (add-to-list 'default-frame-alist '(top . 10))
-    (add-to-list 'default-frame-alist '(left . 10))
-    (add-to-list 'default-frame-alist '(width . 90))
-    (add-to-list `default-frame-alist '(height . 30)))
+    (defconst *is-a-mac* (eq system-type 'darwin)
+      "T if emacs is running under OSX, nil otherwise.")
+
+    (defconst *spell-check-support-enabled* t
+      "T if we want spell checking support enabled, nil otherwise.")
+
+    (defvar url-http-extra-headers nil)
+    (defvar oauth--token-data nil)
+    (defvar url-callback-function nil)
+    (defvar url-callback-arguments nil)
+    (defvar emacspeak-we-url-executor nil)
+    (defvar org-ans2 nil)
+    (defvar ido-process-ignore-lists nil)
+    (defvar select-object nil)
+    (defvar *slime-inspector* nil)
+
+    (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
+
+
+    (setq initial-frame-alist '((vertical-scroll-bars)
+                                 (horizontal-scroll-bars)
+                                 (tool-bar-lines . 0)
+                                 (menu-bar-lines . 0)
+                                 (width . 90)
+                                 (height . 29)))
+    (setq default-frame-alist '((tool-bar-lines . 0)
+                                 (menu-bar-lines . 0)
+                                 (vertical-scroll-bars)
+                                 (top . 10)
+                                 (left . 10)
+                                 (width . 90)
+                                 (height . 29)))
+    (if *is-a-mac*
+        (add-to-list 'default-frame-alist '(fullscreen . fullboth))))
 
 #+end_src
 
@@ -151,59 +248,6 @@ repository go in the ~.emacs.d/lib~  subdirectory.
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
-
-#+end_src
-
-* Set Some Constants
-I set a couple of constants which can then be used to control configuration
-settings in my init file.
-
-** Mac or Linux?
-
-I run emacs on both OSX and Linux. To handle differences in configuration
-settings for the two platforms, I set a constant which determines if emacs is
-running on OSX or not. 
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (defconst *is-a-mac* (eq system-type 'darwin)
-    "T if emacs is running under OSX, nil otherwise.")
-
-#+end_src
-
-** Do Spell Checking?
-
-Set a constant to determine if spell checking is to be enabled. Not sure if I
-really need this, but leaving it in place for now.
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (defconst *spell-check-support-enabled* t
-    "T if we want spell checking support enabled, nil otherwise.")
-
-#+end_src
-
-** Silence Warnings
-
-Some ELISP packages don't necessarily define variables correctly and can
-generate warnings. This section lists such variables to quieten things down a
-bit.
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (defvar url-http-extra-headers nil)
-  (defvar oauth--token-data nil)
-  (defvar url-callback-function nil)
-  (defvar url-callback-arguments nil)
-  (defvar emacspeak-we-url-executor nil)
-  (defvar org-ans2 nil)
-  (defvar ido-process-ignore-lists nil)
-  (defvar select-object nil)
-  (defvar *slime-inspector* nil)
-
-#+end_src
-
-** Load Emacspeak
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
 
 #+end_src
 
