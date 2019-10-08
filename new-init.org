@@ -56,7 +56,10 @@ The below has been borrowed from Doom Emacs.
 *** Load Emacspeak
 
  #+begin_src emacs-lisp :tangle tangle-early-init.el
-   (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
+   (defconst *run_emacspeak* (if (string= (getenv "RUN_EMACSPEAK") "yes")
+                                 t
+                               nil))
+
 
  #+end_src
 
@@ -76,7 +79,7 @@ loaded, but after `early-init-file'. We handles package
 initialization, so we must prevent Emacs from doing it early!
 
 #+begin_src emacs-lisp :tangle tangle-early-init.el
-(setq package-enable-at-startup nil)
+  ;;; (setq package-enable-at-startup nil)
 
 #+end_src
 
@@ -429,10 +432,10 @@ do the simple way
   ;;   (add-to-list 'load-path "~/git/github/use-package")
   ;;   (require 'use-package))
 
-  (eval-when-compile
-    (require 'use-package))
-  (require 'diminish)
-  (require 'bind-key)
+  ;; (eval-when-compile
+  ;;   (require 'use-package))
+  ;; (require 'diminish)
+  ;; (require 'bind-key)
 
 #+end_src
 
@@ -453,7 +456,7 @@ normally ensure a 'stable' environment.
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package org
-    :pin org
+    ;;;:pin org
     :ensure org-plus-contrib 
     :init
     (setq
