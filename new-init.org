@@ -335,18 +335,18 @@ them.
 
 ** Emacspeak Key Bindings
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (when *run_emacspeak*
     (defun my-esp-bindings ()
       (message "Loading my emacspeak key bindings...")
-      (unbind-key "<S-left>")
-      (unbind-key "<S-right>")
-      (unbind-key "<C-left>")
-      (unbind-key "<C-right>")
-      (unbind-key "<C-down>")
-      (unbind-key "<C-up>")
-      (unbind-key "<S-up>")
-      (unbind-key "<S-down>")
+      ;; (unbind-key "<S-left>")
+      ;; (unbind-key "<S-right>")
+      ;; (unbind-key "<C-left>")
+      ;; (unbind-key "<C-right>")
+      ;; (unbind-key "<C-down>")
+      ;; (unbind-key "<C-up>")
+      ;; (unbind-key "<S-up>")
+      ;; (unbind-key "<S-down>")
       (bind-key "<f5>" 'my-hydra-window/body)
       (bind-key "<f7>" 'my-hydra-wizards/body)
       (bind-key "C-z" 'my-hydra-zoom/body))
