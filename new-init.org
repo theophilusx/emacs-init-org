@@ -1052,7 +1052,10 @@ Set the default font
 ** Font Variables
 
 #+begin_src emacs-lisp :tangle tangle-init.el
-  (defvar tx-font (font-spec :family "Fira Code" :size 24))
+  (if *is-a-mac*
+      (defvar tx-font (font-spec :family "Fira Code" :size 26))
+    (defvar tx-font (font-spec :family "Fira Code" :size 24)))
+
   (defvar tx-variable-pitch-font (cond
                                   (*is-a-mac* (font-spec :family "Helvetica"))
                                   ((string= system-name "tim-desktop")
