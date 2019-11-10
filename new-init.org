@@ -237,8 +237,9 @@ Emacs < 27 does not have the early init file.
                                  (left . 10)
                                  (width . 90)
                                  (height . 29)))
-    (if *is-a-mac*
-        (add-to-list 'default-frame-alist '(fullscreen . fullboth))))
+    ;; (if *is-a-mac*
+    ;;     (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
+    )
 
 #+end_src
 
@@ -335,21 +336,28 @@ them.
 
 ** Emacspeak Key Bindings
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when *run_emacspeak*
     (defun my-esp-bindings ()
       (message "Loading my emacspeak key bindings...")
       ;; (unbind-key "<S-left>")
       ;; (unbind-key "<S-right>")
-      ;; (unbind-key "<C-left>")
-      ;; (unbind-key "<C-right>")
+      (unbind-key "<C-left>")
+      (unbind-key "<C-right>")
       ;; (unbind-key "<C-down>")
       ;; (unbind-key "<C-up>")
       ;; (unbind-key "<S-up>")
       ;; (unbind-key "<S-down>")
-      (bind-key "<f5>" 'my-hydra-window/body)
-      (bind-key "<f7>" 'my-hydra-wizards/body)
-      (bind-key "C-z" 'my-hydra-zoom/body))
+      (bind-key "<C-left>" (lambda ()
+                             (interactive)
+                             (other-frame -1)))
+      (bind-key "<C-right>" (lambda ()
+                              (interactive)
+                              (other-frame +1)))
+      ;; (bind-key "<f5>" 'my-hydra-window/body)
+      ;; (bind-key "<f7>" 'my-hydra-wizards/body)
+      ;; (bind-key "C-z" 'my-hydra-zoom/body)
+      )
 
     (add-hook 'after-init-hook #'my-esp-bindings t))
 
