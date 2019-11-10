@@ -1936,7 +1936,7 @@ Not sure I like this mode compared to paredit. Disabling it for now.
         (setq-local flycheck-idle-change-delay tx-flycheck-lazy-idle-delay)))
 
     (add-hook 'flycheck-after-syntax-check-hook
-              #'+flycheck|adjust-syntax-check-eagerness)
+              #'tx-flycheck-adjust-syntax-check-eagerness)
 
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
