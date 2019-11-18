@@ -243,6 +243,13 @@ Emacs < 27 does not have the early init file.
 
 #+end_src
 
+* Emacs 27 Specific
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when (= emacs-major-version 27)
+    (tab-bar-mode))
+
+#+end_src
 * Load Path
 The following adds additional directories to the emacs load-path so that
 emacs can find various additional libraries etc
@@ -348,12 +355,22 @@ them.
       ;; (unbind-key "<C-up>")
       ;; (unbind-key "<S-up>")
       ;; (unbind-key "<S-down>")
-      (bind-key "<C-left>" (lambda ()
+      (if *is-a-mac*
+          (progn
+            (bind-key "<C-left>" (lambda ()
                              (interactive)
                              (other-frame -1)))
-      (bind-key "<C-right>" (lambda ()
+            (bind-key "<C-right>" (lambda ()
                               (interactive)
-                              (other-frame +1)))
+                              (other-frame +1))))
+        (bind-key "<C-left>" (lambda ()
+                               (interactive)
+                               (tab-previous)))
+        (bind-key "<C-right>" (lambda ()
+                                (interactive)
+                                (tab-next))))
+    
+    
       ;; (bind-key "<f5>" 'my-hydra-window/body)
       ;; (bind-key "<f7>" 'my-hydra-wizards/body)
       ;; (bind-key "C-z" 'my-hydra-zoom/body)
@@ -2720,7 +2737,7 @@ Setup version control stuff
 
 ** Toggle Map
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (bind-keys :prefix-map toggle-map
              :prefix "C-x t"
              ("d" . toggle-debug-on-error)
