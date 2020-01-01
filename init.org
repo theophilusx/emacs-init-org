@@ -1,7 +1,255 @@
-#+TITEL: Emacs init.el File
+#+TITLE: Emacs init.el File
 #+DATE: \today
 #+AUTHOR: Tim Cross
 
+* Early Init
+
+Emacs 27 introduces an early init file. This is a good place to set some frame defaults and tweak the gc to speed up init process
+The below has been borrowed from Doom Emacs.
+
+** Set Some Constants
+ I set a couple of constants which can then be used to control configuration
+ settings in my init file.
+
+*** Mac or Linux?
+
+ I run emacs on both OSX and Linux. To handle differences in configuration
+ settings for the two platforms, I set a constant which determines if emacs is
+ running on OSX or not. 
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *is-a-mac* (eq system-type 'darwin)
+     "T if emacs is running under OSX, nil otherwise.")
+
+ #+end_src
+
+*** Do Spell Checking?
+
+ Set a constant to determine if spell checking is to be enabled. Not sure if I
+ really need this, but leaving it in place for now.
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *spell-check-support-enabled* t
+     "T if we want spell checking support enabled, nil otherwise.")
+
+ #+end_src
+
+*** Silence Warnings
+
+ Some ELISP packages don't necessarily define variables correctly and can
+ generate warnings. This section lists such variables to quieten things down a
+ bit.
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defvar url-http-extra-headers nil)
+   (defvar oauth--token-data nil)
+   (defvar url-callback-function nil)
+   (defvar url-callback-arguments nil)
+   (defvar emacspeak-we-url-executor nil)
+   (defvar org-ans2 nil)
+   (defvar ido-process-ignore-lists nil)
+   (defvar select-object nil)
+   (defvar *slime-inspector* nil)
+
+ #+end_src
+
+*** Load Emacspeak
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *run_emacspeak* (if (string= (getenv "RUN_EMACSPEAK") "yes")
+                                 t
+                               nil))
+
+
+ #+end_src
+
+** GC
+
+Defer garbage collection further back in the startup process
+
+#+begin_src emacs-lisp :tangle tangle-early-init.el
+  (setq gc-cons-threshold 268435456)
+
+#+end_src
+
+** Package 
+
+Package initialize occurs automatically, before `user-init-file' is
+loaded, but after `early-init-file'. We handles package
+initialization, so we must prevent Emacs from doing it early!
+
+#+begin_src emacs-lisp :tangle tangle-early-init.el
+  ;;; (setq package-enable-at-startup nil)
+
+#+end_src
+
+Silence the package warnings for now
+
+#+begin_src emacs-lisp :tangle tangle-early-init.el
+  (setq warning-suppress-log-types '((package reinitialization)))
+
+#+end_src
+
+** Frames
+
+Prevent the glimpse of un-styled Emacs by setting these early.
+
+#+begin_src emacs-lisp :tangle tangle-early-init.el
+  (setq initial-frame-alist '((vertical-scroll-bars)
+                               (horizontal-scroll-bars)
+                               (tool-bar-lines . 0)
+                               (menu-bar-lines . 0)
+                               (width . 90)
+                               (height . 34)))
+  (setq default-frame-alist '((tool-bar-lines . 0)
+                               (menu-bar-lines . 0)
+                               (vertical-scroll-bars)
+                               (top . 10)
+                               (left . 10)
+                               (width . 90)
+                               (height . 34)))
+
+  (if *is-a-mac*
+      (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
+
+#+end_src
+
+** site-run
+
+One less file to load at startup
+
+#+begin_src emacs-lisp :tangle tangle-early-init.el
+(setq site-run-file nil)
+
+#+end_src
+
+* GC Settings
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (defvar tx-gc-cons-threshold 16777216 ; 16mb
+    "The default value to use for `gc-cons-threshold'. If you experience freezing,
+  decrease this. If you experience stuttering, increase this.")
+
+  (defvar tx-gc-cons-upper-limit 536870912 ; 512mb
+    "The temporary value for `gc-cons-threshold' to defer it.")
+
+  (defvar tx-file-name-handler-alist file-name-handler-alist)
+
+#+end_src
+
+Function to restore default gc etc after init.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (defun tx-restore-startup-optimizations ()
+    "Resets garbage collection settings to reasonable defaults (a large
+  `gc-cons-threshold' can cause random freezes otherwise) and resets
+  `file-name-handler-alist'."
+    (setq file-name-handler-alist tx-file-name-handler-alist)
+    ;; Do this on idle timer to defer a possible GC pause that could result; also
+    ;; allows deferred packages to take advantage of these optimizations.
+    (run-with-idle-timer
+     3 nil
+     (lambda ()
+       (setq-default gc-cons-threshold tx-gc-cons-threshold)
+       ;; To speed up minibuffer commands (like helm and ivy), we defer garbage
+       ;; collection while the minibuffer is active.
+       (defun tx-defer-garbage-collection ()
+	 (setq gc-cons-threshold tx-gc-cons-upper-limit))
+       (defun tx-restore-garbage-collection ()
+	 ;; Defer it so that commands launched from the minibuffer can enjoy the
+	 ;; benefits.
+	 (run-at-time 1 nil (lambda ()
+			      (setq gc-cons-threshold tx-gc-cons-threshold))))
+       (add-hook 'minibuffer-setup-hook #'tx-defer-garbage-collection)
+       (add-hook 'minibuffer-exit-hook  #'tx-restore-garbage-collection)
+       ;; GC all sneaky breeky like
+       (add-hook 'focus-out-hook #'garbage-collect))))
+
+
+  (if (ignore-errors (or after-init-time noninteractive))
+      (setq gc-cons-threshold tx-gc-cons-threshold)
+    ;; A big contributor to startup times is garbage collection. We up the gc
+    ;; threshold to temporarily prevent it from running, then reset it later in
+    ;; `tx-restore-startup-optimizations'.
+    (setq gc-cons-threshold tx-gc-cons-upper-limit)
+    ;; This is consulted on every `require', `load' and various path/io functions.
+    ;; You get a minor speed up by nooping this.
+    (setq file-name-handler-alist nil)
+    ;; Not restoring these to their defaults will cause stuttering/freezes.
+    (add-hook 'after-init-hook #'tx-restore-startup-optimizations))
+
+#+end_src
+
+Set things for fast load
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (if (ignore-errors (or after-init-time noninteractive))
+      (setq gc-cons-threshold tx-gc-cons-threshold)
+    ;; A big contributor to startup times is garbage collection. We up the gc
+    ;; threshold to temporarily prevent it from running, then reset it later in
+    ;; `tx-restore-startup-optimizations'.
+    (setq gc-cons-threshold tx-gc-cons-upper-limit)
+    ;; This is consulted on every `require', `load' and various path/io functions.
+    ;; You get a minor speed up by nooping this.
+    (setq file-name-handler-alist nil)
+    ;; Not restoring these to their defaults will cause stuttering/freezes.
+    (add-hook 'after-init-hook #'tx-restore-startup-optimizations))
+
+  (setq load-prefer-newer noninteractive)
+
+#+end_src
+
+* Emacs < 27 stuff
+
+Emacs < 27 does not have the early init file.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when (< emacs-major-version 27)
+    (defconst *is-a-mac* (eq system-type 'darwin)
+      "T if emacs is running under OSX, nil otherwise.")
+
+    (defconst *spell-check-support-enabled* t
+      "T if we want spell checking support enabled, nil otherwise.")
+
+    (defvar url-http-extra-headers nil)
+    (defvar oauth--token-data nil)
+    (defvar url-callback-function nil)
+    (defvar url-callback-arguments nil)
+    (defvar emacspeak-we-url-executor nil)
+    (defvar org-ans2 nil)
+    (defvar ido-process-ignore-lists nil)
+    (defvar select-object nil)
+    (defvar *slime-inspector* nil)
+
+    (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
+
+
+    (setq initial-frame-alist '((vertical-scroll-bars)
+                                 (horizontal-scroll-bars)
+                                 (tool-bar-lines . 0)
+                                 (menu-bar-lines . 0)
+                                 (width . 90)
+                                 (height . 29)))
+    (setq default-frame-alist '((tool-bar-lines . 0)
+                                 (menu-bar-lines . 0)
+                                 (vertical-scroll-bars)
+                                 (top . 10)
+                                 (left . 10)
+                                 (width . 90)
+                                 (height . 29)))
+    ;; (if *is-a-mac*
+    ;;     (add-to-list 'default-frame-alist '(fullscreen . fullboth)))
+    )
+
+#+end_src
+
+* Emacs 27 Specific
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when (= emacs-major-version 27)
+    (tab-bar-mode))
+
+#+end_src
 * Load Path
 The following adds additional directories to the emacs load-path so that
 emacs can find various additional libraries etc
@@ -9,58 +257,8 @@ emacs can find various additional libraries etc
 Any small third party libraries I use which are not packaged in an ELPA
 repository go in the ~.emacs.d/lib~  subdirectory.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
-#+END_SRC
-
-* Set Some Constants
-I set a couple of constants which can then be used to control configuration
-settings in my init file.
-
-** Mac or Linux?
-
-I run emacs on both OSX and Linux. To handle differences in configuration
-settings for the two platforms, I set a constant which determines if emacs is
-running on OSX or not. 
-
-#+BEGIN_SRC emacs-lisp
-  (defconst *is-a-mac* (eq system-type 'darwin)
-    "T if emacs is running under OSX, nil otherwise.")
-#+END_SRC
-
-** Do Spell Checking?
-
-Set a constant to determine if spell checking is to be enabled. Not sure if I
-really need this, but leaving it in place for now.
-
-#+BEGIN_SRC emacs-lisp
-  (defconst *spell-check-support-enabled* t
-    "T if we want spell checking support enabled, nil otherwise.")
-#+END_SRC
-
-** Silence Warnings
-
-Some ELISP packages don't necessarily define variables correctly and can
-generate warnings. This section lists such variables to quieten things down a
-bit.
-
-#+BEGIN_SRC emacs-lisp
-  (defvar url-http-extra-headers nil)
-  (defvar oauth--token-data nil)
-  (defvar url-callback-function nil)
-  (defvar url-callback-arguments nil)
-  (defvar emacspeak-we-url-executor nil)
-  (defvar org-ans2 nil)
-  (defvar ido-process-ignore-lists nil)
-  (defvar select-object nil)
-  (defvar *slime-inspector* nil)
-
-#+END_SRC
-
-** Load Emacspeak
-
-#+begin_src emacs-lisp
-  (defconst *run_emacspeak* (if (getenv "RUN_EMACSPEAK") t nil))
 
 #+end_src
 
@@ -74,7 +272,7 @@ First, setup a constant which tells emacs where to look for the emacspeak distro
 
 ** Emacspeak Loading Constants
 
-#+BEGIN_SRC emacs-lisp 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when *run_emacspeak*
     (defconst *emacspeak-src-dir* (if (getenv "EMACSPEAK_DIR")
                                       (expand-file-name (getenv "EMACSPEAK_DIR"))
@@ -91,13 +289,14 @@ First, setup a constant which tells emacs where to look for the emacspeak distro
     (add-to-list 'Info-additional-directory-list
                  (expand-file-name "info"  *emacspeak-src-dir*)))
 
-#+END_SRC
+#+end_src
 
 ** Load Emacspeak
+
 When emacs is not being run in batch mode and when emacspeak is not yet loaded,
 then load it
 
-#+BEGIN_SRC emacs-lisp 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when (and *run_emacspeak*
              (not noninteractive)
              (not (featurep 'emacspeak)))
@@ -116,6 +315,7 @@ then load it
           emacpseak-play-args nil
           mac-default-speech-rate 360        
           outloud-default-speech-rate 90
+          espeak-default-speech-rate 250
           sox-play (if *is-a-mac*
                        "/usr/local/bin/play"
                      "/usr/bin/play")
@@ -131,7 +331,8 @@ then load it
                 (emacspeak-sounds-select-theme "3d/")))
 
     (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
-#+END_SRC
+
+#+end_src
 
 I like to set my own key bindings and there are a lot of emacspeak key bindings
 I don't need/want. However, emacspeak does a key binding /refresh/ at the end of
@@ -142,49 +343,69 @@ them.
 
 ** Emacspeak Key Bindings
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when *run_emacspeak*
     (defun my-esp-bindings ()
       (message "Loading my emacspeak key bindings...")
-      (unbind-key "<S-left>")
-      (unbind-key "<S-right>")
+      ;; (unbind-key "<S-left>")
+      ;; (unbind-key "<S-right>")
       (unbind-key "<C-left>")
       (unbind-key "<C-right>")
-      (unbind-key "<C-down>")
-      (unbind-key "<C-up>")
-      (unbind-key "<S-up>")
-      (unbind-key "<S-down>")
-      (bind-key "<f5>" 'my-hydra-window/body)
-      (bind-key "<f7>" 'my-hydra-wizards/body)
-      (bind-key "C-z" 'my-hydra-zoom/body))
+      ;; (unbind-key "<C-down>")
+      ;; (unbind-key "<C-up>")
+      ;; (unbind-key "<S-up>")
+      ;; (unbind-key "<S-down>")
+      (if *is-a-mac*
+          (progn
+            (bind-key "<C-left>" (lambda ()
+                             (interactive)
+                             (other-frame -1)))
+            (bind-key "<C-right>" (lambda ()
+                              (interactive)
+                              (other-frame +1))))
+        (bind-key "<C-left>" (lambda ()
+                               (interactive)
+                               (tab-previous)))
+        (bind-key "<C-right>" (lambda ()
+                                (interactive)
+                                (tab-next))))
+    
+    
+      ;; (bind-key "<f5>" 'my-hydra-window/body)
+      ;; (bind-key "<f7>" 'my-hydra-wizards/body)
+      ;; (bind-key "C-z" 'my-hydra-zoom/body)
+      )
 
     (add-hook 'after-init-hook #'my-esp-bindings t))
 
-#+END_SRC
+#+end_src
 
  I've added a little of my own extensions/enhancements to Emacspeak. Once I feel
  they are mature enough, I will generally submit them for inclusion 
 
 ** Experimental 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   ;;;Require my emacspeak-smartparens.el
-  ;; (when (featurep 'emacspeak)
-  ;;   (require 'emacspeak-smartparens))
+  (when (featurep 'emacspeak)
+    (require 'emacspeak-smartparens))
 
-#+END_SRC
+#+end_src
 
 * Custom 
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (if *is-a-mac*
       (setq custom-file (expand-file-name "mac-custom.el" user-emacs-directory))
     (setq custom-file (expand-file-name "linux-custom.el" user-emacs-directory)))
 
   (when (file-exists-p custom-file)
     (load custom-file))
-#+END_SRC
+
+#+end_src
 
 * ELPA
+
 ELPA has made managing add-on elisp packages *much* easier than it use to
 be. The trick is to only load packages you really want/need and not get carried
 away loading lots of additional packages /just in case/.
@@ -196,7 +417,7 @@ package repositories. I add
    - The Org repository so that I can use most recent org-plus-contrib package
    - The melpa repository
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (require 'package)
 
   (setq package-enable-at-startup nil
@@ -204,9 +425,10 @@ package repositories. I add
 
   (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
   (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-  (package-initialize)
+  (when (< emacs-major-version 27)
+    (package-initialize))
 
-#+END_SRC
+#+end_src
 
 * Use Package
 
@@ -219,7 +441,7 @@ package from ELPA before we can use it, but it is what we want to use to install
 the package. Therefore, need a simple light weight way to get that package. Lets
 do the simple way
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'diminish)
@@ -235,13 +457,15 @@ do the simple way
   ;;   (add-to-list 'load-path "~/git/github/use-package")
   ;;   (require 'use-package))
 
-  (eval-when-compile
-    (require 'use-package))
-  (require 'diminish)
-  (require 'bind-key)
-#+END_SRC
+  ;; (eval-when-compile
+  ;;   (require 'use-package))
+  ;; (require 'diminish)
+  ;; (require 'bind-key)
+
+#+end_src
 
 * Org Mode
+
 Start by getting required package. I'm using the org-plus-contrib package from
 the org repository.
 
@@ -255,114 +479,119 @@ this is to reload org mode using the command
 Then remove the repo package version and re-install. This will
 normally ensure a 'stable' environment.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package org
-    :pin org
+    ;;;:pin org
     :ensure org-plus-contrib 
     :init
-    (setq org-agenda-show-outline-path nil
-          org-catch-invisible-edits 'smart
-          org-ctrl-k-protect-subtree t
-          org-default-notes-file "~/Dropbox/org/notes.org"
-          org-directory "~/Dropbox/org"
-          org-ellipsis "…"
-          org-list-allow-alphabetical t
-          org-list-indent-offset 2
-          org-pretty-entities t
-          org-startup-align-all-tables t
-          org-startup-with-inline-images (display-graphic-p)
-          org-support-shift-select t
-          org-use-sub-superscripts (quote {}))
-    (setq org-modules '(org-bibtex
-                        org-crypt
-                        org-docview
-                        org-eww
-                        org-info
-                        org-irc
-                        org-protocol))
-    (setq org-capture-templates
-          (quote
-           (("t" "todo" entry
-             (file "~/Dropbox/org/refile.org")
-             "* TODO %?\n\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("r" "respond" entry
-             (file "~/Dropbox/org/refile.org")
-             "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("n" "note" entry
-             (file "~/Dropbox/org/notes.org")
-             "* %? :NOTE:\n\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("j" "journal" entry
-             (file+olp+datetree "~/Dropbox/org/journal.org")
-             "* %?\n  "
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("p" "phone" entry
-             (file "~/Dropbox/org/refile.org")
-             "* PHONE %? :PHONE:\n  "
-             :empty-lines-after 1 :clock-in t :clock-resume t)
-            ("m" "mail" entry
-             (file "~/Dropbox/org/refile.org")
-             "* MAIL from %:from on %:subject\n\n  %a"
-             :empty-lines-after 1 :clock-in t :clock-resume t))))
-    (setq org-enforce-todo-checkbox-dependencies t
-          org-enforce-todo-dependencies t
-          org-log-done 'time
-          org-log-into-drawer t)
-    (setq org-todo-keywords
-          (quote
-           ((sequence "TODO(t)"
-                      "NEXT(n)"
-                      "STARTED(s!)"
-                      "DELEGATED(w@/!)"
-                      "HOLD(h@/!)"
-                      "|"
-                      "CANCELLED(c@)"
-                      "DONE(d!)"))))
-    (setq org-log-refile 'time
-          org-refile-allow-creating-parent-nodes 'confirm
-          org-refile-targets (quote ((nil :maxlevel . 5)
-                                     (org-agenda-files :maxlevel . 5)))
-          org-refile-use-outline-path (quote file))
-    (setq org-clock-in-resume t
-          org-clock-out-remove-zero-time-clocks t
-          org-clock-persist 'clock
-          org-time-clocksum-format '(:hours "%d" :require-hours t
-                                            :minutes ":%02d" :require-minutes t))
-    (setq org-agenda-files '("~/Dropbox/org")
-          org-agenda-remove-tags t)
+    (setq
+     org-agenda-files '("~/Dropbox/org")
+     org-agenda-remove-tags t
+     org-agenda-show-outline-path nil
+     org-babel-clojure-backend 'cider
+     org-babel-clojure-sync-nrepl-timeout 0
+     org-catch-invisible-edits 'smart
+     org-clock-in-resume t
+     org-clock-out-remove-zero-time-clocks t
+     org-clock-persist 'clock
+     org-confirm-babel-evaluate nil
+     org-ctrl-k-protect-subtree t
+     org-default-notes-file "~/Dropbox/org/notes.org"
+     org-directory "~/Dropbox/org"
+     org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
+     org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar")
+     org-ellipsis "…"
+     org-enforce-todo-checkbox-dependencies t
+     org-enforce-todo-dependencies t
+     org-export-backends '(ascii beamer html
+                                 latex texinfo
+                                 md odt org)
+     org-export-coding-system 'utf-8
+     org-hide-block-startup t
+     org-log-done 'time
+     org-log-into-drawer t
+     org-list-allow-alphabetical t
+     org-list-indent-offset 2
+     org-log-refile 'time
+     org-modules '(org-crypt
+                   ol-docview
+                   ol-eww
+                   ol-info
+                   ol-bibtex
+                   ol-irc)
+     org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
+     org-pretty-entities t
+     org-refile-allow-creating-parent-nodes 'confirm
+     org-refile-targets (quote ((nil :maxlevel . 5)
+                                (org-agenda-files :maxlevel . 5)))
+     org-refile-use-outline-path (quote file)
+     org-src-tab-acts-natively t
+     org-src-window-setup 'current-window
+     org-startup-align-all-tables t
+     org-startup-with-inline-images (display-graphic-p)
+     org-support-shift-select t
+     org-time-clocksum-format '(:hours "%d" :require-hours t
+                                       :minutes ":%02d" :require-minutes t)
+     org-use-sub-superscripts (quote {}))
 
-    (setq org-agenda-custom-commands
-          (quote
-           (("n" "Agenda and all TODO's"
-             ((agenda "" nil)
-              (alltodo "" nil))
-             nil)
-            ("wr" "Weekly Report"
-             ((todo "DONE|CANCELLED"
-                    ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-              (todo "STARTED|NEXT"
-                    ((org-agenda-overriding-header "WIP")))
-              (todo "HOLD|DELEGATED"
-                    ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-              (todo "TODO"
-                    ((org-agenda-overriding-header "Task Backlog"))))
-             nil nil))))
-    (setq org-src-tab-acts-natively t
-          org-hide-block-startup t
-          org-src-window-setup 'current-window)
-    (setq org-confirm-babel-evaluate nil)
-    (setq org-babel-clojure-backend 'cider
-          org-babel-clojure-sync-nrepl-timeout 0)
-    (setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
-          org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
-          org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar"))
-    (setq org-export-backends '(ascii beamer html
-                                      latex texinfo
-                                      md odt org)
-          org-export-coding-system 'utf-8)
-    (setq org-latex-classes
+    (setq
+     org-capture-templates
+     (quote
+      (("t" "todo" entry
+        (file "~/Dropbox/org/refile.org")
+        "* TODO %?\n\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("r" "respond" entry
+        (file "~/Dropbox/org/refile.org")
+        "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("n" "note" entry
+        (file "~/Dropbox/org/notes.org")
+        "* %? :NOTE:\n\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("j" "journal" entry
+        (file+olp+datetree "~/Dropbox/org/journal.org")
+        "* %?\n  "
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("p" "phone" entry
+        (file "~/Dropbox/org/refile.org")
+        "* PHONE %? :PHONE:\n  "
+        :empty-lines-after 1 :clock-in t :clock-resume t)
+       ("m" "mail" entry
+        (file "~/Dropbox/org/refile.org")
+        "* MAIL from %:from on %:subject\n\n  %a"
+        :empty-lines-after 1 :clock-in t :clock-resume t))))
+
+    (setq
+     org-todo-keywords (quote
+                        ((sequence "TODO(t)"
+                                   "NEXT(n)"
+                                   "STARTED(s!)"
+                                   "DELEGATED(w@/!)"
+                                   "HOLD(h@/!)"
+                                   "|"
+                                   "CANCELLED(c@)"
+                                   "DONE(d!)"))))
+
+    (setq
+     org-agenda-custom-commands
+     (quote
+      (("n" "Agenda and all TODO's"
+        ((agenda "" nil)
+         (alltodo "" nil))
+        nil)
+       ("wr" "Weekly Report"
+        ((todo "DONE|CANCELLED"
+               ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+         (todo "STARTED|NEXT"
+               ((org-agenda-overriding-header "WIP")))
+         (todo "HOLD|DELEGATED"
+               ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+         (todo "TODO"
+               ((org-agenda-overriding-header "Task Backlog"))))
+        nil nil))))
+
+     (setq org-latex-classes
           '(("beamer"
              "\\documentclass[presentation]{beamer}"
              ("\\section{%s}" . "\\section*{%s}")
@@ -454,20 +683,6 @@ normally ensure a 'stable' environment.
     (org-element-update-syntax)
     (org-clock-persistence-insinuate)
 
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("p" "#+BEGIN_SRC python\n?\n#+END_SRC"
-    ;;                "<src lang=\"python\">\n?\n</src>"))
-
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("el" "#+BEGIN_SRC emacs-lisp\n?\n#+END_SRC"
-    ;;                "<src lang=\"emacs-lisp\">\n?\n</src>"))
-
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("clj" "#+BEGIN_SRC clojure-mode\n?\n#+END_SRC"
-    ;;                "<src lang=\"clojure-mode\">\n?\n</src>"))
-    ;; (add-to-list 'org-structure-template-alist
-    ;;              '("cl" "#+BEGIN_SRC lisp\n?\n#+END_SRC"
-    ;;                "<src lang=\"lisp-mode\">\n?\n</src>"))
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((emacs-lisp . t)
@@ -493,15 +708,12 @@ normally ensure a 'stable' environment.
        (gnuplot . t)))
     (bind-key "C-c l" 'org-store-link)
     (bind-key "C-c a" 'org-agenda)
-    (bind-key "C-c b" 'org-switchb)
     (bind-key "C-c r" 'org-capture))
-
-
-#+END_SRC
+#+end_src
 
 * Hydra
 
- #+BEGIN_SRC emacs-lisp
+ #+begin_src emacs-lisp :tangle tangle-init.el
    (use-package winner
      :config
      (winner-mode 1))
@@ -620,14 +832,15 @@ normally ensure a 'stable' environment.
        ;;("b" ido-switch-buffer "buf")
        ("m" headlong-bookmark-jump)))
 
- #+END_SRC
+ #+end_src
 
 * OSX Tweaks 
+
 Some tweaks to make emacs and OSX get on better. Note that I also install the
 coreutils package from homebrew to get some GNU flavoured utilities. These tend
 to start with 'g', so we need to do some additional variable settings.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when *is-a-mac*
     (setq mac-command-modifier 'meta)
     (setq mac-option-modifier 'none)
@@ -656,13 +869,14 @@ to start with 'g', so we need to do some additional variable settings.
       :ensure t
       :bind (:map org-mode-map ("C-c g" . grab-mac-link))))
 
-#+END_SRC
+#+end_src
 
 * Basic defaults 
 Some basic defaults and customizations 
 
 ** Disabled Features 
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when (fboundp 'tool-bar-mode)
       (tool-bar-mode -1))
   (when (fboundp 'scroll-bar-mode)
@@ -670,22 +884,31 @@ Some basic defaults and customizations
   (when (fboundp 'horizontal-scroll-bar-mode)
     (horizontal-scroll-bar-mode -1))
 
-#+END_SRC
+#+end_src
 
 ** Zap up to char
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (autoload 'zap-up-to-char "misc"
     "Kill up to, but not including ARGth occurrence of CHAR." t)
 
   (global-set-key (kbd "M-z") 'zap-up-to-char)  
-#+END_SRC
+
+#+end_src
 
 ** Enable some useful minor modes
-#+BEGIN_SRC emacs-lisp
+*** uniquify
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package uniquify
     :demand t
-    :init (setq uniquify-buffer-name-style 'forward))
+    :init (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
 
+#+end_src
+
+*** saveplace
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package saveplace
     :demand t
     :init 
@@ -693,120 +916,229 @@ Some basic defaults and customizations
     :config
     (save-place-mode 1))
 
+#+end_src
+
+*** paren
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package paren
     :demand t
     :config
+    (setq show-paren-delay 0.1
+          show-paren-highlight-openparen t
+          show-paren-when-point-inside-paren t)
     (show-paren-mode 1))
 
+#+end_src
+
+*** delsel
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package delsel
     :demand
     :config
     (delete-selection-mode))
 
+#+end_src
+
+*** autorevert
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package autorevert
     :demand t
     :config
     (global-auto-revert-mode))
 
+#+end_src
+
+*** transient-mark-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (transient-mark-mode t)
 
+#+end_src
+
+*** global-prettify-symbols-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when (fboundp 'global-prettify-symbols-mode)
     (global-prettify-symbols-mode))
 
+#+end_src
+
+*** yes-or-no-p
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (fset 'yes-or-no-p 'y-or-n-p)
 
-#+END_SRC
+#+end_src
   
 ** Enable some disabled modes
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (put 'narrow-to-region 'disabled nil)
   (put 'narrow-to-page 'disabled nil)
   (put 'narrow-to-defun 'disabled nil)
   (put 'upcase-region 'disabled nil)
   (put 'downcase-region 'disabled nil)
 
-#+END_SRC
+#+end_src
 
 ** Set some setq defaults
-#+BEGIN_SRC emacs-lisp
-  (setq apropos-do-all t
-        auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
-        backup-directory-alist `(("." . ,(concat user-emacs-directory
-                                                 "backups")))
-        blink-matching-paren nil
-        default-frame-alist '((top . 10) (left . 10) (width . 90) (height . 30))
-        delete-by-moving-to-trash t
-        ediff-window-setup-function 'ediff-setup-windows-plain
-        eldoc-idle-delay 1.5
-        inhibit-startup-message t
-        initial-fram-alist '((top . 10) (left . 10) (width . 90) (height . 30))
-        line-move-visual nil
-        load-prefer-newer t
-       ;; max-mini-window-height 0.50
-        message-log-max 2048
-        mouse-yank-at-point t
-        require-final-newline t
-        save-interprogram-paste-before-kill t
-        show-paren-delay 0
-        show-paren-style 'mixed
-        tab-always-indent 'complete
-        truncate-lines t
-        visible-bell t
-        select-enable-clipboard t
-        select-enable-primary t)
-#+END_SRC
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (setq
+   apropos-do-all t
+   auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
+   backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
+   delete-by-moving-to-trash t
+   ediff-window-setup-function 'ediff-setup-windows-plain
+   eldoc-idle-delay 1.5
+   inhibit-startup-message t
+   line-move-visual nil
+   load-prefer-newer t
+   ;; max-mini-window-height 0.50
+   message-log-max 2048
+   require-final-newline t
+   save-interprogram-paste-before-kill t
+   visible-bell t
+   select-enable-clipboard t
+   select-enable-primary t
+   show-paren-delay 0
+   show-paren-style 'mixed
+   tab-always-indent 'complete
+   truncate-lines t)
+
+#+end_src
 
 ** Set some setq-defaults
-#+BEGIN_SRC emacs-lisp
-  (setq-default fill-column 80
-                indent-tabs-mode nil
-                save-place t
-                show-trailing-whitespace nil
-                tab-width 4)
-#+END_SRC
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (setq-default
+   ansi-color-for-comint-mode t
+   bidi-display-reordering nil ; disable bidirectional text for tiny perf boost
+   blink-matching-paren nil    ; don't blink--too distracting
+   compilation-always-kill t        ; kill compilation process before starting another
+   compilation-ask-about-save nil   ; save all buffers on `compile'
+   compilation-scroll-output 'first-error
+   confirm-nonexistent-file-or-buffer t
+   fill-column 80
+   frame-resize-pixelwise t
+   image-animate-loop t
+   indent-tabs-mode nil
+   indicate-buffer-boundaries nil
+   indicate-empty-lines nil
+   mode-line-default-help-echo nil ; disable mode-line mouseovers
+   mouse-yank-at-point t           ; middle-click paste at point, not at click
+   pos-tip-internal-border-width 6
+   pos-tip-border-width 1
+   ring-bell-function #'ignore
+   save-place t
+   show-help-function nil          ; hide :help-echo text
+   show-trailing-whitespace nil
+   tab-width 4
+   use-dialog-box nil              ; always avoid GUI
+   visible-bell nil
+   x-stretch-cursor nil)
+
+#+end_src
+
+* Mode Line
+** Hide modeline
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package hide-mode-line
+    :ensure t
+    :config
+    (add-hook 'completion-list-mode-hook #'hide-mode-line-mode)
+    (add-hook 'Man-mode-hook #'hide-mode-line-mode))
+
+#+end_src
+
+** doom-modeline
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package doom-modeline
+    :ensure t
+    :hook (after-init . doom-modeline-mode)
+    :config
+    (setq  doom-modeline-height 20
+           doom-modeline-buffer-file-name-style 'truncate-all))
+
+#+end_src
 
 * Fonts
+
 Set the default font
 
-#+BEGIN_SRC emacs-lisp
+** Font Variables
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (if *is-a-mac*
-      (progn
-        (set-face-attribute 'default nil
-                            :foundry nil
-                            :family "Fira Code"
-                            :height 361)
-        (mac-auto-operator-composition-mode))
-    (set-face-attribute 'default nil
-                        :foundry "CTDB"
-                        :family "Fira Code"
-                        :height 242))
+      (defvar tx-font (font-spec :family "Fira Code" :size 26))
+    (defvar tx-font (font-spec :family "Fira Code" :size 24)))
 
+  (defvar tx-variable-pitch-font (cond
+                                  (*is-a-mac* (font-spec :family "Helvetica"))
+                                  ((string= system-name "tim-desktop")
+                                   (font-spec :family "Noto Sans"))
+                                  (t (font-spec :family "DejaVu Serif"))))
 
-#+END_SRC
+  (defvar tx-serif-font (cond
+                         (*is-a-mac* (font-spec :family "Times"))
+                         ((string= system-name "tim-desktop")
+                          (font-spec :family "Noto Serif Display"))
+                         (t (font-spec :family "DejaVu Serif"))))
+
+  (defvar tx-unicode-font
+    (if *is-a-mac*
+        (font-spec :family "Apple Color Emoji")
+      (font-spec :family "Noto Color Emoji")))
+
+#+end_src
+
+** Set Fonts
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (set-face-attribute 'default nil :font tx-font)
+  (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font)
+  (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)
+  (set-fontset-font t 'unicode tx-unicode-font nil 'prepend)
+
+  (when *is-a-mac*
+    (mac-auto-operator-composition-mode))
+
+#+end_src
+
+** Font Scaling
 
 Setup some font scaling support
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package default-text-scale
     :ensure t
     :config
     (bind-key "C-M-=" 'default-text-scale-increase)
     (bind-key "C-M--" 'default-text-scale-decrease))
-#+END_SRC
+
+#+end_src
+
+** Emoji
 
 Setup emoji support
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package emojify
     :ensure t
     :config
-    (setq emojify-program-contexts '(comments string))
+    (setq
+     emojify-company-tooltips-p nil
+     emojify-display-style 'unicode
+     emojify-program-contexts '(comments string))
     :init
     (add-hook 'after-init-hook #'global-emojify-mode))
 
-#+END_SRC
-
-#+RESULTS:
+#+end_src
 
 * Commands et. al 
 Some basic configuration relating to commands 
@@ -814,7 +1146,7 @@ Some basic configuration relating to commands
 ** Exec Path
 Set up the exec path for emacs
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package exec-path-from-shell
     :ensure t
     :init
@@ -825,10 +1157,12 @@ Set up the exec path for emacs
       (add-to-list 'exec-path-from-shell-variables var))
     (when (memq window-system '(mac ns x))
       (exec-path-from-shell-initialize)))
-#+END_SRC
+
+#+end_src
 
 ** Browse Kill Ring
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package browse-kill-ring
     :ensure t
     :init
@@ -839,19 +1173,25 @@ Set up the exec path for emacs
       (bind-key "M-n" 'browse-kill-ring-forward browse-kill-ring-mode-map)
       (bind-key "M-p" 'browse-kill-ring-previous browse-kill-ring-mode-map)
       (bind-key "M-Y" 'browse-kill-ring)))
-#+END_SRC
+
+#+end_src
 
 ** Undo Tree
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package undo-tree
     :ensure t
     :diminish undo-tree-mode
     :config
     (global-undo-tree-mode))
-#+END_SRC
+
+#+end_src
 
 ** Ido Mode
-#+BEGIN_SRC emacs-lisp
+
+*** ido
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ido
     :demand t
     :init
@@ -869,14 +1209,21 @@ Set up the exec path for emacs
     :config
     (ido-mode 1))
 
+#+end_src
+
+*** ido-completing-read+
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ido-completing-read+
     :ensure t
     :config
     (ido-ubiquitous-mode t))
-#+END_SRC
+
+#+end_src
 
 ** SMEX
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
     (use-package smex
       :ensure t
       :demand t
@@ -885,10 +1232,14 @@ Set up the exec path for emacs
              ("M-X" . smex-major-mode-commands)
              ("C-c C-c M-x" . execute-extended-command))
       :config (smex-initialize))
-#+END_SRC
 
-** IBuffer
-#+BEGIN_SRC emacs-lisp
+#+end_src
+
+** IBuffer Mode
+
+*** ibuffer
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ibuffer
     :commands 'ibuffer
     :config
@@ -899,40 +1250,47 @@ Set up the exec path for emacs
          ((> (buffer-size) 1000000) (format "%7.1fM" (/ (buffer-size) 1000000.0)))
          ((> (buffer-size) 1000) (format "%7.1fk" (/ (buffer-size) 1000.0)))
          (t (format "%8d" (buffer-size)))))
-
-      (use-package ibuffer-vc
-        :ensure t
-        :init
-        (setq ibuffer-filter-group-name-face 'font-lock-doc-face
-              ibuffer-formats '((mark modified read-only vc-status-mini " "
-                                      (name 18 18 :left :elide)
-                                      " "
-                                      (size-h 9 -1 :right)
-                                      " "
-                                      (mode 16 16 :left :elide)
-                                      " "
-                                      filename-and-process)
-                                (mark modified read-only vc-status-mini " "
-                                      (name 18 18 :left :elide)
-                                      " "
-                                      (size-h 9 -1 :right)
-                                      " "
-                                      (mode 16 16 :left :elide)
-                                      " "
-                                      (vc-status 16 16 :left)
-                                      " "
-                                      filename-and-process)))
-        :config
-        (defun ibuffer-set-up-preferred-filters ()
-          (ibuffer-vc-set-filter-groups-by-vc-root)
-          (unless (eq ibuffer-sorting-mode 'filename/process)
-            (ibuffer-do-sort-by-filename/process)))
-        (add-hook 'ibuffer-hook 'ibuffer-set-up-preferred-filters))
       (bind-key "C-x C-b" 'ibuffer)))
-#+END_SRC
+
+#+end_src
+
+*** ibuffer-vc
+
+#+begin_src emacs-lisp :tangle no
+  (use-package ibuffer-vc
+    :ensure t
+    :init
+    (setq ibuffer-filter-group-name-face 'font-lock-doc-face
+          ibuffer-formats '((mark modified read-only vc-status-mini " "
+                                  (name 18 18 :left :elide)
+                                  " "
+                                  (size-h 9 -1 :right)
+                                  " "
+                                  (mode 16 16 :left :elide)
+                                  " "
+                                  filename-and-process)
+                            (mark modified read-only vc-status-mini " "
+                                  (name 18 18 :left :elide)
+                                  " "
+                                  (size-h 9 -1 :right)
+                                  " "
+                                  (mode 16 16 :left :elide)
+                                  " "
+                                  (vc-status 16 16 :left)
+                                  " "
+                                  filename-and-process)))
+    :config
+    (defun ibuffer-set-up-preferred-filters ()
+      (ibuffer-vc-set-filter-groups-by-vc-root)
+      (unless (eq ibuffer-sorting-mode 'filename/process)
+        (ibuffer-do-sort-by-filename/process)))
+    (add-hook 'ibuffer-hook 'ibuffer-set-up-preferred-filters))
+
+#+end_src
 
 ** Recentf
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package recentf
     :init
     (setq recentf-max-saved-items 50)
@@ -945,11 +1303,12 @@ Set up the exec path for emacs
         (message "Aborting")))
     (recentf-mode)
     (bind-key "C-x C-r" 'ido-recentf-open))
-#+END_SRC
+
+#+end_src
 
 ** Counsel
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package counsel
     :ensure t
     :bind (("C-x C-m" . counsel-M-x)
@@ -959,25 +1318,30 @@ Set up the exec path for emacs
            ("C-c i" . counsel.unicode-char)
            :map read-expression-map
            ("C-r" . counsel-expression-history)))
+
 #+end_src
 
 ** Swiper
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package swiper
     :ensure t
     :bind ("C-s".  swiper))
-#+END_SRC
+
+#+end_src
+
 ** Free Keys
 The ~free-keys~ package provides a convenient way to identify keys which are
 potential bind candidates. Combine this with the ~describe-personal-keybindings~
 function from the ~bind-keys~ package and you can go to town with customising
 your emacs!
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package free-keys
     :ensure t
     :commands (free-keys))
-#+END_SRC 
+
+#+end_src 
 
 * Editing 
   Text editing stuff
@@ -986,7 +1350,9 @@ your emacs!
 Some simple functions and bindings stolen from [[http://github.com/purcell/emacs.d]]
 which adds some editing tweaks
 
-#+BEGIN_SRC emacs-lisp
+*** Linie editing tweaks
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (bind-key "RET" 'newline-and-indent)
 
   (defun tx/newline-at-end-of-line ()
@@ -1040,68 +1406,78 @@ which adds some editing tweaks
       (indent-according-to-mode)))
 
   (bind-key "C-o" 'tx/open-line-with-reindent)
-#+END_SRC
 
-** Page Break Lines
-Display lines to show where page breaks are. Useful in making the
-browse-kill-ring mode look a little better. See [[https://github.com/purcell/page-break-lines][page-break-lines on GitHub]]
+#+end_src
 
-#+BEGIN_SRC emacs-lisp :tangle no
-  (use-package page-break-lines
-    :ensure t
-    :diminish page-break-lines-mode
-    :config
-    (progn 
-      (global-page-break-lines-mode)
-      (push 'browse-kill-ring-mode page-break-lines-modes)
-      (push 'sql-mode page-break-lines-modes)
-      (push 'text-mode page-break-lines-modes)))
+*** Page Break Lines
+ Display lines to show where page breaks are. Useful in making the
+ browse-kill-ring mode look a little better. See [[https://github.com/purcell/page-break-lines][page-break-lines on GitHub]]
 
-#+END_SRC
+ #+begin_src emacs-lisp :tangle no
+   (use-package page-break-lines
+     :ensure t
+     :diminish page-break-lines-mode
+     :config
+     (progn 
+       (global-page-break-lines-mode)
+       (push 'browse-kill-ring-mode page-break-lines-modes)
+       (push 'sql-mode page-break-lines-modes)
+       (push 'text-mode page-break-lines-modes)))
 
-** Move Or Duplicate Lines
+ #+end_src
 
-While this seems like a really handy utility, I find I never seem to use it, so
-commenting it out for now.
+*** Move Or Duplicate Lines
 
-#+BEGIN_SRC emacs-lisp
-  (use-package move-dup
-    :ensure t
-    :commands (md/move-lines-up
-              md/move-lines-down
-              md/duplicate-down
-              md/duplicate-up)
-    :bind (("M-S-<up>" . md/move-lines-up)
-           ("M-S-<down>" . md/move-lines-down)
-           ("C-c p" . md/duplicate-down)
-           ("C-c P" . md/duplicate-up)))
-#+END_SRC
+ While this seems like a really handy utility, I find I never seem to use it, so
+ commenting it out for now.
 
-** Whole Line or Region
-Allow region oriented commands to work on the current line if no region is
-defined.
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package move-dup
+     :ensure t
+     :commands (md/move-lines-up
+               md/move-lines-down
+               md/duplicate-down
+               md/duplicate-up)
+     :bind (("M-S-<up>" . md/move-lines-up)
+            ("M-S-<down>" . md/move-lines-down)
+            ("C-c p" . md/duplicate-down)
+            ("C-c P" . md/duplicate-up)))
 
-#+BEGIN_SRC emacs-lisp
-  (use-package whole-line-or-region
-    :ensure t
-    :delight
-    :config
-    (progn
-      (whole-line-or-region-mode t)
-      ;;(make-variable-buffer-local 'whole-line-or-region-mode)
-      ))
+ #+end_src
 
-#+END_SRC
+*** Whole Line or Region
+ Allow region oriented commands to work on the current line if no region is
+ defined.
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package whole-line-or-region
+     :ensure t
+     :delight
+     :config
+     (progn
+       (whole-line-or-region-mode t)
+       ;;(make-variable-buffer-local 'whole-line-or-region-mode)
+       ))
+
+ #+end_src
 
 ** Filling et. al. 
-#+BEGIN_SRC emacs-lisp
+
+*** Enable fill mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (add-hook 'text-mode-hook 'turn-on-auto-fill)
 
+#+end_src
+
+*** Unfill mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package unfill
     :ensure t
     :commands (unfill-paragraph unfill-region unfill-toggle))
 
-#+END_SRC
+#+end_src
 
 *** Fill Column Indicator
 
@@ -1124,7 +1500,7 @@ Stopped using this package as it is not compatible with org src block editing
 ** Whitespace Cleanup
 Cleanup whitespace
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package whitespace-cleanup-mode
     :ensure t
     :diminish whitespace-cleanup-mode
@@ -1139,13 +1515,13 @@ Cleanup whitespace
     (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
     (add-hook 'org-mode-hook #'whitespace-mode))
 
-#+END_SRC
+#+end_src
 
 ** Fix the mark
 Enable setting of mark without setting of transient mark mode. While this seems
 like a good idea, I don't seem to use it. Commenting it out for now.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (defun push-mark-no-activate ()
     "Pushes `point' to `mark-ring' and does not activate the region
      Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
@@ -1170,28 +1546,30 @@ like a good idea, I don't seem to use it. Commenting it out for now.
     (deactivate-mark nil))
 
   (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
-#+END_SRC
+#+end_src
 
 ** Searching
 Using ~ag~ package for searches. This needs some OS support
 
   - On Linux ~apt-get install silversearcher-ag~
   - On OSX ~brew install the_silver_searcher~
-  - 
 
-#+BEGIN_SRC emacs-lisp
+*** ag
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ag
     :ensure t
     :commands
     (ag ag-files ag-regex ag-project ag-project-files ag-project-regexp)
     :config
     (bind-key "M-?" 'ag-project))
-#+END_SRC
 
-** Completions 
-*** Yasnippet
+#+end_src
 
-#+BEGIN_SRC emacs-lisp
+** Templates
+*** yasnippet
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package yasnippet
     :ensure t
     :init
@@ -1205,165 +1583,197 @@ Using ~ag~ package for searches. This needs some OS support
       ;;(yas-load-directory "~/.emacs.d/snippets")
       (yas-global-mode 1)))
 
+#+end_src
+
+*** yasnippet-snippets
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package yasnippet-snippets
     :ensure t)
 
-#+END_SRC
+#+end_src
 
-*** Company
-#+BEGIN_SRC emacs-lisp
+** Completions
+*** Set completion style
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (add-to-list 'completion-styles 'initials t)
 
-  (use-package company
-    :ensure t
-    :init
-    (setq company-idle-delay 3.0
-          company-selection-wrap-around t)
-    :bind (("C-M-i" . company-complete)
-           ("TAB" . company-indent-or-complete-common))
-    :config
-    (global-company-mode 1)
-    (dolist (backend '(company-eclim company-semantic))
-      (delq backend company-backends))
-    (add-to-list 'company-backends 'company-elm))
+#+end_src
 
-  (use-package company-auctex
-    :ensure t
-    :config
-    (company-auctex-init))
+*** Company
+**** Company
 
-  (use-package company-quickhelp
-    :ensure t
-    :config
-    (company-quickhelp-mode 1))
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package company
+     :ensure t
+     :init
+     (setq company-idle-delay 3.0
+           company-selection-wrap-around t)
+     :bind (("C-M-i" . company-complete)
+            ("TAB" . company-indent-or-complete-common))
+     :config
+     (global-company-mode 1)
+     (dolist (backend '(company-eclim company-semantic))
+       (delq backend company-backends)))
 
-  (use-package company-web
-    :ensure t
-    :config
-    (add-to-list 'company-backends 'company-web-html)
-    (add-to-list 'company-backends 'company-web-jade)
-    (add-to-list 'company-backends 'company-web-slim))
+ #+end_src
 
-#+END_SRC
+**** company-auctex
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package company-auctex
+     :ensure t
+     :config
+     (company-auctex-init))
+
+ #+end_src
+
+**** company-quickhelp
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package company-quickhelp
+     :ensure t
+     :config
+     (company-quickhelp-mode 1))
+
+ #+end_src
+
+**** company-web
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package company-web
+     :ensure t
+     :config
+     (add-to-list 'company-backends 'company-web-html)
+     (add-to-list 'company-backends 'company-web-jade)
+     (add-to-list 'company-backends 'company-web-slim))
+
+ #+end_src
 
 *** Hippie Expand
-#+BEGIN_SRC emacs-lisp
-  (use-package hippie-expand
-    :init
-    (setq hippie-expand-try-functions-list
-          '(try-expand-dabbrev
-            try-expand-dabbrev-all-buffers
-            try-expand-dabbrev-from-kill
-            try-flyspell
-            try-complete-file-name-partially
-            try-complete-file-name))
-     :bind ("M-/" . hippie-expand))
 
-#+END_SRC
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package hippie-expand
+     :init
+     (setq hippie-expand-try-functions-list
+           '(try-expand-dabbrev
+             try-expand-dabbrev-all-buffers
+             try-expand-dabbrev-from-kill
+             try-flyspell
+             try-complete-file-name-partially
+             try-complete-file-name))
+      :bind ("M-/" . hippie-expand))
 
-*** Outlining 
+ #+end_src
+
+** Outlining 
 
 Some addditional outlining support to make more things work like org-mode.
 
-**** Narrow/widern
+*** Narrow/widern
 
- #+begin_src emacs-lisp
-   (defun tx/narrow-or-widen-dwim (p)
-     "If the buffer is narrowed, it widens. Otherwise, it narrows
-   intelligently.  Intelligently means: region, org-src-block,
-   org-subtree, or defun, whichever applies first.  Narrowing to
-   org-src-block actually calls `org-edit-src-code'.
+#+begin_src emacs-lisp :tangle no
+  (defun tx/narrow-or-widen-dwim (p)
+    "If the buffer is narrowed, it widens. Otherwise, it narrows
+  intelligently.  Intelligently means: region, org-src-block,
+  org-subtree, or defun, whichever applies first.  Narrowing to
+  org-src-block actually calls `org-edit-src-code'.
 
-   With prefix P, don't widen, just narrow even if buffer is already
-   narrowed."
-     (interactive "P")
-     (declare (interactive-only))
-     (cond ((and (buffer-narrowed-p) (not p)) (widen))
-           ((and (boundp 'org-src-mode) org-src-mode (not p))
-            (org-edit-src-exit))
-           ((region-active-p)
-            (narrow-to-region (region-beginning) (region-end)))
-           ((derived-mode-p 'org-mode)
-            (cond ((ignore-errors (org-edit-src-code))
-                   (delete-other-windows))
-                  ((org-at-block-p)
-                   (org-narrow-to-block))
-                  (t (org-narrow-to-subtree))))
-           ((derived-mode-p 'prog-mode) (narrow-to-defun))
-           (t (error "Please select a region to narrow to"))))
+  With prefix P, don't widen, just narrow even if buffer is already
+  narrowed."
+    (interactive "P")
+    (declare (interactive-only))
+    (cond ((and (buffer-narrowed-p) (not p)) (widen))
+          ((and (boundp 'org-src-mode) org-src-mode (not p))
+           (org-edit-src-exit))
+          ((region-active-p)
+           (narrow-to-region (region-beginning) (region-end)))
+          ((derived-mode-p 'org-mode)
+           (cond ((ignore-errors (org-edit-src-code))
+                  (delete-other-windows))
+                 ((org-at-block-p)
+                  (org-narrow-to-block))
+                 (t (org-narrow-to-subtree))))
+          ((derived-mode-p 'prog-mode) (narrow-to-defun))
+          (t (error "Please select a region to narrow to"))))
 
-   (eval-after-load 'org-src
-     '(bind-key "C-x C-s" 'org-edit-src-exit org-src-mode-map))
- #+end_src
+  (eval-after-load 'org-src
+    '(bind-key "C-x C-s" 'org-edit-src-exit org-src-mode-map))
+#+end_src
 
-**** Outshine
+*** Outshine
 
- #+begin_src emacs-lisp :tangle no
-   (use-package outline
-     :config
-     (defvar outline-minor-mode-prefix "\M-#"))
+#+begin_src emacs-lisp :tangle no
+  (use-package outline
+    :config
+    (defvar outline-minor-mode-prefix "\M-#"))
 
-   (use-package outorg
-     :ensure t)
+  (use-package outorg
+    :ensure t)
 
-   (use-package outshine
-     :ensure t
-     :init
-     (setq outshine-use-speed-commands t)
-     :config
-     (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
-     (add-hook 'clojure-mode-hook 'outshine-mode)
-     (add-hook 'jst-mode-hook 'outshine-mode)
-     (add-hook 'message-mode-hook 'outshine-mode))
+  (use-package outshine
+    :ensure t
+    :init
+    (setq outshine-use-speed-commands t)
+    :config
+    (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
+    (add-hook 'clojure-mode-hook 'outshine-mode)
+    (add-hook 'jst-mode-hook 'outshine-mode)
+    (add-hook 'message-mode-hook 'outshine-mode))
 
-   (use-package navi-mode
-     :ensure t)
+  (use-package navi-mode
+    :ensure t)
 
- #+end_src
+#+end_src
 
-**** orgalist
+*** orgalist
 
- #+begin_src emacs-lisp 
-   ;; (use-package orgalist
-   ;;   :ensure t
-   ;;   :init
-   ;;   (add-hook 'message-mode 'orgalist-mode))
+#+begin_src emacs-lisp :tangle no
+  (use-package orgalist
+    :ensure t
+    :init
+    (add-hook 'message-mode 'orgalist-mode))
 
- #+end_src
+#+end_src
 
-**** hideshow
+*** hideshow
 
- #+begin_src emacs-lisp
-   ;; (use-package hideshow
-   ;;   :ensure t
-   ;;   :hook ((prog-mode . hs-minor-mode)))
+#+begin_src emacs-lisp :tangle no
+  (use-package hideshow
+    :ensure t
+    :hook ((prog-mode . hs-minor-mode)))
 
-   ;; (defun tx/toggle-fold ()
-   ;;   (interactive)
-   ;;   (save-excursion
-   ;;     (end-of-line)
-   ;;     (hs-toggle-hiding)))
- #+end_src
+  (defun tx/toggle-fold ()
+    (interactive)
+    (save-excursion
+      (end-of-line)
+      (hs-toggle-hiding)))
 
-**** origami
+#+end_src
 
- #+begin_src emacs-lisp 
-   (use-package origami
-     :ensure t
-     :bind (:map origami-mode-map
-            ("C-c f" . origami-recursively-toggle-node)
-            ("C-c F" . origami-toggle-all-nodes))
-     :commands (origami-mode))
+*** origami
 
- #+end_src
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package origami
+    :ensure t
+    :bind (:map origami-mode-map
+           ("C-c f" . origami-recursively-toggle-node)
+           ("C-c F" . origami-toggle-all-nodes))
+    :commands (origami-mode))
+
+#+end_src
+
 * Programming Tweaks 
+
 Configuration relating to programming
 
 ** Highlight Symbol Mode
+
 Highlight symbols and enable navigation by symbol in programming modes. See
 [[http://nschum.de/src/emacs/highlight-symbol/]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package highlight-symbol
     :ensure t
     :diminish highlight-symbol-mode
@@ -1379,28 +1789,33 @@ Highlight symbols and enable navigation by symbol in programming modes. See
                     (and (boundp 'multiple-cursors-mode)
                          multiple-cursors-mode))
           ad-do-it))))
-#+END_SRC
+
+#+end_src
 
 ** Electric Pair Mode
 
-#+BEGIN_SRC emacs-lisp 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when (fboundp 'electric-pair-mode)
     (electric-pair-mode))
-#+END_SRC
+
+#+end_src
 
 ** Goto Address
+
 Lets make addresses action buttons when we find them in comments in
 programming buffers
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (dolist (hook (if (fboundp 'prog-mode)
                     '(prog-mode-hook ruby-mode-hook)
                   '(find-file-hooks)))
     (add-hook hook 'goto-address-prog-mode))
-#+END_SRC
+
+#+end_src
 
 ** Rainbow Mode
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package rainbow-mode
     :ensure t
     :delight
@@ -1409,10 +1824,12 @@ programming buffers
     (add-hook 'ielm-mode-hook 'rainbow-mode)
     (add-hook 'lisp-interaction-mode-hook 'rainbow-mode)
     (add-hook 'emacs-lisp-mode-hook 'rainbow-mode))
-#+END_SRC
+
+#+end_src
 
 ** Rainbow Delimiters 
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package rainbow-delimiters 
     :ensure t
     :delight
@@ -1422,16 +1839,19 @@ programming buffers
     (add-hook 'lisp-interaction-mode-hook 'rainbow-delimiters-mode)
     (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
 
-#+END_SRC
+#+end_src
 
 ** Paredit 
+
 This mode was a little tricky at first, but now I'm use to it, I miss it when
 it isn't there. 
 
 There are some issues with using this mode in conjunction with emacspeak. Need
 to add some paredit specific advice to provide speech feedback for this mode.
 
-#+BEGIN_SRC emacs-lisp
+*** paredit
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package paredit
     :ensure t
     :diminish paredit-mode
@@ -1471,16 +1891,22 @@ to add some paredit specific advice to provide speech feedback for this mode.
       (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
       (add-hook 'ielm-mode-hook #'enable-paredit-mode)))
 
+#+end_src
+
+*** paredit-everywhere
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package paredit-everywhere
     :ensure t
     :config
     (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
-#+END_SRC
+
+#+end_src
 
 ** Smartparens
 Not sure I like this mode compared to paredit. Disabling it for now.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (use-package smartparens-config
     :ensure smartparens
     :config
@@ -1491,61 +1917,235 @@ Not sure I like this mode compared to paredit. Disabling it for now.
     (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
     (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
 
-#+END_SRC
+#+end_src
 
 ** Imenu
 
-#+BEGIN_SRC emacs-lisp 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package imenu-anywhere
     :ensure t)
-#+END_SRC
+
+#+end_src
 
 ** Line numbers
 
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-#+END_SRC
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (add-hook 'prog-mode-hook (lambda ()
+                              (display-line-numbers-mode)
+                              (line-number-mode)
+                              (column-number-mode)))
 
-** flycheck
+#+end_src
 
-#+BEGIN_SRC emacs-lisp
+** Flycheck Mode
+
+*** flycheck
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (defvar tx-flycheck-lazy-idle-delay 3.0
+    "The delay before flycheck checks the buffer, after a check that produces no
+  errors.")
+
   (use-package flycheck
     :ensure t
+    :commands (flycheck-list-errors flycheck-buffer)
     :config
+    (setq flycheck-check-syntax-automatically
+          (delq 'new-line flycheck-check-syntax-automatically)
+          flycheck-emacs-lisp-load-path 'inherit)
+
+    (defun tx-flycheck-adjust-syntax-check-eagerness ()
+      "Check for errors less often when there aren't any."
+      (if flycheck-current-errors
+          (kill-local-variable 'flycheck-idle-change-delay)
+        (setq-local flycheck-idle-change-delay tx-flycheck-lazy-idle-delay)))
+
+    (add-hook 'flycheck-after-syntax-check-hook
+              #'tx-flycheck-adjust-syntax-check-eagerness)
+
     (setq-default flycheck-disabled-checkers
                   (append flycheck-disabled-checkers
                           '(javascript-jshint)))
 
     (setq flycheck-display-errors-function
           #'flycheck-display-error-messages-unless-error-list)
-    (global-flycheck-mode))
+    (global-flycheck-mode +1))
 
+#+end_src
+
+*** flycheck-color-mode-line
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package flycheck-color-mode-line
     :ensure t
+
     :config
     (add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode))
 
-#+END_SRC
+#+end_src
+
 ** Highlight Indentation 
+
 Highlight the indentation level in programming modes.
 
-#+BEGIN_SRC emacs-lisp 
+There are a few modes which provide this type of functionality. Experimenting
+with two of them ~highlight-indentation~ and ~highlight-indent-guide~. Problem
+is that highlight-indent-guide looks better, but causes some problems with some
+modes (like org's edit block mode). It can also be a pain with TTS. On the other
+hand ~highlight-indentation~ does not cause problems with other modes, but is
+ugly.
+
+
+Can't wait until Emacs has this as native functionality, which should be at a
+layer which does not mess with editing etc.
+
+#+begin_src emacs-lisp :tangle no
   (use-package highlight-indentation
     :ensure t
     :config
     (add-hook 'prog-mode-hook #'highlight-indentation-current-column-mode))
 
-
-#+END_SRC
-* Utility Modes 
-** Alert
-
-#+begin_src emacs-lisp
-  (use-package alert
-    :ensure t)
 #+end_src
 
+#+begin_src emacs-lisp :tangle no
+  (use-package highlight-indent-guides
+    :ensure t
+    :hook ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
+    :init
+    (setq highlight-indent-guides-method 'character)
+    :config
+    (add-hook 'focus-in-hook #'highlight-indent-guides-auto-set-faces)
+
+    (defun tx/indent-guides-disable-maybe ()
+      (when highlight-indent-guides-mode
+        (highlight-indent-guides-mode -1)))
+    ;; `highlight-indent-guides' breaks in these modes
+    (add-hook 'visual-line-mode-hook #'tx/indent-guides-disable-maybe)
+    (add-hook 'org-indent-mode-hook #'tx/indent-guides-disable-maybe))
+
+#+end_src
+
+** ediff
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ediff
+    :defer t
+    :init
+    (setq ediff-diff-options "-w" ; turn off whitespace checking
+          ediff-split-window-function #'split-window-horizontally
+          ediff-window-setup-function #'ediff-setup-windows-plain)
+    :config
+    (defvar tx--ediff-saved-wconf nil)
+    ;; Restore window config after quitting ediff
+    (defun tx|ediff-save-wconf ()
+      (setq tx--ediff-saved-wconf (current-window-configuration)))
+    (add-hook 'ediff-before-setup-hook #'tx|ediff-save-wconf)
+
+    (defun tx|ediff-restore-wconf ()
+      (when (window-configuration-p tx--ediff-saved-wconf)
+        (set-window-configuration tx--ediff-saved-wconf)))
+    (add-hook 'ediff-quit-hook #'tx|ediff-restore-wconf 'append)
+    (add-hook 'ediff-suspend-hook #'tx|ediff-restore-wconf 'append))
+
+#+end_src
+
+** diff-hl 
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package diff-hl
+    :ensure t
+    :config
+    (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+    (add-hook 'dired-mode-hook 'diff-hl-dir-mode)
+    (add-hook 'after-init-hook 'global-diff-hl-mode))
+
+#+end_src
+
+** Quickrun
+
+#+begin_src emacs-lisp :tangle no
+  (use-package quickrun
+    :ensure t
+    :commands (quickrun)
+    :init
+    (setq
+     eval-expression-print-length nil
+     eval-expression-print-level  nil)
+    :config
+    (setq quickrun-focus-p nil)
+
+    (defun tx-quickrun-auto-close (&rest _)
+      "Allows us to silently re-run quickrun from within the quickrun buffer."
+      (when-let (win (get-buffer-window quickrun--buffer-name))
+        (let ((inhibit-message t))
+          (quickrun--kill-running-process)
+          (message ""))
+        (delete-window win)))
+    (advice-add #'quickrun :before #'tx-quickrun-auto-close)
+    (advice-add #'quickrun-region :before #'tx-quickrun-auto-close)
+  
+    (defun tx-quickrun-shrink-window ()
+      "Shrink the quickrun output window once code evaluation is complete."
+      (when-let (win (get-buffer-window quickrun--buffer-name))
+        (with-selected-window (get-buffer-window quickrun--buffer-name)
+          (let ((ignore-window-parameters t))
+            (shrink-window-if-larger-than-buffer)))))
+    (add-hook 'quickrun-after-run-hook #'tx-quickrun-shrink-window)
+
+    (defun tx-quickrun-scroll-to-bof ()
+      "Ensures window is scrolled to BOF on invocation."
+      (when-let (win (get-buffer-window quickrun--buffer-name))
+        (with-selected-window win
+          (goto-char (point-min)))))
+    (add-hook 'quickrun-after-run-hook #'tx-quickrun-scroll-to-bof))
+
+#+end_src
+
+** Projectile 
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package projectile
+     :ensure t
+     :delight '(:eval (concat " " (projectile-project-name)))
+     ;;:diminish projectile-mode
+     ;; :commands (projectile-mode
+     ;;            projectile-mode)
+     :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
+     :init
+     ;; (add-hook 'prog-mode-hook 'projectile-mode)
+     (projectile-mode +1))
+
+ #+end_src
+
+** lsp-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package lsp-mode
+    :ensure t
+    ;;:hook (prog-mode-hook . lsp-deferred)
+    :commands (lsp lsp-deferred)
+    :config
+    ;; (dolist (m '(clojure-mode
+    ;;              clojurec-mode
+    ;;              clojurescript-mode
+    ;;              clojurex-mode))
+    ;;   (add-to-list 'lsp-language-id-configuration `(,m . "clojure")))
+    :init
+    (setq lsp-enable-indentation nil)
+    ;; (add-hook 'clojure-mode-hook #'lsp)
+    ;; (add-hook 'clojurec-mode-hook #'lsp)
+    ;; (add-hook 'clojurescript-mode-hook #'lsp)
+    (add-hook 'js2-mode-hook #'lsp))
+
+  (use-package company-lsp
+    :ensure t
+    :commands company-lsp)
+
+#+end_src
+
+* Utility Modes 
 ** Spelling
+
 When running on OSX it is necessary to
 
   - Install a spell checker. I prefer to use /homebrew/ to install both emacs and
@@ -1560,7 +2160,7 @@ When running on OSX it is necessary to
   - I also setup symbolic links from the dictionaries I want to /default.aff/
     and /default.dic/
 
-#+BEGIN_SRC emacs-lisp 
+#+begin_src emacs-lisp :tangle tangle-init.el
     (when *spell-check-support-enabled*
       (use-package ispell
         :init
@@ -1592,7 +2192,7 @@ When running on OSX it is necessary to
                 ispell-dictionary "en_AU"))
         :config
         (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
-        (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC ". "#\\+END_SRC$"))
+        (add-to-list 'ispell-skip-region-alist '("^#\\+begin_src ". "#\\+end_src$"))
         (add-to-list 'ispell-skip-region-alist '("^#\\+begin_example ". "#\\+end_example$"))
         (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_EXAMPLE ". "#\\+END_EXAMPLE$"))
         (add-to-list 'ispell-skip-region-alist '("\:PROPERTIES\:$" . "\:END\:$"))
@@ -1612,13 +2212,15 @@ When running on OSX it is necessary to
             :config
             (add-hook 'prog-mode-hook 'flyspell-prog-mode)
             (add-hook 'text-mode-hook 'flyspell-mode)))))
-#+END_SRC
+
+#+end_src
 
 ** Timestamps
+
 Surprises me how often people ask for this functionality without realizing it is
 already built-in.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package time-stamp
      :init
      (setq time-stamp-active t
@@ -1629,39 +2231,46 @@ already built-in.
            time-stamp-line-limit 10)
      :config
      (add-hook 'write-file-hooks 'time-stamp))
-#+END_SRC
+
+#+end_src
 
 ** Regex Tool
+
 Add the handy ~regex-tool~ package
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (use-package regex-tool
     :ensure t
     :commands (regex-tool))
 
-#+END_SRC
+#+end_src
 
 ** Crontab
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package crontab-mode
     :mode ("\\.?cron\\(tab\\)?\\'" . crontab-mode))
-#+END_SRC
+
+#+end_src
 
 ** CSV
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package csv-mode
     :ensure t
     :init
     (setq csv-separators '("," ";" "|" " "))
     :config
     :mode ("\\.[Cc][Ss][Vv]\\'" . csv-mode))
-#+END_SRC
+
+#+end_src
 
 ** Grep and Wgrep
+
 The ~wgrep~ package allows for writing of grep buffers back to file. See [[http://github.com/mhayashi1120/Emacs-wgrep][wgrep
 on GitHub]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package grep
     :init
     (setq-default grep-highlight-matches t
@@ -1673,19 +2282,20 @@ on GitHub]]
         (use-package wgrep
           :ensure t)
         (add-hook 'grep-setup-hook 'wgrep-setup)))
-#+END_SRC
+
+#+end_src
 
 ** REST Client
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package restclient
     :ensure t)
 
-#+END_SRC
+#+end_src
 
 ** Alert
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package alert
     :ensure t
     :config
@@ -1693,34 +2303,37 @@ on GitHub]]
     (when *is-a-mac*
       (setq alert-default-style 'growl))
     (setq alert-reveal-idle-time 120))
-#+END_SRC
+
+#+end_src
 
 ** Write Good
 
-#+BEGIN_SRC emacs-lisp 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package writegood-mode
     :ensure t
     :bind ("C-M-g" . writegood-mode))
-#+END_SRC
+
+#+end_src
 
 ** Lorem Ipsum 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package lorem-ipsum
     :ensure t
     :commands (lorem-ipsum-insert-paragraph
                lorem-ipsum-insert-sentence
                lorem-ipsum-insert-list))
 
-#+END_SRC
+#+end_src
 
 * Application Modes 
 Modes relating to emacs applications 
  
 ** Calendar
+
 Configure the calendar
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package calendar
     :init
     (setq calendar-date-style 'iso
@@ -1734,18 +2347,16 @@ Configure the calendar
           icalendar-import-format-location " (%s)"
           icalendar-recurring-start-year 2013))
 
-#+END_SRC
+#+end_src
 
-** Dired
+** Directory Edit
+
 I like to have directories listed first. Easiest way to do this is use the
 ~ls-lisp~ library
 
-#+BEGIN_SRC emacs-lisp
-  (use-package diff-hl
-    :ensure t
-    :config
-    (add-hook 'dired-mode-hook 'diff-hl-dir-mode))
+*** dired
 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package dired
     :init
     (setq dired-listing-switches "-la --group-directories-first"
@@ -1756,17 +2367,23 @@ I like to have directories listed first. Easiest way to do this is use the
     :config
     (require 'dired-x))
 
+#+end_src
+
+*** find-dired
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package find-dired
     :init
     (setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld")))
 
-#+END_SRC
+#+end_src
 
 ** Stack Exchange
+
 When I'm a bit bored or want a break from my own problems, I sometimes like to
 look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub]].
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (use-package sx
     :ensure t
     :commands (sx-bug-report sx-authenticate sx-inbox sx-inbox-notifications
@@ -1778,45 +2395,64 @@ look at stack overflow. See [[https://github.com/vermiculus/sx.el/][sx on GitHub
                              sx-tab-topvoted sx-tab-hot
                              sx-tab-week sx-tab-month))
 
-#+END_SRC
+#+end_src
 
 ** Version Control
+
 Setup version control stuff
 
-#+BEGIN_SRC emacs-lisp
+*** git-commit
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package git-commit
     :ensure t)
     :config
     (global-git-commit-mode)
 
+#+end_src
+
+*** git-timemachine
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package git-timemachine
     :ensure t
     :commands (git-timemachine-toggle git-timemachine 
                git-timemachine-switch-browser))
 
+#+end_src
+
+*** gitignore-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package gitignore-mode
     :ensure t)
 
+#+end_src
+
+*** magit
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package magit
     :ensure t
     :commands (magit-status magit-dispatch-popup)
     :bind (("C-x g" . magit-status)
            ("C-x M-g" . magit-dispatch-popup)))
 
+#+end_src
+
+*** magit-popup
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package magit-popup
     :ensure t)
 
-  (use-package diff-hl
-    :ensure t
-    :config
-    (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
-    (add-hook 'after-init-hook 'global-diff-hl-mode))
-
-#+END_SRC
+#+end_src
 
 ** ERC
 
-#+BEGIN_SRC emacs-lisp 
+*** erc
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package erc
     :commands 'erc
     :preface
@@ -1934,18 +2570,29 @@ Setup version control stuff
      (lambda ()
        (setq erc-fill-column (- (window-width) 2)))))
 
+#+end_src
+
+*** erc-hl-nicks
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package erc-hl-nicks
     :ensure t
     :after erc)
 
+#+end_src
+
+*** erc-image
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package erc-image
     :ensure t
     :after erc)
-#+END_SRC
+
+#+end_src
 
 ** Eshell
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package eshell
     :commands 'eshell
     :init
@@ -1973,10 +2620,14 @@ Setup version control stuff
       (add-hook 'eshell-mode-hook
                 (lambda ()
                   (eshell/export "NODE_NO_READLINE=1")))))
-#+END_SRC
+
+#+end_src
 
 ** Elfeed
-#+BEGIN_SRC emacs-lisp
+
+*** elfeed
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package elfeed
     :ensure t
     :init
@@ -2032,6 +2683,11 @@ Setup version control stuff
 	        ("j" . hydra-elfeed/body)
 	        ("J" . hydra-elfeed/body)))
 
+#+end_src
+
+*** elfeed-org
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package elfeed-org
     :ensure t
     :init
@@ -2039,21 +2695,21 @@ Setup version control stuff
     :config
     (elfeed-org))
 
-#+END_SRC
+#+end_src
 
 ** Gnuplot
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package gnuplot
     :ensure t)
 
-#+END_SRC
+#+end_src
 
 * Keymaps
 
 *** read-write-toggle
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (defun tx/read-write-toggle ()
     "Toggles read-only in any relevant mode: ag-mode, Dired, or
   just any file at all."
@@ -2065,25 +2721,28 @@ Setup version control stuff
       ;; if the mode is Dired, it will make the directory writable
       ;; if it is not, it will just toggle read only, as desired
       (dired-toggle-read-only)))
+
 #+end_src
 
 *** Scratch
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (defun tx/scratch ()
       (interactive)
       (switch-to-buffer-other-window (get-buffer-create "*scratch*")))
+
 #+end_src
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (defun tx/make-org-scratch ()
     (interactive)
     (find-file "~/Dropbox/org/scratch.org"))
+
 #+end_src
 
 ** Toggle Map
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (bind-keys :prefix-map toggle-map
              :prefix "C-x t"
              ("d" . toggle-debug-on-error)
@@ -2094,10 +2753,12 @@ Setup version control stuff
              ("r" . tx/read-write-toggle)
              ("t" . text-mode)
              ("w" . whitespace-mode))
+
 #+end_src
+
 ** Launcher Map
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (bind-keys :prefix-map launcher-map
              :prefix "C-x l"
              ("A" . terminal) ;; save "a" for open-agenda
@@ -2119,43 +2780,31 @@ Setup version control stuff
                ("." . counsel-linux-app)))
 
 #+end_src
-* Projectile 
-#+BEGIN_SRC emacs-lisp
-  (use-package projectile
-    :ensure t
-    :delight '(:eval (concat " " (projectile-project-name)))
-    ;;:diminish projectile-mode
-    ;; :commands (projectile-mode
-    ;;            projectile-mode)
-    :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
-    :init
-    ;; (add-hook 'prog-mode-hook 'projectile-mode)
-    (projectile-mode +1))
-#+END_SRC
 
 * Auctex 
  Use the ~auctex~ package for writing LaTeX.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package tex
     :ensure auctex)
 
-#+END_SRC
+#+end_src
 
 * Web 
 ** Htmlize
 Add the ~htmlize~ package to provide an easy way to turn buffer contents into
 HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package htmlize
     :ensure t
     :commands (htmlize-buffer htmlize-region htmlize-file
                               htmlize-many-files htmlize-many-files-dired))
-#+END_SRC
+#+end_src
 
 ** Browse-url
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package browse-url
     :commands (browse-url-at-point
                browse-url-of-buffer
@@ -2177,10 +2826,14 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
       ("d" emacspeak-wizards-unhex-uri "Decode")
       ("q" nil "Quit"))
     :bind ("<f6>" . my-hydra-browse-url/body))
-#+END_SRC
+
+#+end_src
 
 ** Markdown
-#+BEGIN_SRC emacs-lisp
+
+*** markdown-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package markdown-mode
     :ensure t
     :defer t
@@ -2188,19 +2841,34 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
     :mode (("\\.markdown\\'" . markdown-mode)
            ("\\.md\\'" . markdown-mode)))
 
+#+end_src
 
+*** gh-md
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package gh-md
     :ensure t
     :commands (gh-md-render-buffer gh-md-render-region))
 
+#+end_src
+
+*** markdown-preview-eww
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package markdown-preview-eww
     :ensure t
     :commands (markdown-peview-eww))
 
+#+end_src
+
+*** markdown-toc
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package markdown-toc
     :ensure t
     :commands (markdown-toc-generate-toc))
-#+END_SRC
+
+#+end_src
 
 * Programming Modes 
 ** Lua
@@ -2208,20 +2876,21 @@ HTML. See [[http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git]].
 No time for any Lua programming just now, so commenting out configuration as it
 is not required at this time. 
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package lua-mode
-  ;;   :ensure t
-  ;;   :commands (lua-mode)
-  ;;   :mode "\\.lua\\'"
-  ;;   :interpreter "lua")
+#+begin_src emacs-lisp :tangle no
+  (use-package lua-mode
+    :ensure t
+    :commands (lua-mode)
+    :mode "\\.lua\\'"
+    :interpreter "lua")
 
-#+END_SRC
+#+end_src
 
 ** Emacs Lisp
 Configure lisp modes. 
 
-*** Add the ~elisp-slime-nave~ package to get some nice nav functions.
-#+BEGIN_SRC emacs-lisp
+*** elisp-slime-nav
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package elisp-slime-nav
     :ensure t
     ;; :diminish elisp-slime-nav-mode
@@ -2231,10 +2900,12 @@ Configure lisp modes.
                     lisp-mode-hook
                     clojure-mode-hook))
            (add-hook hook 'turn-on-elisp-slime-nav-mode)))
-#+END_SRC
 
-*** Use ~ipretty~ to improve display of eval results 
-#+BEGIN_SRC emacs-lisp
+#+end_src
+
+*** ipretty
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ipretty
     :ensure t
     :init
@@ -2245,10 +2916,12 @@ Configure lisp modes.
           (view-mode 1))))
     :config
     (add-hook 'emacs-lisp-mode-hook 'ipretty-mode))
-#+END_SRC
+
+#+end_src
 
 *** Setup Emacs Lisp
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (defun setup-hippie-expand-for-elisp ()
     "Locally set `hippie-expand' completion functions for use with Emacs Lisp."
     (make-local-variable 'hippie-expand-try-functions-list)
@@ -2269,23 +2942,32 @@ Configure lisp modes.
 
   (bind-key "M-:" 'pp-eval-expression)
   (bind-key "C-x C-e" 'tx/eval-last-sexp-or-region emacs-lisp-mode-map)
-#+END_SRC
+
+#+end_src
 
 ** Clojure
 Setup ~clojure-mode~ and ~cider~. 
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package clojure-cheatsheet
-  ;;   :ensure t
-  ;;   :commands clojure-cheatsheet)
+*** clojure-snippets
 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package clojure-snippets
     :ensure t)
 
+#+end_src
+
+*** clojure-hydra
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package cider-hydra
     :ensure t
     :commands cider-hydra-mode)
 
+#+end_src
+
+*** clojure-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package clojure-mode
     :ensure t
     :init
@@ -2294,9 +2976,19 @@ Setup ~clojure-mode~ and ~cider~.
     (add-hook 'clojure-mode-hook #'subword-mode)
     (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
+#+end_src
+
+*** flycheck-joker
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package flycheck-joker
      :ensure t)
 
+#+end_src
+
+*** cider
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package cider
     :ensure t
     :commands (cider-mode cider-connect cider-jack-in cider-jack-in-clojurescript)
@@ -2306,15 +2998,17 @@ Setup ~clojure-mode~ and ~cider~.
      ;; cider-font-lock-dynamically '(macro core function var)
      cider-eldoc-display-for-symbol-at-point nil
      eldoc-echo-area-use-multiline-p t
-     cider-overlays-use-font-lock t
-     cider-use-overlays t
      cider-show-error-buffer nil
-     cider-repl-display-help-banner nil
      cider-repl-history-file (expand-file-name "repl-history"))
     :config
     (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
     (add-hook 'cider-mode-hook #'cider-hydra-mode))
 
+#+end_src
+
+*** clj-refactor
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package clj-refactor
     :ensure t
     :commands clj-refactor-mode
@@ -2326,27 +3020,44 @@ Setup ~clojure-mode~ and ~cider~.
                                    ;; insert keybinding setup here
                                    (cljr-add-keybindings-with-prefix "C-c C-m"))))
 
+#+end_src
 
-  ;; (use-package inf-clojure
-  ;;   :ensure t
-  ;;   :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
-#+END_SRC
+*** inf-clojure
+
+#+begin_src emacs-lisp :tangle no
+  (use-package inf-clojure
+    :ensure t
+    :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
+
+#+end_src
 
 ** SQL
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package sql-indent
-  ;;   :ensure t
-  ;;   :config
-  ;;   (eval-after-load 'sql
-  ;;     (load-library "sql-indent")))
 
+*** sql-indent
 
+#+begin_src emacs-lisp :tangle no
+  (use-package sql-indent
+    :ensure t
+    :config
+    (eval-after-load 'sql
+      (load-library "sql-indent")))
+
+#+end_src
+
+*** sqlup-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package sqlup-mode
     :ensure t
     :config
     (add-hook 'sql-mode-hook 'sqlup-mode)
     (add-hook 'sql-interactive-mode-hook 'sqlup-mode))
 
+#+end_src
+
+*** sql
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package sql
     :init
     (progn 
@@ -2381,11 +3092,13 @@ Setup ~clojure-mode~ and ~cider~.
     :config
     (bind-key "C-c C-z" 'tx/pop-to-sqli-buffer sql-mode-map))
 
-
-#+END_SRC
+#+end_src
 
 ** Web
-#+BEGIN_SRC emacs-lisp
+
+*** web-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package web-mode
     :ensure t
     :config
@@ -2407,17 +3120,28 @@ Setup ~clojure-mode~ and ~cider~.
 
     (add-hook 'web-mode-hook  'my-web-mode-hook))
 
+#+end_src
+
+*** less-css-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package less-css-mode
     :ensure t)
 
+#+end_src
+
+*** emmet-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package emmet-mode
     :ensure t)
 
-#+END_SRC
+#+end_src
 
 ** JavaScript
+*** js2-mode
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package js2-mode
     :ensure t
     :delight
@@ -2437,6 +3161,11 @@ Setup ~clojure-mode~ and ~cider~.
     (js2-imenu-extras-setup)
     (define-key js2-mode-map (kbd "M-.") nil))
 
+#+end_src
+
+*** xref-js2
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package xref-js2
     :ensure t
     :delight
@@ -2446,6 +3175,11 @@ Setup ~clojure-mode~ and ~cider~.
                 (add-hook 'xref-backend-functions
                           #'xref-js2-xref-backend nil t))))
 
+#+end_src
+
+*** js2-refactor
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package js2-refactor
     :ensure t
     :config
@@ -2453,12 +3187,22 @@ Setup ~clojure-mode~ and ~cider~.
     (js2r-add-keybindings-with-prefix "C-c C-r")
     (define-key js2-mode-map (kbd "C-k") #'js2r-kill))
 
+#+end_src
+
+*** tern
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package tern
     :ensure t
     :delight
     :config
     (add-hook 'js2-mode-hook #'tern-mode))
 
+#+end_src
+
+*** company-tern
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package company-tern
     :ensure t
     :config
@@ -2471,6 +3215,11 @@ Setup ~clojure-mode~ and ~cider~.
     (define-key tern-mode-keymap (kbd "M-.") nil)
     (define-key tern-mode-keymap (kbd "M-,") nil))
 
+#+end_src
+
+*** indium
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package indium
     :ensure t
     :delight
@@ -2478,6 +3227,11 @@ Setup ~clojure-mode~ and ~cider~.
     :config
     (add-hook 'js2-mode-hook #'indium-interaction-mode))
 
+#+end_src
+
+*** prettier-js
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package prettier-js
     :ensure t
     :init
@@ -2488,12 +3242,27 @@ Setup ~clojure-mode~ and ~cider~.
     :config
     (add-hook 'js2-mode-hook #'prettier-js-mode))
 
+#+end_src
+
+*** json-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package json-mode
     :ensure t)
 
+#+end_src
+
+*** ng2
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ng2-mode
     :ensure t)
 
+#+end_src
+
+*** js-doc
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package js-doc
     :ensure t
     :init
@@ -2505,66 +3274,91 @@ Setup ~clojure-mode~ and ~cider~.
                 (define-key js2-mode-map "\C-ci" 'js-doc-insert-function-doc)
                 (define-key js2-mode-map "@" 'js-doc-insert-tag))))
 
+#+end_src
+
+*** tide
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package tide
     :ensure t)
 
-#+END_SRC
+#+end_src
 
 ** Powershell
 
 Have been blessed with no need to do powershell scripting at this time, so
 disabling this support for now. 
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package powershell
-  ;;   :ensure t)
-#+END_SRC
+#+begin_src emacs-lisp :tangle no
+  (use-package powershell
+    :ensure t)
+
+#+end_src
 
 ** Python
 
 No time to continue with learning Python programming at this time, so disabling
 this support for now. 
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package jedi
-  ;;   :ensure t
-  ;;   :mode ("\\.py\\'" . python-mode)
-  ;;   :init
-  ;;   (setq jedi:complete-on-dot t)
-  ;;   :config
-  ;;   (add-hook 'python-mode-hook 'jedi:setup))
+*** jedi
 
-  ;; (use-package company-jedi
-  ;;   :ensure t)
+#+begin_src emacs-lisp :tangle no
+  (use-package jedi
+    :ensure t
+    :mode ("\\.py\\'" . python-mode)
+    :init
+    (setq jedi:complete-on-dot t)
+    :config
+    (add-hook 'python-mode-hook 'jedi:setup))
 
-  ;; (use-package importmagic
-  ;;   :ensure t)
+#+end_src
 
-  ;; (use-package elpy
-  ;;   :ensure t
-  ;;   :init
-  ;;   (setq elpy-rpc-backend "jedi")
-  ;;   :config
-  ;;   (elpy-enable))
+*** company-jedi
 
-#+END_SRC
+#+begin_src emacs-lisp :tangle no
+  (use-package company-jedi
+    :ensure t)
+
+#+end_src
+
+*** importmagic
+
+#+begin_src emacs-lisp :tangle no
+  (use-package importmagic
+    :ensure t)
+
+#+end_src
+
+*** elpy
+
+#+begin_src emacs-lisp :tangle no
+  (use-package elpy
+    :ensure t
+    :init
+    (setq elpy-rpc-backend "jedi")
+    :config
+    (elpy-enable))
+
+#+end_src
 
 ** Scheme
 
 No need for scheme support at this time. Disabling for now.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package geiser
-  ;;   :ensure t)
+*** geiser
 
-#+END_SRC
+#+begin_src emacs-lisp :tangle no
+  (use-package geiser
+    :ensure t)
+
+#+end_src
 
 ** CL
 
 Moved back to Gnome from Stumpwn for now. Until time permits for full stumpwm
 setup, comment out for now.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when (not *is-a-mac*)
     (use-package slime
       :ensure t
@@ -2588,59 +3382,49 @@ setup, comment out for now.
       :ensure t
       :config
       (slime-setup '(slime-company))))
-#+END_SRC
+
+#+end_src
 
 ** Elm
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package elm-mode
     :ensure t
     :config
     (setq elm-tags-on-save t
           elm-sort-imports-on-save t
-          elm-format-on-save t))
+          elm-format-on-save t)
+    (add-to-list 'company-backends 'company-elm))
 
-#+END_SRC
+#+end_src
 
 * Theme 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package solarized-theme
-  ;;   :ensure t
-  ;;   :init 
-  ;;   (setq-default custom-enabled-themes '(solarized-dark))
-  ;;   (setq solarized-distinct-fringe-background +1)
-  ;;   (setq solarized-use-more-italic t)
-  ;;   :config
-  ;;   (defun reapply-themes ()
-  ;;     "Forcibly load the themes listed in `custom-enabled-themes'."
-  ;;     (dolist (theme custom-enabled-themes)
-  ;;       (unless (custom-theme-p theme)
-  ;;         (load-theme theme)))
-  ;;     (custom-set-variables `(custom-enabled-themes
-  ;;                             (quote ,custom-enabled-themes))))
-  ;;   (add-hook 'after-init-hook 'reapply-themes))
 
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package night-owl-theme
     :ensure t
     :init 
     (setq-default custom-enabled-themes '(night-owl))
+    (setq
+     night-owl-background "#011627"
+     night-owl-doc-face-as-comment t
+     night-owl-foreground "goldenrod3"
+     night-owl-foreground-muted "OrangeRed3"
+     night-owl-foreground-slightly-muted "goldenrod4"
+     night-owl-highlight "#1D1053"
+     night-owl-highlight-alt "#3C0074"
+     night-owl-highlight-line "#010F1D"
+     night-owl-use-variable-pitch t)
     :config
-    (defun reapply-themes ()
-      "Forcibly load the themes listed in `custom-enabled-themes'."
-      (dolist (theme custom-enabled-themes)
-        (unless (custom-theme-p theme)
-          (load-theme theme)))
-      (custom-set-variables `(custom-enabled-themes
-                              (quote ,custom-enabled-themes))))
-    (add-hook 'after-init-hook 'reapply-themes))
+    (load-theme 'night-owl))
 
-#+END_SRC
+#+end_src
 
 ** Diminish Mode
 The ~diminish~ package allows us to remove or change minor mode entries in the
 mode-line. See [[https://github.com/myrjola/diminish.el][diminish on GitHub]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package diminish
     :ensure t
     :config
@@ -2662,36 +3446,24 @@ mode-line. See [[https://github.com/myrjola/diminish.el][diminish on GitHub]]
       (diminish 'whitespace-mode)
       (diminish 'guide-key-mode)))
 
-#+END_SRC
-
-** Mode Line
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package powerline
-  ;;   :ensure t
-  ;;   :init
-  ;;   (setq powerline-display-mule-info nil
-  ;;         powerline-display-buffer-size nil)
-  ;;   :config
-  ;;   (powerline-default-theme))
-
-#+END_SRC
+#+end_src
 
 * Local Packages 
 I put locally managed packages i.e. those not installed via elpa into the lib
 directory.
 
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package ipcalc
-  ;;   :commands (ipcalc))
+#+begin_src emacs-lisp :tangle no
+  (use-package ipcalc
+    :commands (ipcalc))
 
-#+END_SRC
+#+end_src
 
 * Mail
-** Google Contacts
+** google-contacts
 
 Ability to access google contacts is useful. 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package google-contacts
     :ensure t
     :init
@@ -2699,13 +3471,13 @@ Ability to access google contacts is useful.
     :config
     ;; (require 'google-contacts-message)
     (require 'google-org-contacts))
-#+END_SRC
+#+end_src
 
 ** Mu4e
 
 First, setup some load paths.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (require 'info)
 
   (if *is-a-mac*
@@ -2718,11 +3490,11 @@ First, setup some load paths.
   (add-to-list 'load-path (expand-file-name mu4e-lisp))
   (add-to-list 'Info-additional-directory-list (expand-file-name mu4e-info))
 
-#+END_SRC
+#+end_src
 
 Next, load some additional packages we need.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (when *run_emacspeak*
       (require 'emacspeak-mu4e))
 
@@ -2731,12 +3503,32 @@ Next, load some additional packages we need.
   (use-package "org-mime"
     :ensure t)
 
+#+end_src
 
-#+END_SRC
+Setup mu4e alert
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package mu4e-alert
+    :ensure t
+    :config
+    (setq mu4e-alert-interesting-mail-query
+          (if (string= system-name "arch-vbox")
+              (concat
+               "(maildir:/gmail/INBOX OR "
+               "maildir:/outlook/INBOX) AND "
+               "flag:unread AND NOT flag:trashed")
+            (concat
+             "(maildir:/gmail/INBOX OR "
+             "maildir:/outlook/INBOX OR "
+             "maildir:/sheep/INBOX) AND "
+             "flag:unread AND NOT flag:trashed")))
+    (mu4e-alert-enable-mode-line-display))
+
+#+end_src
 
 Now setup mu4e.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package mu4e
     :init
     (setq tx-gmail-email "theophilusx@gmail.com"
@@ -2745,6 +3537,7 @@ Now setup mu4e.
     (setq mu4e-maildir (expand-file-name "~/Maildir")
           mu4e-attachment-dir (expand-file-name "~/Desktop")
           mu4e-get-mail-command "mbsync -a"
+          mu4e-hide-index-messages t
           mu4e-headers-include-related nil
           mu4e-change-filenames-when-moving t
           mu4e-context-policy 'pick-first
@@ -2762,110 +3555,145 @@ Now setup mu4e.
     :config
     (add-hook 'message-mode-hook 'turn-on-orgtbl)
     ;;(add-hook 'message-mode-hook 'outline-minor-mode)
-    (setq mu4e-bookmarks `(,(make-mu4e-bookmark
-                             :name  "Unread messages"
-                             :query "flag:unread AND NOT flag:trashed"
-                             :key ?u)
-                           ,(make-mu4e-bookmark
-                             :name "Today's messages"
-                             :query "date:today..now AND NOT flag:trashed"
-                             :key ?t)
-                           ,(make-mu4e-bookmark
-                             :name "Last 7 days"
-                             :query "date:7d..now AND NOT flag:trashed"
-                             :key ?w)
-                           ,(make-mu4e-bookmark
-                             :name "Messages with images"
-                             :query "mime:image/* AND NOT flag:trashed"
-                             :key ?p)))
-    (setq mu4e-contexts
-          `(,(make-mu4e-context
-              :name "Private"
-              :enter-func (lambda ()
-                            (mu4e-message "Entering Private context"))
-              :leave-func
-              (lambda ()
-                (mu4e-message "Leaving Private context"))
-              ;; we match based on the contact-fields of the message
-              :match-func
-              (lambda (msg)
-                (when msg
-                  (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
-              :vars '((user-mail-address . "theophilusx@gmail.com")
-                      (user-full-name . "Tim Cross")
-                      (mu4e-compose-signature . (concat "Tim Cross\n"))
-                      (mu4e-drafts-folder . "/gmail/Drafts")
-                      (mu4e-sent-folder . "/gmail/Sent Mail")
-                      (mu4e-trash-folder . "/gmail/Bin")
-                      (mu4e-refile-folder . "/gmail/All Mail")
-                      (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
-                                                 ("/gmail/Sent Mail" . ?s)
-                                                 ("/gmail/All Mail" . ?a)
-                                                 ("/gmail/Drafts" . ?d)
-                                                 ("/gmail/Starred" . ?f)))
-                      (smtpmail-smtp-server . "smtp.gmail.com")
-                      (smtpmail-smtp-service . 587)
-                      (mu4e-sent-messages-behavior . delete)))
-            ,(make-mu4e-context
-              :name "Sheep"
-              :enter-func
-              (lambda ()
-                (mu4e-message "Entering Sheep context"))
-              :leave-func
-              (lambda ()
-                (mu4e-message "Leaving Sheep context"))
-              ;; we match based on the contact-fields of the message
-              :match-func
-              (lambda (msg)
-                (when msg
-                  (mu4e-message-contact-field-matches msg :to "tcross8@une.edu.au")))
-              :vars '((user-mail-address . "tcross8@une.edu.au")
-                      (user-full-name . "Tim Cross")
-                      (mu4e-compose-signature . (concat
+    (setq mu4e-bookmarks '())
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name "Last 7 days"
+                  :query "date:7d..now AND NOT flag:trashed"
+                  :key ?w))
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name "Messages with images"
+                  :query "mime:image/* AND NOT flag:trashed"
+                  :key ?p))
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name "Today's messages"
+                  :query "date:today..now AND NOT flag:trashed"
+                  :key ?t))
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name  "Unread messages"
+                  :query (if (string= system-name "arch-vbox")
+                             (concat "(maildir:/gmail/INBOX OR "
+                                     "maildir:/outlook/INBOX) AND "
+                                     "flag:unread AND NOT flag:trashed")
+                           (concat "(maildir:/gmail/INBOX OR "
+                                   "maildir:/outlook/INBOX OR "
+                                   "maildir:/sheep/INBOX) AND "
+                                   "flag:unread AND NOT flag:trashed"))
+                  :key ?u))
+    (setq mu4e-contexts '())
+    (add-to-list 'mu4e-contexts
+                 (make-mu4e-context
+                  :name "Outlook"
+                  :enter-func
+                  (lambda ()
+                    (mu4e-message "Entering Outlook context"))
+                  :leave-func
+                  (lambda ()
+                    (mu4e-message "Leaving Outlook context"))
+                  ;; we match based on the contact-fields of the message
+                  :match-func
+                  (lambda (msg)
+                    (when msg
+                      (mu4e-message-contact-field-matches msg
+                                                          :to
+                                                          "blind-bat@hotmail.com")))
+                  :vars '((user-mail-address . "blind-bat@hotmail.com")
+                          (user-full-name . "Tim Cross")
+                          (mu4e-compose-signature . (concat "Tim Cross\n"))
+                          (mu4e-drafts-folder . "/outlook/Drafts")
+                          (mu4e-sent-folder . "/outlook/Sent Mail")
+                          (mu4e-trash-folder . "/outlook/Deleted Items")
+                          (mu4e-refile-folder . "/outlook/Archive")
+                          (mu4e-maildir-shortcuts . (("/outlook/INBOX" . ?i)
+                                                     ("/outlook/Sent Mail" . ?s)
+                                                     ("/outlook/Archive" . ?a)
+                                                     ("/outlook/Drafts" . ?d)))
+                          (smtpmail-smtp-server . "smtp-mail.outlook.com")
+                          (smtpmail-smtp-service . 587)
+                          (mu4e-sent-messages-behavior . delete))))
+    (if (string= system-name "tim-desktop")
+        (add-to-list 'mu4e-contexts
+                     (make-mu4e-context
+                      :name "Sheep"
+                      :enter-func
+                      (lambda ()
+                        (mu4e-message "Entering Sheep context"))
+                      :leave-func
+                      (lambda ()
+                        (mu4e-message "Leaving Sheep context"))
+                      ;; we match based on the contact-fields of the message
+                      :match-func
+                      (lambda (msg)
+                        (when msg
+                          (mu4e-message-contact-field-matches msg
+                                                              :to
+                                                              "tcross8@une.edu.au")))
+                      :vars
+                      '((user-mail-address . "tcross8@une.edu.au")
+                        (user-full-name . "Tim Cross")
+                        (mu4e-compose-signature .
+                                                (concat
                                                  "Tim Cross\n"
-                                                 "DBA/Developer - Livestock App Building\n"
-                                                 "School of Science and Technology\n"
-                                                 "Room 253 Booth Block (C027), Univrsity of New England\n"))
-                      (mu4e-drafts-folder . "/sheep/Drafts")
-                      (mu4e-sent-folder . "/sheep/Sent Items")
-                      (mu4e-trash-folder . "/sheep/Deleted Items")
-                      (mu4e-refile-folder . "/sheep/Archive")
-                      (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
-                                                 ("/sheep/Sent Items" . ?s)
-                                                 ("/sheep/Archive" . ?a)
-                                                 ("/sheep/Drafts" . ?d)))
-                      (smtpmail-smtp-server . "mailhub.une.edu.au")
-                      (smtpmail-smtp-service . 25)
-                      (mu4e-sent-messages-behavior . sent)))
-            ,(make-mu4e-context
-              :name "Outlook"
-              :enter-func
-              (lambda ()
-                (mu4e-message "Entering Outlook context"))
-              :leave-func
-              (lambda ()
-                (mu4e-message "Leaving Outlook context"))
-              ;; we match based on the contact-fields of the message
-              :match-func
-              (lambda (msg)
-                (when msg
-                  (mu4e-message-contact-field-matches msg :to "blind-bat@hotmail.com")))
-              :vars '((user-mail-address . "blind-bat@hotmail.com")
-                      (user-full-name . "Tim Cross")
-                      (mu4e-compose-signature . (concat "Tim Cross\n"))
-                      (mu4e-drafts-folder . "/outlook/Drafts")
-                      (mu4e-sent-folder . "/outlook/Sent Mail")
-                      (mu4e-trash-folder . "/outlook/Deleted Items")
-                      (mu4e-refile-folder . "/outlook/Archive")
-                      (mu4e-maildir-shortcuts . (("/outlook/INBOX" . ?i)
-                                                 ("/outlook/Sent Mail" . ?s)
-                                                 ("/outlook/Archive" . ?a)
-                                                 ("/outlook/Drafts" . ?d)))
-                      (smtpmail-smtp-server . "smtp-mail.outlook.com")
-                      (smtpmail-smtp-service . 587)
-                      (mu4e-sent-messages-behavior . delete))))))
+                                                 "DBA/Developer - "
+                                                 "Livestock App Building\n"
+                                                 "School of Science and "
+                                                 "Technology\n"
+                                                 "Room 253 Booth Block (C027), "
+                                                 "Univrsity of New England\n"))
+                        (mu4e-drafts-folder . "/sheep/Drafts")
+                        (mu4e-sent-folder . "/sheep/Sent Items")
+                        (mu4e-trash-folder . "/sheep/Deleted Items")
+                        (mu4e-refile-folder . "/sheep/Archive")
+                        (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
+                                                   ("/sheep/Sent Items" . ?s)
+                                                   ("/sheep/Archive" . ?a)
+                                                   ("/sheep/Drafts" . ?d)))
+                        (smtpmail-smtp-server . "mailhub.une.edu.au")
+                        (smtpmail-smtp-service . 25)
+                        (mu4e-sent-messages-behavior . sent)))))
+    (add-to-list 'mu4e-contexts
+                 (make-mu4e-context
+                  :name "Private"
+                  :enter-func (lambda ()
+                                (mu4e-message "Entering Private context"))
+                  :leave-func
+                  (lambda ()
+                    (mu4e-message "Leaving Private context"))
+                  ;; we match based on the contact-fields of the message
+                  :match-func
+                  (lambda (msg)
+                    (when msg
+                      (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
+                  :vars
+                  '((user-mail-address . "theophilusx@gmail.com")
+                    (user-full-name . "Tim Cross")
+                    (mu4e-compose-signature . (concat "Tim Cross\n"))
+                    (mu4e-drafts-folder . "/gmail/Drafts")
+                    (mu4e-sent-folder . "/gmail/Sent Mail")
+                    (mu4e-trash-folder . "/gmail/Bin")
+                    (mu4e-refile-folder . "/gmail/All Mail")
+                    (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
+                                               ("/gmail/Sent Mail" . ?s)
+                                               ("/gmail/All Mail" . ?a)
+                                               ("/gmail/Drafts" . ?d)
+                                               ("/gmail/Starred" . ?f)))
+                    (smtpmail-smtp-server . "smtp.gmail.com")
+                    (smtpmail-smtp-service . 587)
+                    (mu4e-sent-messages-behavior . delete)))))
 
-#+END_SRC
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package orgalist
+    :after mu4e
+    :config
+    (add-to-list 'orgalist-context-function
+                 '(mu4e-compose-mode . orgalist-message-mode-context))
+    (add-hook 'mu4e-compose-mode-hook #'orgalist-mode))
+#+end_src
 
 I no longer have a UNE staff account, so have removed the associated context for
 that account. However, may still need it if I want to look at the messages I
@@ -2898,7 +3726,7 @@ have archived on this system, so keeping it below for reference.
 
 #+END_EXAMPLE
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package smtpmail
     :config
     (setq message-send-mail-function 'smtpmail-send-it
@@ -2910,14 +3738,15 @@ have archived on this system, so keeping it below for reference.
           smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
     ;; don't keep message buffers around
     (setq message-kill-buffer-on-exit t))
-#+END_SRC
+
+#+end_src
 
 ** Test out VM again
 
 Looks like there has been no work done on VM since 2016. Suspect the client may
 have reached end-of-life!
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
   (add-to-list 'Info-additional-directory-list
                (expand-file-name "~/bzr/vm/new-trunk/info"))
@@ -2938,13 +3767,15 @@ have reached end-of-life!
   (defalias 'vm-mime-display-internal-emacs-w3m-text/html
        'vm-mime-display-internal-shr-text/html)
 
-#+END_SRC
+#+end_src
 
 * Emacs Server
+
 Start the emacs server so that we can use emacsclient
 
 ** Edit Server
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle no
   (use-package edit-server
     :ensure t
     :init
@@ -2956,27 +3787,32 @@ Start the emacs server so that we can use emacsclient
     :config
     (edit-server-start))
 
-#+END_SRC
+#+end_src
 
 ** Emacs Server
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package server
     :config
     (server-start))
-#+END_SRC
+
+#+end_src
 
 * Coding System
-#+BEGIN_SRC emacs-lisp
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (prefer-coding-system 'utf-8)
   (when (display-graphic-p)
     (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
-#+END_SRC
+
+#+end_src
 
 * Startup Window
+
 My custom setup for initial window configuration. There is probably a better way
 to do this!
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle no
   (defun my-startup-window ()
     (interactive)
     (org-agenda nil "wr")
@@ -2992,5 +3828,5 @@ to do this!
 
   (add-hook 'after-init-hook 'my-after-init-config)
 
-#+END_SRC
+#+end_src
 
