@@ -513,13 +513,12 @@ normally ensure a 'stable' environment.
      org-list-allow-alphabetical t
      org-list-indent-offset 2
      org-log-refile 'time
-     org-modules '(org-bibtex
-                   org-crypt
-                   org-docview
-                   org-eww
-                   org-info
-                   org-irc
-                   org-protocol)
+     org-modules '(org-crypt
+                   ol-docview
+                   ol-eww
+                   ol-info
+                   ol-bibtex
+                   ol-irc)
      org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
      org-pretty-entities t
      org-refile-allow-creating-parent-nodes 'confirm
@@ -534,7 +533,7 @@ normally ensure a 'stable' environment.
      org-time-clocksum-format '(:hours "%d" :require-hours t
                                        :minutes ":%02d" :require-minutes t)
      org-use-sub-superscripts (quote {}))
-  
+
     (setq
      org-capture-templates
      (quote
@@ -709,9 +708,7 @@ normally ensure a 'stable' environment.
        (gnuplot . t)))
     (bind-key "C-c l" 'org-store-link)
     (bind-key "C-c a" 'org-agenda)
-    (bind-key "C-c b" 'org-switchb)
     (bind-key "C-c r" 'org-capture))
-
 #+end_src
 
 * Hydra
@@ -1194,7 +1191,7 @@ Set up the exec path for emacs
 
 *** ido
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package ido
     :demand t
     :init
@@ -1216,7 +1213,7 @@ Set up the exec path for emacs
 
 *** ido-completing-read+
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package ido-completing-read+
     :ensure t
     :config
@@ -1226,7 +1223,7 @@ Set up the exec path for emacs
 
 ** SMEX
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
     (use-package smex
       :ensure t
       :demand t
@@ -1309,6 +1306,37 @@ Set up the exec path for emacs
 
 #+end_src
 
+** Flx
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package flx
+    :ensure t)
+#+end_src
+
+** Icons
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package all-the-icons
+    :ensure t
+    :config (setq all-the-icons-scale-factor 1.0))
+
+  (use-package all-the-icons-ivy
+    :ensure t
+    :hook (after-init . all-the-icons-ivy-setup))
+
+#+end_src
+
+** Prescient
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package prescient
+    :ensure t
+    :config
+    (setq prescient-filter-method '(literal regexp initialism fuzzy))
+    (prescient-persist-mode +1))
+
+#+end_src
+
 ** Counsel
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -1321,6 +1349,104 @@ Set up the exec path for emacs
            ("C-c i" . counsel.unicode-char)
            :map read-expression-map
            ("C-r" . counsel-expression-history)))
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package counsel-projectile
+    :ensure t
+    :config
+    (counsel-projectile-mode +1))
+#+end_src
+
+** Ivy
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ivy
+    :ensure t
+    :diminish
+    :hook (after-init . ivy-mode)
+    :config
+    (setq ivy-display-style nil)
+    (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
+    (define-key ivy-minibuffer-map (kbd "<escape>") #'minibuffer-keyboard-quit)
+    (setq ivy-re-builders-alist
+          '((counsel-rg . ivy--regex-plus)
+            (counsel-projectile-rg . ivy--regex-plus)
+            (counsel-ag . ivy--regex-plus)
+            (counsel-projectile-ag . ivy--regex-plus)
+            (swiper . ivy--regex-plus)
+            (t . ivy--regex-fuzzy)))
+    (setq ivy-use-virtual-buffers t
+          ivy-count-format "(%d/%d) "
+          ivy-initial-inputs-alist nil))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ivy-posframe
+    :ensure t
+    :after ivy
+    :diminish
+    :config
+    (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center))
+          ivy-posframe-height-alist '((t . 20))
+          ivy-posframe-parameters '((internal-border-width . 10)))
+    (setq ivy-posframe-width 70)
+    (ivy-posframe-mode +1))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ivy-rich
+    :ensure t
+    :preface
+    (defun ivy-rich-switch-buffer-icon (candidate)
+      (with-current-buffer
+          (get-buffer candidate)
+        (all-the-icons-icon-for-mode major-mode)))
+    :init
+    (setq ivy-rich-display-transformers-list ; max column width sum = (ivy-poframe-width - 1)
+          '(ivy-switch-buffer
+            (:columns
+             ((ivy-rich-switch-buffer-icon (:width 2))
+              (ivy-rich-candidate (:width 35))
+              (ivy-rich-switch-buffer-project (:width 15 :face success))
+              (ivy-rich-switch-buffer-major-mode (:width 13 :face warning)))
+             :predicate
+             #'(lambda (cand) (get-buffer cand)))
+            counsel-M-x
+            (:columns
+             ((counsel-M-x-transformer (:width 35))
+              (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
+            counsel-describe-function
+            (:columns
+             ((counsel-describe-function-transformer (:width 35))
+              (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
+            counsel-describe-variable
+            (:columns
+             ((counsel-describe-variable-transformer (:width 35))
+              (ivy-rich-counsel-variable-docstring (:width 34 :face font-lock-doc-face))))
+            package-install
+            (:columns
+             ((ivy-rich-candidate (:width 25))
+              (ivy-rich-package-version (:width 12 :face font-lock-comment-face))
+              (ivy-rich-package-archive-summary (:width 7 :face font-lock-builtin-face))
+              (ivy-rich-package-install-summary (:width 23 :face font-lock-doc-face))))))
+    :config
+    (ivy-rich-mode +1)
+    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ivy-prescient
+    :ensure t
+    :after (prescient ivy)
+    :config
+    (setq ivy-prescient-sort-commands
+          '(:not swiper counsel-grep ivy-switch-buffer))
+    (setq ivy-prescient-retain-classic-highlighting t)
+    (ivy-prescient-mode +1))
 
 #+end_src
 
@@ -1653,6 +1779,16 @@ Using ~ag~ package for searches. This needs some OS support
      (add-to-list 'company-backends 'company-web-slim))
 
  #+end_src
+
+**** company-prescient
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package company-prescient
+    :ensure t
+    :after (prescient company)
+    :config (company-prescient-mode +1))
+
+#+end_src
 
 *** Hippie Expand
 
@@ -2107,16 +2243,28 @@ layer which does not mess with editing etc.
 ** Projectile 
 
  #+begin_src emacs-lisp :tangle tangle-init.el
+   ;; (use-package projectile
+   ;;   :ensure t
+   ;;   :delight '(:eval (concat " " (projectile-project-name)))
+   ;;   ;;:diminish projectile-mode
+   ;;   ;; :commands (projectile-mode
+   ;;   ;;            projectile-mode)
+   ;;   :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
+   ;;   :init
+   ;;   ;; (add-hook 'prog-mode-hook 'projectile-mode)
+   ;;   (projectile-mode +1))
+
    (use-package projectile
      :ensure t
-     :delight '(:eval (concat " " (projectile-project-name)))
-     ;;:diminish projectile-mode
-     ;; :commands (projectile-mode
-     ;;            projectile-mode)
-     :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
-     :init
-     ;; (add-hook 'prog-mode-hook 'projectile-mode)
-     (projectile-mode +1))
+     :diminish
+     :config
+     (projectile-mode +1)
+     (define-key projectile-mode-map (kbd "C-c p") #'projectile-command-map)
+     (define-key projectile-mode-map (kbd "s-p") #'projectile-find-file) ; counsel
+     (define-key projectile-mode-map (kbd "s-F") #'projectile-ripgrep) ; counsel
+     (setq projectile-sort-order 'recentf
+           projectile-indexing-method 'hybrid
+           projectile-completion-system 'ivy))
 
  #+end_src
 
@@ -2125,16 +2273,29 @@ layer which does not mess with editing etc.
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package lsp-mode
     :ensure t
-    :hook (prog-mode-hook . lsp-deferred)
+    ;;:hook (prog-mode-hook . lsp-deferred)
     :commands (lsp lsp-deferred)
     :config
-    (add-to-list 'lsp-language-id-configuration '(clojure-mode . "clojure-mode"))
+    ;; (dolist (m '(clojure-mode
+    ;;              clojurec-mode
+    ;;              clojurescript-mode
+    ;;              clojurex-mode))
+    ;;   (add-to-list 'lsp-language-id-configuration `(,m . "clojure")))
     :init
-    (setq lsp-enable-indentation nil))
+    (setq lsp-prefer-flymake nil
+          lsp-enable-indentation nil
+          lsp-enable-symbol-highlighting nil
+          lsp-signature-auto-activate nil)
+  
+    ;; (add-hook 'clojure-mode-hook #'lsp)
+    ;; (add-hook 'clojurec-mode-hook #'lsp)
+    ;; (add-hook 'clojurescript-mode-hook #'lsp)
+    (add-hook 'js2-mode-hook #'lsp))
 
   (use-package company-lsp
     :ensure t
-    :commands company-lsp)
+    :commands company-lsp
+    :config (setq company-lsp-cache-candidates 'auto))
 
 #+end_src
 
@@ -2943,15 +3104,6 @@ Configure lisp modes.
 ** Clojure
 Setup ~clojure-mode~ and ~cider~. 
 
-*** clojure cheatsheet
-
-#+begin_src emacs-lisp :tangle no
-  (use-package clojure-cheatsheet
-    :ensure t
-    :commands clojure-cheatsheet)
-
-#+end_src
-
 *** clojure-snippets
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -3002,10 +3154,7 @@ Setup ~clojure-mode~ and ~cider~.
      ;; cider-font-lock-dynamically '(macro core function var)
      cider-eldoc-display-for-symbol-at-point nil
      eldoc-echo-area-use-multiline-p t
-     cider-overlays-use-font-lock t
-     cider-use-overlays t
      cider-show-error-buffer nil
-     cider-repl-display-help-banner nil
      cider-repl-history-file (expand-file-name "repl-history"))
     :config
     (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
@@ -3691,6 +3840,15 @@ Now setup mu4e.
                     (smtpmail-smtp-service . 587)
                     (mu4e-sent-messages-behavior . delete)))))
 
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package orgalist
+    :after mu4e
+    :config
+    (add-to-list 'orgalist-context-function
+                 '(mu4e-compose-mode . orgalist-message-mode-context))
+    (add-hook 'mu4e-compose-mode-hook #'orgalist-mode))
 #+end_src
 
 I no longer have a UNE staff account, so have removed the associated context for
