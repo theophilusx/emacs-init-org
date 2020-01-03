@@ -154,12 +154,12 @@ Function to restore default gc etc after init.
        ;; To speed up minibuffer commands (like helm and ivy), we defer garbage
        ;; collection while the minibuffer is active.
        (defun tx-defer-garbage-collection ()
-	 (setq gc-cons-threshold tx-gc-cons-upper-limit))
+         (setq gc-cons-threshold tx-gc-cons-upper-limit))
        (defun tx-restore-garbage-collection ()
-	 ;; Defer it so that commands launched from the minibuffer can enjoy the
-	 ;; benefits.
-	 (run-at-time 1 nil (lambda ()
-			      (setq gc-cons-threshold tx-gc-cons-threshold))))
+         ;; Defer it so that commands launched from the minibuffer can enjoy the
+         ;; benefits.
+         (run-at-time 1 nil (lambda ()
+                              (setq gc-cons-threshold tx-gc-cons-threshold))))
        (add-hook 'minibuffer-setup-hook #'tx-defer-garbage-collection)
        (add-hook 'minibuffer-exit-hook  #'tx-restore-garbage-collection)
        ;; GC all sneaky breeky like
@@ -217,7 +217,7 @@ Emacs < 27 does not have the early init file.
     (defvar url-callback-arguments nil)
     (defvar emacspeak-we-url-executor nil)
     (defvar org-ans2 nil)
-    (defvar ido-process-ignore-lists nil)
+    ;;(defvar ido-process-ignore-lists nil)
     (defvar select-object nil)
     (defvar *slime-inspector* nil)
 
@@ -1063,6 +1063,19 @@ Some basic defaults and customizations
     :hook (after-init . doom-modeline-mode)
     :config
     (setq  doom-modeline-height 20
+           doom-modeline-icon (display-graphic-p)
+           doom-modeline-major-mode-icon t
+           doom-modeline-major-mode-color-icon t
+           doom-modeline-buffer-state-icon t
+           doom-modeline-buffer-modification-icon t
+           doom-modeline-unicode-fallback t
+           doom-modeline-minor-modes nil
+           doom-modeline-enable-word-count nil
+           doom-modeline-persp-name nil
+           doom-modeline-github nil
+           doom-modeline-modal-icon nil
+           doom-modeline-mu4e t
+           doom-modeline-gnus nil
            doom-modeline-buffer-file-name-style 'truncate-all))
 
 #+end_src
@@ -1388,65 +1401,78 @@ Set up the exec path for emacs
     :after ivy
     :diminish
     :config
-    (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center))
+    (setq ivy-posframe-display-functions-alist
+          '((swiper          . nil)
+            (complete-symbol . ivy-posframe-display-at-point)
+            (counsel-M-x     . ivy-posframe-display-at-frame-top-center)
+            (t               . ivy-posframe-display-at-frame-top-center))
           ivy-posframe-height-alist '((t . 20))
-          ivy-posframe-parameters '((internal-border-width . 10)))
-    (setq ivy-posframe-width 70)
+          ivy-posframe-parameters '((internal-border-width . 5))
+          ivy-posframe-width 70)
     (ivy-posframe-mode +1))
 
 #+end_src
 
 #+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package ivy-rich
-    :ensure t
-    :preface
-    (defun ivy-rich-switch-buffer-icon (candidate)
-      (with-current-buffer
-          (get-buffer candidate)
-        (all-the-icons-icon-for-mode major-mode)))
-    :init
-    (setq ivy-rich-display-transformers-list ; max column width sum = (ivy-poframe-width - 1)
-          '(ivy-switch-buffer
-            (:columns
-             ((ivy-rich-switch-buffer-icon (:width 2))
-              (ivy-rich-candidate (:width 35))
-              (ivy-rich-switch-buffer-project (:width 15 :face success))
-              (ivy-rich-switch-buffer-major-mode (:width 13 :face warning)))
-             :predicate
-             #'(lambda (cand) (get-buffer cand)))
-            counsel-M-x
-            (:columns
-             ((counsel-M-x-transformer (:width 35))
-              (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
-            counsel-describe-function
-            (:columns
-             ((counsel-describe-function-transformer (:width 35))
-              (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
-            counsel-describe-variable
-            (:columns
-             ((counsel-describe-variable-transformer (:width 35))
-              (ivy-rich-counsel-variable-docstring (:width 34 :face font-lock-doc-face))))
-            package-install
-            (:columns
-             ((ivy-rich-candidate (:width 25))
-              (ivy-rich-package-version (:width 12 :face font-lock-comment-face))
-              (ivy-rich-package-archive-summary (:width 7 :face font-lock-builtin-face))
-              (ivy-rich-package-install-summary (:width 23 :face font-lock-doc-face))))))
-    :config
-    (ivy-rich-mode +1)
-    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+  ;; (use-package ivy-rich
+  ;;   :ensure t
+  ;;   :preface
+  ;;   (defun ivy-rich-switch-buffer-icon (candidate)
+  ;;     (with-current-buffer
+  ;;         (get-buffer candidate)
+  ;;       (all-the-icons-icon-for-mode major-mode)))
+  ;;   :init
+  ;;   (setq ivy-rich-display-transformers-list ; max column width sum = (ivy-poframe-width - 1)
+  ;;         '(ivy-switch-buffer
+  ;;           (:columns
+  ;;            ((ivy-rich-switch-buffer-icon (:width 2))
+  ;;             (ivy-rich-candidate (:width 35))
+  ;;             (ivy-rich-switch-buffer-project (:width 15 :face success))
+  ;;             (ivy-rich-switch-buffer-major-mode (:width 13 :face warning)))
+  ;;            :predicate
+  ;;            #'(lambda (cand) (get-buffer cand)))
+  ;;           counsel-M-x
+  ;;           (:columns
+  ;;            ((counsel-M-x-transformer (:width 35))
+  ;;             (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
+  ;;           counsel-describe-function
+  ;;           (:columns
+  ;;            ((counsel-describe-function-transformer (:width 35))
+  ;;             (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
+  ;;           counsel-describe-variable
+  ;;           (:columns
+  ;;            ((counsel-describe-variable-transformer (:width 35))
+  ;;             (ivy-rich-counsel-variable-docstring (:width 34 :face font-lock-doc-face))))
+  ;;           package-install
+  ;;           (:columns
+  ;;            ((ivy-rich-candidate (:width 25))
+  ;;             (ivy-rich-package-version (:width 12 :face font-lock-comment-face))
+  ;;             (ivy-rich-package-archive-summary (:width 7 :face font-lock-builtin-face))
+  ;;             (ivy-rich-package-install-summary (:width 23 :face font-lock-doc-face))))))
+  ;;   :config
+  ;;   (ivy-rich-mode +1)
+  ;;   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 
 #+end_src
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ivy-prescient
     :ensure t
-    :after (prescient ivy)
+    :after (prescient ivy counsel)
     :config
     (setq ivy-prescient-sort-commands
           '(:not swiper counsel-grep ivy-switch-buffer))
     (setq ivy-prescient-retain-classic-highlighting t)
     (ivy-prescient-mode +1))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ivy-xref
+    :ensure t
+    :defer t
+    :custom
+    (xref-show-xrefs-function #'ivy-xref-show-xrefs "Use Ivy to show xrefs"))
 
 #+end_src
 
@@ -1731,7 +1757,6 @@ Using ~ag~ package for searches. This needs some OS support
 #+end_src
 
 *** Company
-**** Company
 
  #+begin_src emacs-lisp :tangle tangle-init.el
    (use-package company
@@ -1868,7 +1893,7 @@ Some addditional outlining support to make more things work like org-mode.
 
 *** orgalist
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package orgalist
     :ensure t
     :init
@@ -2284,18 +2309,27 @@ layer which does not mess with editing etc.
     :init
     (setq lsp-prefer-flymake nil
           lsp-enable-indentation nil
-          lsp-enable-symbol-highlighting nil
-          lsp-signature-auto-activate nil)
-  
+          lsp-enable-symbol-highlighting t
+          lsp-signature-auto-activate t)
+
     ;; (add-hook 'clojure-mode-hook #'lsp)
     ;; (add-hook 'clojurec-mode-hook #'lsp)
     ;; (add-hook 'clojurescript-mode-hook #'lsp)
     (add-hook 'js2-mode-hook #'lsp))
 
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package company-lsp
     :ensure t
     :commands company-lsp
     :config (setq company-lsp-cache-candidates 'auto))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package lsp-ivy
+    :ensure t)
 
 #+end_src
 
@@ -2368,6 +2402,14 @@ When running on OSX it is necessary to
             :config
             (add-hook 'prog-mode-hook 'flyspell-prog-mode)
             (add-hook 'text-mode-hook 'flyspell-mode)))))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package flyspell-correct-ivy
+    :bind ("C-M-;" . flyspell-correct-wrapper)
+    :init
+    (setq flyspell-correct-interface #'flyspell-correct-ivy))
 
 #+end_src
 
@@ -2483,6 +2525,7 @@ on GitHub]]
 #+end_src
 
 * Application Modes 
+
 Modes relating to emacs applications 
  
 ** Calendar
@@ -3184,6 +3227,14 @@ Setup ~clojure-mode~ and ~cider~.
   (use-package inf-clojure
     :ensure t
     :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
+
+#+end_src
+
+*** ivy-clojuredocs
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ivy-clojuredocs
+    :ensure t)
 
 #+end_src
 
