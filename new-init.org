@@ -154,12 +154,12 @@ Function to restore default gc etc after init.
        ;; To speed up minibuffer commands (like helm and ivy), we defer garbage
        ;; collection while the minibuffer is active.
        (defun tx-defer-garbage-collection ()
-         (setq gc-cons-threshold tx-gc-cons-upper-limit))
+	 (setq gc-cons-threshold tx-gc-cons-upper-limit))
        (defun tx-restore-garbage-collection ()
-         ;; Defer it so that commands launched from the minibuffer can enjoy the
-         ;; benefits.
-         (run-at-time 1 nil (lambda ()
-                              (setq gc-cons-threshold tx-gc-cons-threshold))))
+	 ;; Defer it so that commands launched from the minibuffer can enjoy the
+	 ;; benefits.
+	 (run-at-time 1 nil (lambda ()
+			      (setq gc-cons-threshold tx-gc-cons-threshold))))
        (add-hook 'minibuffer-setup-hook #'tx-defer-garbage-collection)
        (add-hook 'minibuffer-exit-hook  #'tx-restore-garbage-collection)
        ;; GC all sneaky breeky like
@@ -217,7 +217,7 @@ Emacs < 27 does not have the early init file.
     (defvar url-callback-arguments nil)
     (defvar emacspeak-we-url-executor nil)
     (defvar org-ans2 nil)
-    ;;(defvar ido-process-ignore-lists nil)
+    (defvar ido-process-ignore-lists nil)
     (defvar select-object nil)
     (defvar *slime-inspector* nil)
 
@@ -250,6 +250,7 @@ Emacs < 27 does not have the early init file.
     (tab-bar-mode))
 
 #+end_src
+
 * Load Path
 The following adds additional directories to the emacs load-path so that
 emacs can find various additional libraries etc
@@ -298,37 +299,40 @@ then load it
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (when (and *run_emacspeak*
-             (not noninteractive)
-             (not (featurep 'emacspeak)))
+	     (not noninteractive)
+	     (not (featurep 'emacspeak)))
     (add-to-list 'load-path *emacspeak-src-dir*)
     (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
     (setenv "DTK_PROGRAM" *dtk-program*)
     (setq dtk-program *dtk-program*
-          dtk-use-tones nil
-          emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
-          emacspeak-erc-my-nick "theophilusx"
-          emacspeak-erc-speak-all-participants t
-          emacspeak-mail-alert nil
-          emacspeak-play-emacspeak-startup-icon nil
-          emacspeak-vm-use-raman-settings nil
-          emacspeak-play-program (expand-file-name "~/bin/play")
-          emacpseak-play-args nil
-          mac-default-speech-rate 360        
-          outloud-default-speech-rate 90
-          espeak-default-speech-rate 250
-          sox-play (if *is-a-mac*
-                       "/usr/local/bin/play"
-                     "/usr/bin/play")
-          emacspeak-soxplay-command (if *is-a-mac*
-                                        "/usr/local/bin/play -v 1.2 %s earwax &"
-                                      "/usr/bin/play -v 1.2 %s earwax &")
-          tts-default-speech-rate 90)
+	  dtk-use-tones nil
+	  emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
+	  emacspeak-epub-calibre-root-dir "/home/tim/Documents/Calibre"
+	  emacspeak-epub-calibre-sqlite "/usr/bin/sqlite3"
+	  emacspeak-erc-my-nick "theophilusx"
+	  emacspeak-erc-speak-all-participants t
+	  emacspeak-eww-silence-images nil
+	  emacspeak-mail-alert nil
+	  emacspeak-play-emacspeak-startup-icon nil
+	  emacspeak-vm-use-raman-settings nil
+	  emacspeak-play-program (expand-file-name "~/bin/play")
+	  emacpseak-play-args nil
+	  mac-default-speech-rate 360        
+	  outloud-default-speech-rate 90
+	  espeak-default-speech-rate 250
+	  sox-play (if *is-a-mac*
+		       "/usr/local/bin/play"
+		     "/usr/bin/play")
+	  emacspeak-soxplay-command (if *is-a-mac*
+					"/usr/local/bin/play -v 1.2 %s earwax &"
+				      "/usr/bin/play -v 1.2 %s earwax &")
+	  tts-default-speech-rate 90)
 
     (add-hook 'emacspeak-startup-hook
-              (lambda ()
-                ;; (dtk-set-rate tts-default-speech-rate 1)
-                (dtk-interp-sync)
-                (emacspeak-sounds-select-theme "3d/")))
+	      (lambda ()
+		;; (dtk-set-rate tts-default-speech-rate 1)
+		(dtk-interp-sync)
+		(emacspeak-sounds-select-theme "3d/")))
 
     (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
 
@@ -461,6 +465,144 @@ do the simple way
   ;;   (require 'use-package))
   ;; (require 'diminish)
   ;; (require 'bind-key)
+
+#+end_src
+
+* Appearance 
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package night-owl-theme
+    :ensure t
+    :init 
+    (setq-default custom-enabled-themes '(night-owl))
+    (setq
+     night-owl-background "#011627"
+     night-owl-doc-face-as-comment t
+     night-owl-foreground "goldenrod3"
+     night-owl-foreground-muted "OrangeRed3"
+     night-owl-foreground-slightly-muted "goldenrod4"
+     night-owl-highlight "#1D1053"
+     night-owl-highlight-alt "#3C0074"
+     night-owl-highlight-line "#012F1D"
+     night-owl-use-variable-pitch t)
+    :config
+    (load-theme 'night-owl))
+
+#+end_src
+
+** Diminish Mode
+The ~diminish~ package allows us to remove or change minor mode entries in the
+mode-line. See [[https://github.com/myrjola/diminish.el][diminish on GitHub]]
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package diminish
+    :ensure t
+    :config
+    (progn 
+      (diminish 'voice-lock-mode)
+      (diminish 'auto-fill-function)
+      (diminish 'hs-minor-mode)
+      (diminish 'doc-view-minor-mode " DV")
+      (diminish 'view-mode " RO")
+      ;; (diminish 'elisp-slime-nav-mode)
+      (diminish 'yas-minor-mode)
+      ;; (diminish 'paredit-everywhere-mode " Par")
+      ;; (diminish 'paredit-mode " Par")
+      (diminish 'rainbow-mode "")
+      (diminish 'company-mode)
+      (diminish 'global-whitespace-newline-mode)
+      (diminish 'global-whitespace-mode)
+      (diminish 'whitespace-newline-mode)
+      (diminish 'whitespace-mode)
+      (diminish 'guide-key-mode)))
+
+#+end_src
+
+** Hide modeline
+
+#+begin_src emacs-lisp :tangle no
+  (use-package hide-mode-line
+    :ensure t
+    :config
+    (add-hook 'completion-list-mode-hook #'hide-mode-line-mode)
+    (add-hook 'Man-mode-hook #'hide-mode-line-mode))
+
+#+end_src
+
+** Fonts
+
+ Set the default font
+
+*** Font Variables
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (if *is-a-mac*
+       (defvar tx-font (font-spec :family "Fira Code" :size 26))
+     (defvar tx-font (font-spec :family "Fira Code" :size 24)))
+
+   (defvar tx-variable-pitch-font (cond
+                                   (*is-a-mac* (font-spec :family "Helvetica"))
+                                   ((string= system-name "tim-desktop")
+                                    (font-spec :family "Noto Sans"))
+                                   (t (font-spec :family "DejaVu Serif"))))
+
+   (defvar tx-serif-font (cond
+                          (*is-a-mac* (font-spec :family "Times"))
+                          ((string= system-name "tim-desktop")
+                           (font-spec :family "Noto Serif Display"))
+                          (t (font-spec :family "DejaVu Serif"))))
+
+   (defvar tx-unicode-font
+     (if *is-a-mac*
+         (font-spec :family "Apple Color Emoji")
+       (font-spec :family "Noto Color Emoji")))
+
+ #+end_src
+
+*** Set Fonts
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (set-face-attribute 'default nil :font tx-font)
+   (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font)
+   (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)
+   (set-fontset-font t 'unicode tx-unicode-font nil 'prepend)
+
+   (when *is-a-mac*
+     (mac-auto-operator-composition-mode))
+
+ #+end_src
+
+*** Emoji
+
+ Setup emoji support
+
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package emojify
+     :ensure t
+     :config
+     (setq
+      emojify-company-tooltips-p nil
+      emojify-display-style 'unicode
+      emojify-program-contexts '(comments))
+     :init
+     (add-hook 'after-init-hook #'global-emojify-mode))
+
+ #+end_src
+
+** doom-modeline
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package doom-modeline
+    :ensure t
+    :hook (after-init . doom-modeline-mode)
+    :config
+    (setq  doom-modeline-height 20
+	   doom-modeline-buffer-file-name-style 'truncate-all
+	   doom-modeline-irc nil
+	   doom-modeline-mu4e t
+	   doom-modeline-persp-name nil
+	   doom-modeline-project-detection 'projectile
+	   doom-modeline-unicode-fallback t))
 
 #+end_src
 
@@ -711,6 +853,27 @@ normally ensure a 'stable' environment.
     (bind-key "C-c r" 'org-capture))
 #+end_src
 
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package org-bullets
+    :ensure t
+    :config
+    (add-hook 'org-mode-hook 'org-bullets-mode))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package org-mime
+    :ensure t
+    :config
+    (add-hook 'message-mode-hook
+	      (lambda ()
+		(local-set-key (kbd "C-c M-o") 'org-mime-htmlize)))
+    (add-hook 'org-mode-hook
+	      (lambda ()
+		(local-set-key (kbd "C-c M-o") 'org-mime-org-subtree-htmlize))))
+
+#+end_src
+
 * Hydra
 
  #+begin_src emacs-lisp :tangle tangle-init.el
@@ -872,31 +1035,92 @@ to start with 'g', so we need to do some additional variable settings.
 #+end_src
 
 * Basic defaults 
+
 Some basic defaults and customizations 
 
-** Disabled Features 
-
 #+begin_src emacs-lisp :tangle tangle-init.el
-  (when (fboundp 'tool-bar-mode)
-      (tool-bar-mode -1))
-  (when (fboundp 'scroll-bar-mode)
-    (scroll-bar-mode -1))
-  (when (fboundp 'horizontal-scroll-bar-mode)
-    (horizontal-scroll-bar-mode -1))
+  (setq-default fill-column 80)
+
+  (setq abbrev-all-caps t
+	auto-insert-mode t
+	auto-save-no-message t
+	bookmark-save-flag 1
+	bookmark-use-annotations t
+	confirm-kill-processes nil
+	delete-by-moving-to-trash t
+	delete-old-versions t
+	desktop-save-mode t
+	dynamic-completion-mode t
+	electric-pair-mode t
+	focus-follows-mouse t
+	indent-tabs-mode nil
+	kill-do-not-save-duplicates t
+	line-move-visual nil
+	load-prefer-newer t
+	parse-sexp-ignore-comments t
+	save-interprogram-paste-before-kill t
+	scroll-bar-mode nil
+	select-enable-primary t
+	semantic-imenu-auto-rebuild-directory-indexes t
+	tab-always-indent 'complete
+	tab-width 4
+	tool-bar-mode nil
+	version-control t)
 
 #+end_src
 
-** Zap up to char
+*** Some hooks
 
 #+begin_src emacs-lisp :tangle tangle-init.el
-  (autoload 'zap-up-to-char "misc"
-    "Kill up to, but not including ARGth occurrence of CHAR." t)
-
-  (global-set-key (kbd "M-z") 'zap-up-to-char)  
+  (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+  (add-hook 'emacs-lisp-mode-hook 'eldoc-mode)
+  (add-hook 'prog-mode-hook (lambda ()
+			      (abbrev-mode)))
+  (add-hook 'text-mode-hook (lambda ()
+			      (turn-on-auto-fill)
+			      (text-mode-hook-identify)))
 
 #+end_src
 
-** Enable some useful minor modes
+*** hl-line
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package hl-line
+    :config
+    (global-hl-line-mode))
+
+#+end_src
+
+*** display-fill-column-indicator
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package display-fill-column-indicator
+    :config
+    (add-hook 'text-mode-hook 'display-fill-column-indicator-mode)
+    (add-hook 'prog-mode-hook 'display-fill-column-indicator-mode))
+
+#+end_src
+
+*** show-paren-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package paren
+    :init
+    (setq show-paren-style 'mixed
+	  show-paren-when-point-in-periphery t
+	  show-paren-when-point-inside-paren t)
+    :config
+    (add-hook 'text-mode-hook 'show-paren-mode)
+    (add-hook 'prog-mode-hook 'show-paren-mode)
+    (add-hook 'emacs-lisp-mode-hook 'show-paren-mode))
+#+end_src
+*** y-or-n-p
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (fset 'yes-or-no-p 'y-or-n-p)
+
+#+end_src
+
 *** uniquify
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -915,19 +1139,6 @@ Some basic defaults and customizations
     (setq save-place-file (expand-file-name ".saveplace" user-emacs-directory))
     :config
     (save-place-mode 1))
-
-#+end_src
-
-*** paren
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package paren
-    :demand t
-    :config
-    (setq show-paren-delay 0.1
-          show-paren-highlight-openparen t
-          show-paren-when-point-inside-paren t)
-    (show-paren-mode 1))
 
 #+end_src
 
@@ -951,13 +1162,6 @@ Some basic defaults and customizations
 
 #+end_src
 
-*** transient-mark-mode
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (transient-mark-mode t)
-
-#+end_src
-
 *** global-prettify-symbols-mode
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -966,194 +1170,50 @@ Some basic defaults and customizations
 
 #+end_src
 
-*** yes-or-no-p
+*** Electric Pair Mode
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (fset 'yes-or-no-p 'y-or-n-p)
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (when (fboundp 'electric-pair-mode)
+     (electric-pair-mode))
 
-#+end_src
-  
-** Enable some disabled modes
+ #+end_src
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (put 'narrow-to-region 'disabled nil)
-  (put 'narrow-to-page 'disabled nil)
-  (put 'narrow-to-defun 'disabled nil)
-  (put 'upcase-region 'disabled nil)
-  (put 'downcase-region 'disabled nil)
+*** Goto Address
 
-#+end_src
+ Lets make addresses action buttons when we find them in comments in
+ programming buffers
 
-** Set some setq defaults
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (dolist (hook (if (fboundp 'prog-mode)
+                     '(prog-mode-hook ruby-mode-hook)
+                   '(find-file-hooks)))
+     (add-hook hook 'goto-address-prog-mode))
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (setq
-   apropos-do-all t
-   auth-sources '("~/.authinfo.gpg" "~/.authinfo" "~/.netrc")
-   backup-directory-alist `(("." . ,(concat user-emacs-directory "backups")))
-   delete-by-moving-to-trash t
-   ediff-window-setup-function 'ediff-setup-windows-plain
-   eldoc-idle-delay 1.5
-   inhibit-startup-message t
-   line-move-visual nil
-   load-prefer-newer t
-   ;; max-mini-window-height 0.50
-   message-log-max 2048
-   require-final-newline t
-   save-interprogram-paste-before-kill t
-   visible-bell t
-   select-enable-clipboard t
-   select-enable-primary t
-   show-paren-delay 0
-   show-paren-style 'mixed
-   tab-always-indent 'complete
-   truncate-lines t)
+ #+end_src
 
-#+end_src
+*** Imenu
 
-** Set some setq-defaults
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package imenu-anywhere
+     :ensure t
+     :init
+     (setq imenu-auto-rescan t))
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (setq-default
-   ansi-color-for-comint-mode t
-   bidi-display-reordering nil ; disable bidirectional text for tiny perf boost
-   blink-matching-paren nil    ; don't blink--too distracting
-   compilation-always-kill t        ; kill compilation process before starting another
-   compilation-ask-about-save nil   ; save all buffers on `compile'
-   compilation-scroll-output 'first-error
-   confirm-nonexistent-file-or-buffer t
-   fill-column 80
-   frame-resize-pixelwise t
-   image-animate-loop t
-   indent-tabs-mode nil
-   indicate-buffer-boundaries nil
-   indicate-empty-lines nil
-   mode-line-default-help-echo nil ; disable mode-line mouseovers
-   mouse-yank-at-point t           ; middle-click paste at point, not at click
-   pos-tip-internal-border-width 6
-   pos-tip-border-width 1
-   ring-bell-function #'ignore
-   save-place t
-   show-help-function nil          ; hide :help-echo text
-   show-trailing-whitespace nil
-   tab-width 4
-   use-dialog-box nil              ; always avoid GUI
-   visible-bell nil
-   x-stretch-cursor nil)
 
-#+end_src
+ #+end_src
 
-* Mode Line
-** Hide modeline
+*** Line numbers
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package hide-mode-line
-    :ensure t
-    :config
-    (add-hook 'completion-list-mode-hook #'hide-mode-line-mode)
-    (add-hook 'Man-mode-hook #'hide-mode-line-mode))
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (add-hook 'prog-mode-hook (lambda ()
+                               (display-line-numbers-mode)
+                               (line-number-mode)
+                               (column-number-mode)))
 
-#+end_src
-
-** doom-modeline
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package doom-modeline
-    :ensure t
-    :hook (after-init . doom-modeline-mode)
-    :config
-    (setq  doom-modeline-height 20
-           doom-modeline-icon (display-graphic-p)
-           doom-modeline-major-mode-icon t
-           doom-modeline-major-mode-color-icon t
-           doom-modeline-buffer-state-icon t
-           doom-modeline-buffer-modification-icon t
-           doom-modeline-unicode-fallback t
-           doom-modeline-minor-modes nil
-           doom-modeline-enable-word-count nil
-           doom-modeline-persp-name nil
-           doom-modeline-github nil
-           doom-modeline-modal-icon nil
-           doom-modeline-mu4e t
-           doom-modeline-gnus nil
-           doom-modeline-buffer-file-name-style 'truncate-all))
-
-#+end_src
-
-* Fonts
-
-Set the default font
-
-** Font Variables
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (if *is-a-mac*
-      (defvar tx-font (font-spec :family "Fira Code" :size 26))
-    (defvar tx-font (font-spec :family "Fira Code" :size 24)))
-
-  (defvar tx-variable-pitch-font (cond
-                                  (*is-a-mac* (font-spec :family "Helvetica"))
-                                  ((string= system-name "tim-desktop")
-                                   (font-spec :family "Noto Sans"))
-                                  (t (font-spec :family "DejaVu Serif"))))
-
-  (defvar tx-serif-font (cond
-                         (*is-a-mac* (font-spec :family "Times"))
-                         ((string= system-name "tim-desktop")
-                          (font-spec :family "Noto Serif Display"))
-                         (t (font-spec :family "DejaVu Serif"))))
-
-  (defvar tx-unicode-font
-    (if *is-a-mac*
-        (font-spec :family "Apple Color Emoji")
-      (font-spec :family "Noto Color Emoji")))
-
-#+end_src
-
-** Set Fonts
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (set-face-attribute 'default nil :font tx-font)
-  (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font)
-  (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)
-  (set-fontset-font t 'unicode tx-unicode-font nil 'prepend)
-
-  (when *is-a-mac*
-    (mac-auto-operator-composition-mode))
-
-#+end_src
-
-** Font Scaling
-
-Setup some font scaling support
-
-#+begin_src emacs-lisp :tangle no
-  (use-package default-text-scale
-    :ensure t
-    :config
-    (bind-key "C-M-=" 'default-text-scale-increase)
-    (bind-key "C-M--" 'default-text-scale-decrease))
-
-#+end_src
-
-** Emoji
-
-Setup emoji support
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package emojify
-    :ensure t
-    :config
-    (setq
-     emojify-company-tooltips-p nil
-     emojify-display-style 'unicode
-     emojify-program-contexts '(comments string))
-    :init
-    (add-hook 'after-init-hook #'global-emojify-mode))
-
-#+end_src
+ #+end_src
 
 * Commands et. al 
+
 Some basic configuration relating to commands 
 
 ** Exec Path
@@ -1204,7 +1264,7 @@ Set up the exec path for emacs
 
 *** ido
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ido
     :demand t
     :init
@@ -1226,7 +1286,7 @@ Set up the exec path for emacs
 
 *** ido-completing-read+
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package ido-completing-read+
     :ensure t
     :config
@@ -1236,7 +1296,7 @@ Set up the exec path for emacs
 
 ** SMEX
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle tangle-init.el
     (use-package smex
       :ensure t
       :demand t
@@ -1319,40 +1379,9 @@ Set up the exec path for emacs
 
 #+end_src
 
-** Flx
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package flx
-    :ensure t)
-#+end_src
-
-** Icons
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package all-the-icons
-    :ensure t
-    :config (setq all-the-icons-scale-factor 1.0))
-
-  (use-package all-the-icons-ivy
-    :ensure t
-    :hook (after-init . all-the-icons-ivy-setup))
-
-#+end_src
-
-** Prescient
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package prescient
-    :ensure t
-    :config
-    (setq prescient-filter-method '(literal regexp initialism fuzzy))
-    (prescient-persist-mode +1))
-
-#+end_src
-
 ** Counsel
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package counsel
     :ensure t
     :bind (("C-x C-m" . counsel-M-x)
@@ -1362,123 +1391,12 @@ Set up the exec path for emacs
            ("C-c i" . counsel.unicode-char)
            :map read-expression-map
            ("C-r" . counsel-expression-history)))
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package counsel-projectile
-    :ensure t
-    :config
-    (counsel-projectile-mode +1))
-#+end_src
-
-** Ivy
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package ivy
-    :ensure t
-    :diminish
-    :hook (after-init . ivy-mode)
-    :config
-    (setq ivy-display-style nil)
-    (define-key ivy-minibuffer-map (kbd "RET") #'ivy-alt-done)
-    (define-key ivy-minibuffer-map (kbd "<escape>") #'minibuffer-keyboard-quit)
-    (setq ivy-re-builders-alist
-          '((counsel-rg . ivy--regex-plus)
-            (counsel-projectile-rg . ivy--regex-plus)
-            (counsel-ag . ivy--regex-plus)
-            (counsel-projectile-ag . ivy--regex-plus)
-            (swiper . ivy--regex-plus)
-            (t . ivy--regex-fuzzy)))
-    (setq ivy-use-virtual-buffers t
-          ivy-count-format "(%d/%d) "
-          ivy-initial-inputs-alist nil))
-
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package ivy-posframe
-    :ensure t
-    :after ivy
-    :diminish
-    :config
-    (setq ivy-posframe-display-functions-alist
-          '((swiper          . nil)
-            (complete-symbol . ivy-posframe-display-at-point)
-            (counsel-M-x     . ivy-posframe-display-at-frame-top-center)
-            (t               . ivy-posframe-display-at-frame-top-center))
-          ivy-posframe-height-alist '((t . 20))
-          ivy-posframe-parameters '((internal-border-width . 5))
-          ivy-posframe-width 70)
-    (ivy-posframe-mode +1))
-
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  ;; (use-package ivy-rich
-  ;;   :ensure t
-  ;;   :preface
-  ;;   (defun ivy-rich-switch-buffer-icon (candidate)
-  ;;     (with-current-buffer
-  ;;         (get-buffer candidate)
-  ;;       (all-the-icons-icon-for-mode major-mode)))
-  ;;   :init
-  ;;   (setq ivy-rich-display-transformers-list ; max column width sum = (ivy-poframe-width - 1)
-  ;;         '(ivy-switch-buffer
-  ;;           (:columns
-  ;;            ((ivy-rich-switch-buffer-icon (:width 2))
-  ;;             (ivy-rich-candidate (:width 35))
-  ;;             (ivy-rich-switch-buffer-project (:width 15 :face success))
-  ;;             (ivy-rich-switch-buffer-major-mode (:width 13 :face warning)))
-  ;;            :predicate
-  ;;            #'(lambda (cand) (get-buffer cand)))
-  ;;           counsel-M-x
-  ;;           (:columns
-  ;;            ((counsel-M-x-transformer (:width 35))
-  ;;             (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
-  ;;           counsel-describe-function
-  ;;           (:columns
-  ;;            ((counsel-describe-function-transformer (:width 35))
-  ;;             (ivy-rich-counsel-function-docstring (:width 34 :face font-lock-doc-face))))
-  ;;           counsel-describe-variable
-  ;;           (:columns
-  ;;            ((counsel-describe-variable-transformer (:width 35))
-  ;;             (ivy-rich-counsel-variable-docstring (:width 34 :face font-lock-doc-face))))
-  ;;           package-install
-  ;;           (:columns
-  ;;            ((ivy-rich-candidate (:width 25))
-  ;;             (ivy-rich-package-version (:width 12 :face font-lock-comment-face))
-  ;;             (ivy-rich-package-archive-summary (:width 7 :face font-lock-builtin-face))
-  ;;             (ivy-rich-package-install-summary (:width 23 :face font-lock-doc-face))))))
-  ;;   :config
-  ;;   (ivy-rich-mode +1)
-  ;;   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
-
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package ivy-prescient
-    :ensure t
-    :after (prescient ivy counsel)
-    :config
-    (setq ivy-prescient-sort-commands
-          '(:not swiper counsel-grep ivy-switch-buffer))
-    (setq ivy-prescient-retain-classic-highlighting t)
-    (ivy-prescient-mode +1))
-
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package ivy-xref
-    :ensure t
-    :defer t
-    :custom
-    (xref-show-xrefs-function #'ivy-xref-show-xrefs "Use Ivy to show xrefs"))
 
 #+end_src
 
 ** Swiper
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package swiper
     :ensure t
     :bind ("C-s".  swiper))
@@ -1564,23 +1482,6 @@ which adds some editing tweaks
 
 #+end_src
 
-*** Page Break Lines
- Display lines to show where page breaks are. Useful in making the
- browse-kill-ring mode look a little better. See [[https://github.com/purcell/page-break-lines][page-break-lines on GitHub]]
-
- #+begin_src emacs-lisp :tangle no
-   (use-package page-break-lines
-     :ensure t
-     :diminish page-break-lines-mode
-     :config
-     (progn 
-       (global-page-break-lines-mode)
-       (push 'browse-kill-ring-mode page-break-lines-modes)
-       (push 'sql-mode page-break-lines-modes)
-       (push 'text-mode page-break-lines-modes)))
-
- #+end_src
-
 *** Move Or Duplicate Lines
 
  While this seems like a really handy utility, I find I never seem to use it, so
@@ -1616,15 +1517,6 @@ which adds some editing tweaks
 
  #+end_src
 
-** Filling et. al. 
-
-*** Enable fill mode
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (add-hook 'text-mode-hook 'turn-on-auto-fill)
-
-#+end_src
-
 *** Unfill mode
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -1634,80 +1526,26 @@ which adds some editing tweaks
 
 #+end_src
 
-*** Fill Column Indicator
+*** Whitespace Cleanup
 
-Stopped using this package as it is not compatible with org src block editing
+ Cleanup whitespace
 
-#+begin_src emacs-lisp :tangle no
-    (use-package fill-column-indicator
-      :ensure t
-      :diminish fci-mode
-      :init
-      (setq fci-rule-width 3)
-      :config
-      (progn
-        (add-hook 'prog-mode-hook (lambda () (fci-mode +1)))
-        (add-hook 'text-mode-hook (lambda () (fci-mode +1)))
-        (add-hook 'org-mode-hook (lambda () (fci-mode +1)))))
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package whitespace-cleanup-mode
+     :ensure t
+     :diminish whitespace-cleanup-mode
+     :init
+     (setq whitespace-cleanup-mode-only-if-initially-clean nil
+           whitespace-line-column 80
+           whitespace-style '(face lines-tail))
+     :config
+     (add-hook 'prog-mode-hook #'whitespace-mode)
+     (add-hook 'prog-mode-hook #'whitespace-cleanup-mode)
+     (add-hook 'text-mode-hook #'whitespace-mode)
+     (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
+     (add-hook 'org-mode-hook #'whitespace-mode))
 
-#+end_src
-
-** Whitespace Cleanup
-Cleanup whitespace
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package whitespace-cleanup-mode
-    :ensure t
-    :diminish whitespace-cleanup-mode
-    :init
-    (setq whitespace-cleanup-mode-only-if-initially-clean nil
-          whitespace-line-column 80
-          whitespace-style '(face lines-tail))
-    :config
-    (add-hook 'prog-mode-hook #'whitespace-mode)
-    (add-hook 'prog-mode-hook #'whitespace-cleanup-mode)
-    (add-hook 'text-mode-hook #'whitespace-mode)
-    (add-hook 'text-mode-hook #'whitespace-cleanup-mode)
-    (add-hook 'org-mode-hook #'whitespace-mode))
-
-#+end_src
-
-** Fix the mark
-Enable setting of mark without setting of transient mark mode. While this seems
-like a good idea, I don't seem to use it. Commenting it out for now.
-
-#+begin_src emacs-lisp :tangle no
-  (defun push-mark-no-activate ()
-    "Pushes `point' to `mark-ring' and does not activate the region
-     Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
-    (interactive)
-    (push-mark (point) t nil)
-    (message "Pushed mark to ring"))
-
-  (bind-key "C-`" 'push-mark-no-activate)
-
-  (defun jump-to-mark ()
-    "Jumps to the local mark, respecting the `mark-ring' order.
-    This is the same as using \\[set-mark-command] with the prefix argument."
-    (interactive)
-    (set-mark-command 1))
-
-  (bind-key "M-`" 'jump-to-mark)
-
-  (defun exchange-point-and-mark-no-activate ()
-    "Identical to \\[exchange-point-and-mark] but will not activate the region."
-    (interactive)
-    (exchange-point-and-mark)
-    (deactivate-mark nil))
-
-  (bind-key [remap exchange-point-and-mark] 'exchange-point-and-mark-no-activate)
-#+end_src
-
-** Searching
-Using ~ag~ package for searches. This needs some OS support
-
-  - On Linux ~apt-get install silversearcher-ag~
-  - On OSX ~brew install the_silver_searcher~
+ #+end_src
 
 *** ag
 
@@ -1721,32 +1559,31 @@ Using ~ag~ package for searches. This needs some OS support
 
 #+end_src
 
-** Templates
 *** yasnippet
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package yasnippet
-    :ensure t
-    :init
-    (setq yas-prompt-functions '(yas-dropdown-prompt
-                                 yas-ido-prompt))
-    :config
-    (progn
-      (unbind-key "<tab>" yas-minor-mode-map)
-      (unbind-key "TAB" yas-minor-mode-map)
-      (bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
-      ;;(yas-load-directory "~/.emacs.d/snippets")
-      (yas-global-mode 1)))
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package yasnippet
+     :ensure t
+     :init
+     (setq yas-prompt-functions '(yas-dropdown-prompt
+                                  yas-ido-prompt))
+     :config
+     (progn
+       (unbind-key "<tab>" yas-minor-mode-map)
+       (unbind-key "TAB" yas-minor-mode-map)
+       (bind-key "C-M-/" 'yas-expand yas-minor-mode-map)
+       ;;(yas-load-directory "~/.emacs.d/snippets")
+       (yas-global-mode 1)))
 
-#+end_src
+ #+end_src
 
 *** yasnippet-snippets
 
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package yasnippet-snippets
-    :ensure t)
+ #+begin_src emacs-lisp :tangle tangle-init.el
+   (use-package yasnippet-snippets
+     :ensure t)
 
-#+end_src
+ #+end_src
 
 ** Completions
 *** Set completion style
@@ -1757,6 +1594,7 @@ Using ~ag~ package for searches. This needs some OS support
 #+end_src
 
 *** Company
+**** Company
 
  #+begin_src emacs-lisp :tangle tangle-init.el
    (use-package company
@@ -1805,13 +1643,13 @@ Using ~ag~ package for searches. This needs some OS support
 
  #+end_src
 
-**** company-prescient
+**** company-emoji
 
 #+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package company-prescient
+  (use-package company-emoji
     :ensure t
-    :after (prescient company)
-    :config (company-prescient-mode +1))
+    :config
+    (add-to-list 'company-backends 'company-emoji))
 
 #+end_src
 
@@ -1831,92 +1669,7 @@ Using ~ag~ package for searches. This needs some OS support
 
  #+end_src
 
-** Outlining 
-
-Some addditional outlining support to make more things work like org-mode.
-
-*** Narrow/widern
-
-#+begin_src emacs-lisp :tangle no
-  (defun tx/narrow-or-widen-dwim (p)
-    "If the buffer is narrowed, it widens. Otherwise, it narrows
-  intelligently.  Intelligently means: region, org-src-block,
-  org-subtree, or defun, whichever applies first.  Narrowing to
-  org-src-block actually calls `org-edit-src-code'.
-
-  With prefix P, don't widen, just narrow even if buffer is already
-  narrowed."
-    (interactive "P")
-    (declare (interactive-only))
-    (cond ((and (buffer-narrowed-p) (not p)) (widen))
-          ((and (boundp 'org-src-mode) org-src-mode (not p))
-           (org-edit-src-exit))
-          ((region-active-p)
-           (narrow-to-region (region-beginning) (region-end)))
-          ((derived-mode-p 'org-mode)
-           (cond ((ignore-errors (org-edit-src-code))
-                  (delete-other-windows))
-                 ((org-at-block-p)
-                  (org-narrow-to-block))
-                 (t (org-narrow-to-subtree))))
-          ((derived-mode-p 'prog-mode) (narrow-to-defun))
-          (t (error "Please select a region to narrow to"))))
-
-  (eval-after-load 'org-src
-    '(bind-key "C-x C-s" 'org-edit-src-exit org-src-mode-map))
-#+end_src
-
-*** Outshine
-
-#+begin_src emacs-lisp :tangle no
-  (use-package outline
-    :config
-    (defvar outline-minor-mode-prefix "\M-#"))
-
-  (use-package outorg
-    :ensure t)
-
-  (use-package outshine
-    :ensure t
-    :init
-    (setq outshine-use-speed-commands t)
-    :config
-    (add-hook 'emacs-lisp-mode-hook 'outshine-mode)
-    (add-hook 'clojure-mode-hook 'outshine-mode)
-    (add-hook 'jst-mode-hook 'outshine-mode)
-    (add-hook 'message-mode-hook 'outshine-mode))
-
-  (use-package navi-mode
-    :ensure t)
-
-#+end_src
-
-*** orgalist
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package orgalist
-    :ensure t
-    :init
-    (add-hook 'message-mode 'orgalist-mode))
-
-#+end_src
-
-*** hideshow
-
-#+begin_src emacs-lisp :tangle no
-  (use-package hideshow
-    :ensure t
-    :hook ((prog-mode . hs-minor-mode)))
-
-  (defun tx/toggle-fold ()
-    (interactive)
-    (save-excursion
-      (end-of-line)
-      (hs-toggle-hiding)))
-
-#+end_src
-
-*** origami
+** origami
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package origami
@@ -1953,27 +1706,6 @@ Highlight symbols and enable navigation by symbol in programming modes. See
                     (and (boundp 'multiple-cursors-mode)
                          multiple-cursors-mode))
           ad-do-it))))
-
-#+end_src
-
-** Electric Pair Mode
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (when (fboundp 'electric-pair-mode)
-    (electric-pair-mode))
-
-#+end_src
-
-** Goto Address
-
-Lets make addresses action buttons when we find them in comments in
-programming buffers
-
-#+begin_src emacs-lisp :tangle no
-  (dolist (hook (if (fboundp 'prog-mode)
-                    '(prog-mode-hook ruby-mode-hook)
-                  '(find-file-hooks)))
-    (add-hook hook 'goto-address-prog-mode))
 
 #+end_src
 
@@ -2067,40 +1799,6 @@ to add some paredit specific advice to provide speech feedback for this mode.
 
 #+end_src
 
-** Smartparens
-Not sure I like this mode compared to paredit. Disabling it for now.
-
-#+begin_src emacs-lisp :tangle no
-  (use-package smartparens-config
-    :ensure smartparens
-    :config
-    (progn
-      (sp-use-smartparens-bindings)
-      (smartparens-global-mode)
-      (show-smartparens-global-mode))
-    (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
-    (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
-
-#+end_src
-
-** Imenu
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package imenu-anywhere
-    :ensure t)
-
-#+end_src
-
-** Line numbers
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (add-hook 'prog-mode-hook (lambda ()
-                              (display-line-numbers-mode)
-                              (line-number-mode)
-                              (column-number-mode)))
-
-#+end_src
-
 ** Flycheck Mode
 
 *** flycheck
@@ -2191,7 +1889,7 @@ layer which does not mess with editing etc.
 
 ** ediff
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package ediff
     :defer t
     :init
@@ -2225,71 +1923,19 @@ layer which does not mess with editing etc.
 
 #+end_src
 
-** Quickrun
-
-#+begin_src emacs-lisp :tangle no
-  (use-package quickrun
-    :ensure t
-    :commands (quickrun)
-    :init
-    (setq
-     eval-expression-print-length nil
-     eval-expression-print-level  nil)
-    :config
-    (setq quickrun-focus-p nil)
-
-    (defun tx-quickrun-auto-close (&rest _)
-      "Allows us to silently re-run quickrun from within the quickrun buffer."
-      (when-let (win (get-buffer-window quickrun--buffer-name))
-        (let ((inhibit-message t))
-          (quickrun--kill-running-process)
-          (message ""))
-        (delete-window win)))
-    (advice-add #'quickrun :before #'tx-quickrun-auto-close)
-    (advice-add #'quickrun-region :before #'tx-quickrun-auto-close)
-  
-    (defun tx-quickrun-shrink-window ()
-      "Shrink the quickrun output window once code evaluation is complete."
-      (when-let (win (get-buffer-window quickrun--buffer-name))
-        (with-selected-window (get-buffer-window quickrun--buffer-name)
-          (let ((ignore-window-parameters t))
-            (shrink-window-if-larger-than-buffer)))))
-    (add-hook 'quickrun-after-run-hook #'tx-quickrun-shrink-window)
-
-    (defun tx-quickrun-scroll-to-bof ()
-      "Ensures window is scrolled to BOF on invocation."
-      (when-let (win (get-buffer-window quickrun--buffer-name))
-        (with-selected-window win
-          (goto-char (point-min)))))
-    (add-hook 'quickrun-after-run-hook #'tx-quickrun-scroll-to-bof))
-
-#+end_src
-
 ** Projectile 
 
  #+begin_src emacs-lisp :tangle tangle-init.el
-   ;; (use-package projectile
-   ;;   :ensure t
-   ;;   :delight '(:eval (concat " " (projectile-project-name)))
-   ;;   ;;:diminish projectile-mode
-   ;;   ;; :commands (projectile-mode
-   ;;   ;;            projectile-mode)
-   ;;   :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
-   ;;   :init
-   ;;   ;; (add-hook 'prog-mode-hook 'projectile-mode)
-   ;;   (projectile-mode +1))
-
    (use-package projectile
      :ensure t
-     :diminish
-     :config
-     (projectile-mode +1)
-     (define-key projectile-mode-map (kbd "C-c p") #'projectile-command-map)
-     (define-key projectile-mode-map (kbd "s-p") #'projectile-find-file) ; counsel
-     (define-key projectile-mode-map (kbd "s-F") #'projectile-ripgrep) ; counsel
-     (setq projectile-sort-order 'recentf
-           projectile-indexing-method 'hybrid
-           projectile-completion-system 'ivy))
+     :delight '(:eval (concat " " (projectile-project-name)))
+     ;;:diminish projectile-mode
+     ;; :commands (projectile-mode
+     ;;            projectile-mode)
+     :bind (:map projectile-mode-map ("C-c p" . projectile-command-map))
+     :init
+     ;; (add-hook 'prog-mode-hook 'projectile-mode)
+     (projectile-mode +1))
 
  #+end_src
 
@@ -2307,28 +1953,18 @@ layer which does not mess with editing etc.
     ;;              clojurex-mode))
     ;;   (add-to-list 'lsp-language-id-configuration `(,m . "clojure")))
     :init
-    (setq lsp-prefer-flymake nil
-          lsp-enable-indentation nil
-          lsp-enable-symbol-highlighting t
-          lsp-signature-auto-activate t)
-
+    (setq lsp-enable-indentation nil
+	  lsp-prefer-flymake nil)
     ;; (add-hook 'clojure-mode-hook #'lsp)
     ;; (add-hook 'clojurec-mode-hook #'lsp)
     ;; (add-hook 'clojurescript-mode-hook #'lsp)
     (add-hook 'js2-mode-hook #'lsp))
 
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
   (use-package company-lsp
     :ensure t
-    :commands company-lsp
-    :config (setq company-lsp-cache-candidates 'auto))
+    :commands company-lsp)
 
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package lsp-ivy
+  (use-package lsp-ui
     :ensure t)
 
 #+end_src
@@ -2402,14 +2038,6 @@ When running on OSX it is necessary to
             :config
             (add-hook 'prog-mode-hook 'flyspell-prog-mode)
             (add-hook 'text-mode-hook 'flyspell-mode)))))
-
-#+end_src
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package flyspell-correct-ivy
-    :bind ("C-M-;" . flyspell-correct-wrapper)
-    :init
-    (setq flyspell-correct-interface #'flyspell-correct-ivy))
 
 #+end_src
 
@@ -2506,7 +2134,7 @@ on GitHub]]
 
 ** Write Good
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package writegood-mode
     :ensure t
     :bind ("C-M-g" . writegood-mode))
@@ -2525,7 +2153,6 @@ on GitHub]]
 #+end_src
 
 * Application Modes 
-
 Modes relating to emacs applications 
  
 ** Calendar
@@ -2904,6 +2531,19 @@ Setup version control stuff
 
 #+end_src
 
+** E Reader
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package nov
+    :ensure t)
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ereader
+    :ensure t)
+
+#+end_src
 * Keymaps
 
 *** read-write-toggle
@@ -3227,14 +2867,6 @@ Setup ~clojure-mode~ and ~cider~.
   (use-package inf-clojure
     :ensure t
     :commands (inf-clojure inf-clojure-minor-mode inf-clojure-connect))
-
-#+end_src
-
-*** ivy-clojuredocs
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package ivy-clojuredocs
-    :ensure t)
 
 #+end_src
 
@@ -3605,56 +3237,6 @@ setup, comment out for now.
 
 #+end_src
 
-* Theme 
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package night-owl-theme
-    :ensure t
-    :init 
-    (setq-default custom-enabled-themes '(night-owl))
-    (setq
-     night-owl-background "#011627"
-     night-owl-doc-face-as-comment t
-     night-owl-foreground "goldenrod3"
-     night-owl-foreground-muted "OrangeRed3"
-     night-owl-foreground-slightly-muted "goldenrod4"
-     night-owl-highlight "#1D1053"
-     night-owl-highlight-alt "#3C0074"
-     night-owl-highlight-line "#010F1D"
-     night-owl-use-variable-pitch t)
-    :config
-    (load-theme 'night-owl))
-
-#+end_src
-
-** Diminish Mode
-The ~diminish~ package allows us to remove or change minor mode entries in the
-mode-line. See [[https://github.com/myrjola/diminish.el][diminish on GitHub]]
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package diminish
-    :ensure t
-    :config
-    (progn 
-      (diminish 'voice-lock-mode)
-      (diminish 'auto-fill-function)
-      (diminish 'hs-minor-mode)
-      (diminish 'doc-view-minor-mode " DV")
-      (diminish 'view-mode " RO")
-      ;; (diminish 'elisp-slime-nav-mode)
-      (diminish 'yas-minor-mode)
-      ;; (diminish 'paredit-everywhere-mode " Par")
-      ;; (diminish 'paredit-mode " Par")
-      (diminish 'rainbow-mode "")
-      (diminish 'company-mode)
-      (diminish 'global-whitespace-newline-mode)
-      (diminish 'global-whitespace-mode)
-      (diminish 'whitespace-newline-mode)
-      (diminish 'whitespace-mode)
-      (diminish 'guide-key-mode)))
-
-#+end_src
-
 * Local Packages 
 I put locally managed packages i.e. those not installed via elpa into the lib
 directory.
@@ -3666,20 +3248,6 @@ directory.
 #+end_src
 
 * Mail
-** google-contacts
-
-Ability to access google contacts is useful. 
-
-#+begin_src emacs-lisp :tangle no
-  (use-package google-contacts
-    :ensure t
-    :init
-    (setq plstore-cache-passphrase-for-symmetric-encryption t)
-    :config
-    ;; (require 'google-contacts-message)
-    (require 'google-org-contacts))
-#+end_src
-
 ** Mu4e
 
 First, setup some load paths.
@@ -3704,11 +3272,6 @@ Next, load some additional packages we need.
 #+begin_src emacs-lisp :tangle tangle-init.el
   (when *run_emacspeak*
       (require 'emacspeak-mu4e))
-
-  (require 'org-mu4e)
-
-  (use-package "org-mime"
-    :ensure t)
 
 #+end_src
 
@@ -3739,199 +3302,171 @@ Now setup mu4e.
   (use-package mu4e
     :init
     (setq tx-gmail-email "theophilusx@gmail.com"
-          tx-sheepcrc-email "tcross8@une.edu.au"
-          tx-hotmail-email "blind-bat@hotmail.com")
+	  tx-sheepcrc-email "tcross8@une.edu.au"
+	  tx-hotmail-email "blind-bat@hotmail.com")
     (setq mu4e-maildir (expand-file-name "~/Maildir")
-          mu4e-attachment-dir (expand-file-name "~/Desktop")
-          mu4e-get-mail-command "mbsync -a"
-          mu4e-hide-index-messages t
-          mu4e-headers-include-related nil
-          mu4e-change-filenames-when-moving t
-          mu4e-context-policy 'pick-first
-          mu4e-compose-context-policy nil
-          mu4e-view-fields '(:from :to :cc :subject :date :attachments)
-          mu4e-view-scroll-to-next nil
-          mu4e-view-show-addresses t
-          mu4e-view-use-gnus t
-          mu4e-update-interval (* 60 10)
-          mu4e-user-mail-address-list '("theophilusx@gmail.com"
-                                        "tcross8@une.edu.au"
-                                        "tcross@une.edu.au"
-                                        "blind-bat@hotmail.com"))
+	  mu4e-attachment-dir (expand-file-name "~/Desktop")
+	  mu4e-get-mail-command "mbsync -a"
+	  mu4e-hide-index-messages t
+	  mu4e-headers-include-related nil
+	  mu4e-change-filenames-when-moving t
+	  mu4e-context-policy 'pick-first
+	  mu4e-compose-context-policy nil
+	  mu4e-use-fancy-chars t
+	  mu4e-view-fields '(:from :to :cc :subject :date :attachments)
+	  mu4e-view-scroll-to-next nil
+	  mu4e-view-show-addresses t
+	  mu4e-view-use-gnus t
+	  mu4e-update-interval (* 60 10)
+	  mu4e-user-mail-address-list '("theophilusx@gmail.com"
+					"tcross8@une.edu.au"
+					"tcross@une.edu.au"
+					"blind-bat@hotmail.com"))
     (setq org-mu4e-link-query-in-headers-mode nil)
     :config
     (add-hook 'message-mode-hook 'turn-on-orgtbl)
     ;;(add-hook 'message-mode-hook 'outline-minor-mode)
     (setq mu4e-bookmarks '())
     (add-to-list 'mu4e-bookmarks
-                 (make-mu4e-bookmark
-                  :name "Last 7 days"
-                  :query "date:7d..now AND NOT flag:trashed"
-                  :key ?w))
+		 (make-mu4e-bookmark
+		  :name "Last 7 days"
+		  :query "date:7d..now AND NOT flag:trashed"
+		  :key ?w))
     (add-to-list 'mu4e-bookmarks
-                 (make-mu4e-bookmark
-                  :name "Messages with images"
-                  :query "mime:image/* AND NOT flag:trashed"
-                  :key ?p))
+		 (make-mu4e-bookmark
+		  :name "Messages with images"
+		  :query "mime:image/* AND NOT flag:trashed"
+		  :key ?p))
     (add-to-list 'mu4e-bookmarks
-                 (make-mu4e-bookmark
-                  :name "Today's messages"
-                  :query "date:today..now AND NOT flag:trashed"
-                  :key ?t))
+		 (make-mu4e-bookmark
+		  :name "Today's messages"
+		  :query "date:today..now AND NOT flag:trashed"
+		  :key ?t))
     (add-to-list 'mu4e-bookmarks
-                 (make-mu4e-bookmark
-                  :name  "Unread messages"
-                  :query (if (string= system-name "arch-vbox")
-                             (concat "(maildir:/gmail/INBOX OR "
-                                     "maildir:/outlook/INBOX) AND "
-                                     "flag:unread AND NOT flag:trashed")
-                           (concat "(maildir:/gmail/INBOX OR "
-                                   "maildir:/outlook/INBOX OR "
-                                   "maildir:/sheep/INBOX) AND "
-                                   "flag:unread AND NOT flag:trashed"))
-                  :key ?u))
+		 (make-mu4e-bookmark
+		  :name  "Unread messages"
+		  :query (if (string= system-name "arch-vbox")
+			     (concat "(maildir:/gmail/INBOX OR "
+				     "maildir:/outlook/INBOX) AND "
+				     "flag:unread AND NOT flag:trashed")
+			   (concat "(maildir:/gmail/INBOX OR "
+				   "maildir:/outlook/INBOX OR "
+				   "maildir:/sheep/INBOX) AND "
+				   "flag:unread AND NOT flag:trashed"))
+		  :key ?u))
     (setq mu4e-contexts '())
     (add-to-list 'mu4e-contexts
-                 (make-mu4e-context
-                  :name "Outlook"
-                  :enter-func
-                  (lambda ()
-                    (mu4e-message "Entering Outlook context"))
-                  :leave-func
-                  (lambda ()
-                    (mu4e-message "Leaving Outlook context"))
-                  ;; we match based on the contact-fields of the message
-                  :match-func
-                  (lambda (msg)
-                    (when msg
-                      (mu4e-message-contact-field-matches msg
-                                                          :to
-                                                          "blind-bat@hotmail.com")))
-                  :vars '((user-mail-address . "blind-bat@hotmail.com")
-                          (user-full-name . "Tim Cross")
-                          (mu4e-compose-signature . (concat "Tim Cross\n"))
-                          (mu4e-drafts-folder . "/outlook/Drafts")
-                          (mu4e-sent-folder . "/outlook/Sent Mail")
-                          (mu4e-trash-folder . "/outlook/Deleted Items")
-                          (mu4e-refile-folder . "/outlook/Archive")
-                          (mu4e-maildir-shortcuts . (("/outlook/INBOX" . ?i)
-                                                     ("/outlook/Sent Mail" . ?s)
-                                                     ("/outlook/Archive" . ?a)
-                                                     ("/outlook/Drafts" . ?d)))
-                          (smtpmail-smtp-server . "smtp-mail.outlook.com")
-                          (smtpmail-smtp-service . 587)
-                          (mu4e-sent-messages-behavior . delete))))
+		 (make-mu4e-context
+		  :name "Outlook"
+		  :enter-func
+		  (lambda ()
+		    (mu4e-message "Entering Outlook context"))
+		  :leave-func
+		  (lambda ()
+		    (mu4e-message "Leaving Outlook context"))
+		  ;; we match based on the contact-fields of the message
+		  :match-func
+		  (lambda (msg)
+		    (when msg
+		      (mu4e-message-contact-field-matches msg
+							  :to
+							  "blind-bat@hotmail.com")))
+		  :vars '((user-mail-address . "blind-bat@hotmail.com")
+			  (user-full-name . "Tim Cross")
+			  (mu4e-compose-signature . (concat "Tim Cross\n"))
+			  (mu4e-drafts-folder . "/outlook/Drafts")
+			  (mu4e-sent-folder . "/outlook/Sent Mail")
+			  (mu4e-trash-folder . "/outlook/Deleted Items")
+			  (mu4e-refile-folder . "/outlook/Archive")
+			  (mu4e-maildir-shortcuts . (("/outlook/INBOX" . ?i)
+						     ("/outlook/Sent Mail" . ?s)
+						     ("/outlook/Archive" . ?a)
+						     ("/outlook/Drafts" . ?d)))
+			  (smtpmail-smtp-server . "smtp-mail.outlook.com")
+			  (smtpmail-smtp-service . 587)
+			  (mu4e-sent-messages-behavior . delete))))
     (if (string= system-name "tim-desktop")
-        (add-to-list 'mu4e-contexts
-                     (make-mu4e-context
-                      :name "Sheep"
-                      :enter-func
-                      (lambda ()
-                        (mu4e-message "Entering Sheep context"))
-                      :leave-func
-                      (lambda ()
-                        (mu4e-message "Leaving Sheep context"))
-                      ;; we match based on the contact-fields of the message
-                      :match-func
-                      (lambda (msg)
-                        (when msg
-                          (mu4e-message-contact-field-matches msg
-                                                              :to
-                                                              "tcross8@une.edu.au")))
-                      :vars
-                      '((user-mail-address . "tcross8@une.edu.au")
-                        (user-full-name . "Tim Cross")
-                        (mu4e-compose-signature .
-                                                (concat
-                                                 "Tim Cross\n"
-                                                 "DBA/Developer - "
-                                                 "Livestock App Building\n"
-                                                 "School of Science and "
-                                                 "Technology\n"
-                                                 "Room 253 Booth Block (C027), "
-                                                 "Univrsity of New England\n"))
-                        (mu4e-drafts-folder . "/sheep/Drafts")
-                        (mu4e-sent-folder . "/sheep/Sent Items")
-                        (mu4e-trash-folder . "/sheep/Deleted Items")
-                        (mu4e-refile-folder . "/sheep/Archive")
-                        (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
-                                                   ("/sheep/Sent Items" . ?s)
-                                                   ("/sheep/Archive" . ?a)
-                                                   ("/sheep/Drafts" . ?d)))
-                        (smtpmail-smtp-server . "mailhub.une.edu.au")
-                        (smtpmail-smtp-service . 25)
-                        (mu4e-sent-messages-behavior . sent)))))
+	(add-to-list 'mu4e-contexts
+		     (make-mu4e-context
+		      :name "Sheep"
+		      :enter-func
+		      (lambda ()
+			(mu4e-message "Entering Sheep context"))
+		      :leave-func
+		      (lambda ()
+			(mu4e-message "Leaving Sheep context"))
+		      ;; we match based on the contact-fields of the message
+		      :match-func
+		      (lambda (msg)
+			(when msg
+			  (mu4e-message-contact-field-matches msg
+							      :to
+							      "tcross8@une.edu.au")))
+		      :vars
+		      '((user-mail-address . "tcross8@une.edu.au")
+			(user-full-name . "Tim Cross")
+			(mu4e-compose-signature .
+						(concat
+						 "Tim Cross\n"
+						 "DBA/Developer - "
+						 "Livestock App Building\n"
+						 "School of Science and "
+						 "Technology\n"
+						 "Room 253 Booth Block (C027), "
+						 "Univrsity of New England\n"))
+			(mu4e-drafts-folder . "/sheep/Drafts")
+			(mu4e-sent-folder . "/sheep/Sent Items")
+			(mu4e-trash-folder . "/sheep/Deleted Items")
+			(mu4e-refile-folder . "/sheep/Archive")
+			(mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
+						   ("/sheep/Sent Items" . ?s)
+						   ("/sheep/Archive" . ?a)
+						   ("/sheep/Drafts" . ?d)))
+			(smtpmail-smtp-server . "mailhub.une.edu.au")
+			(smtpmail-smtp-service . 25)
+			(mu4e-sent-messages-behavior . sent)))))
     (add-to-list 'mu4e-contexts
-                 (make-mu4e-context
-                  :name "Private"
-                  :enter-func (lambda ()
-                                (mu4e-message "Entering Private context"))
-                  :leave-func
-                  (lambda ()
-                    (mu4e-message "Leaving Private context"))
-                  ;; we match based on the contact-fields of the message
-                  :match-func
-                  (lambda (msg)
-                    (when msg
-                      (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
-                  :vars
-                  '((user-mail-address . "theophilusx@gmail.com")
-                    (user-full-name . "Tim Cross")
-                    (mu4e-compose-signature . (concat "Tim Cross\n"))
-                    (mu4e-drafts-folder . "/gmail/Drafts")
-                    (mu4e-sent-folder . "/gmail/Sent Mail")
-                    (mu4e-trash-folder . "/gmail/Bin")
-                    (mu4e-refile-folder . "/gmail/All Mail")
-                    (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
-                                               ("/gmail/Sent Mail" . ?s)
-                                               ("/gmail/All Mail" . ?a)
-                                               ("/gmail/Drafts" . ?d)
-                                               ("/gmail/Starred" . ?f)))
-                    (smtpmail-smtp-server . "smtp.gmail.com")
-                    (smtpmail-smtp-service . 587)
-                    (mu4e-sent-messages-behavior . delete)))))
+		 (make-mu4e-context
+		  :name "Private"
+		  :enter-func (lambda ()
+				(mu4e-message "Entering Private context"))
+		  :leave-func
+		  (lambda ()
+		    (mu4e-message "Leaving Private context"))
+		  ;; we match based on the contact-fields of the message
+		  :match-func
+		  (lambda (msg)
+		    (when msg
+		      (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
+		  :vars
+		  '((user-mail-address . "theophilusx@gmail.com")
+		    (user-full-name . "Tim Cross")
+		    (mu4e-compose-signature . (concat "Tim Cross\n"))
+		    (mu4e-drafts-folder . "/gmail/Drafts")
+		    (mu4e-sent-folder . "/gmail/Sent Mail")
+		    (mu4e-trash-folder . "/gmail/Bin")
+		    (mu4e-refile-folder . "/gmail/All Mail")
+		    (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
+					       ("/gmail/Sent Mail" . ?s)
+					       ("/gmail/All Mail" . ?a)
+					       ("/gmail/Drafts" . ?d)
+					       ("/gmail/Starred" . ?f)))
+		    (smtpmail-smtp-server . "smtp.gmail.com")
+		    (smtpmail-smtp-service . 587)
+		    (mu4e-sent-messages-behavior . delete)))))
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package orgalist
-    :after mu4e
+    :ensure t
+    ;;:after mu4e
     :config
-    (add-to-list 'orgalist-context-function
-                 '(mu4e-compose-mode . orgalist-message-mode-context))
+    ;; (add-to-list 'orgalist-context-function
+    ;; 	       '(message-mode . orgalist-message-mode-context))
     (add-hook 'mu4e-compose-mode-hook #'orgalist-mode))
+
 #+end_src
-
-I no longer have a UNE staff account, so have removed the associated context for
-that account. However, may still need it if I want to look at the messages I
-have archived on this system, so keeping it below for reference.
-
-#+BEGIN_EXAMPLE
-  (make-mu4e-context
-              :name "Work"
-              :enter-func (lambda ()
-                            (mu4e-message "Switch to the Work context"))
-              ;; we match based on the contact-fields of the message
-              :match-func (lambda (msg)
-                            (when msg
-                              (mu4e-message-contact-field-matches msg :to "tcross@une.edu.au")))
-              :vars '((user-mail-address . "tcross@une.edu.au")
-                      (user-full-name . "Tim Cross")
-                      (mu4e-compose-signature . (concat "Tim Cross\n"
-                                                        "www.une.edu.au\n"
-                                                        "CRICOS Provider Number: 00003G"))
-                      (mu4e-drafts-folder . "/une/Drafts")
-                      (mu4e-sent-folder . "/une/Sent")
-                      (mu4e-trash-folder . "/une/Deleted Items")
-                      (mu4e-refile-folder . "/une/Archive")
-                      (mu4e-maildir-shortcuts . (("/une/Inbox" . ?i)
-                                                 ("/une/Sent" . ?s)
-                                                 ("/une/Drafts" . ?d)))
-                      (smtpmail-smtp-server . "smtp.office365.com")
-                      (smtpmail-smtp-service . 587)
-                      (mu4e-sent-messages-behavior . sent)))
-
-#+END_EXAMPLE
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package smtpmail
@@ -3945,34 +3480,6 @@ have archived on this system, so keeping it below for reference.
           smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
     ;; don't keep message buffers around
     (setq message-kill-buffer-on-exit t))
-
-#+end_src
-
-** Test out VM again
-
-Looks like there has been no work done on VM since 2016. Suspect the client may
-have reached end-of-life!
-
-#+begin_src emacs-lisp :tangle no
-  (add-to-list 'load-path (expand-file-name "~/bzr/vm/new-trunk/lisp"))
-  (add-to-list 'Info-additional-directory-list
-               (expand-file-name "~/bzr/vm/new-trunk/info"))
-
-  (require 'vm-autoloads)
-
-  ;; Some hacks to make VM use shr for HTML messages
-
-  (defun vm-mime-display-internal-shr-text/html (start end layout)
-    "Use shr to inline HTML mails in the VM presentation buffer."
-    (shr-render-region start (1- end))
-    (put-text-property start end
-                       'text-rendered-by-shr t))
-
-  ;; has to be done indirectly
-  ;; Fake emacs-w3m, though we actually use shr
-
-  (defalias 'vm-mime-display-internal-emacs-w3m-text/html
-       'vm-mime-display-internal-shr-text/html)
 
 #+end_src
 
@@ -4014,26 +3521,4 @@ Start the emacs server so that we can use emacsclient
 
 #+end_src
 
-* Startup Window
-
-My custom setup for initial window configuration. There is probably a better way
-to do this!
-
-#+begin_src emacs-lisp :tangle no
-  (defun my-startup-window ()
-    (interactive)
-    (org-agenda nil "wr")
-    (delete-other-windows))
-
-  (setq warning-minimum-level :error
-        warning-minimum-log-level :error)
-
-  (add-hook 'after-init-hook 'my-startup-window t)
-
-  (defun my-after-init-config ()
-    (require 'ido-fix))
-
-  (add-hook 'after-init-hook 'my-after-init-config)
-
-#+end_src
 
