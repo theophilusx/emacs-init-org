@@ -627,7 +627,7 @@ normally ensure a 'stable' environment.
     :ensure org-plus-contrib 
     :init
     (setq
-     org-agenda-files '("~/Dropbox/org")
+     org-agenda-files '("~/Documents/org-data")
      org-agenda-remove-tags t
      org-agenda-show-outline-path nil
      org-babel-clojure-backend 'cider
@@ -638,11 +638,10 @@ normally ensure a 'stable' environment.
      org-clock-persist 'clock
      org-confirm-babel-evaluate nil
      org-ctrl-k-protect-subtree t
-     org-default-notes-file "~/Dropbox/org/notes.org"
-     org-directory "~/Dropbox/org"
+     org-default-notes-file "~/Documents/org-data/notes.org"
+     org-directory "~/Documents/org-data"
      org-ditaa-jar-path (expand-file-name "~/.emacs.d/jars/ditaa.jar")
      org-ditaa-eps-jar-path (expand-file-name "~/.emacs.d/jars/DitaaEps.jar")
-     org-ellipsis "…"
      org-enforce-todo-checkbox-dependencies t
      org-enforce-todo-dependencies t
      org-export-backends '(ascii beamer html
@@ -680,27 +679,27 @@ normally ensure a 'stable' environment.
      org-capture-templates
      (quote
       (("t" "todo" entry
-        (file "~/Dropbox/org/refile.org")
+        (file "~/Documents/org-data/refile.org")
         "* TODO %?\n\n  %a"
         :empty-lines-after 1 :clock-in t :clock-resume t)
        ("r" "respond" entry
-        (file "~/Dropbox/org/refile.org")
+        (file "~/Documents/org-data/refile.org")
         "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
         :empty-lines-after 1 :clock-in t :clock-resume t)
        ("n" "note" entry
-        (file "~/Dropbox/org/notes.org")
+        (file "~/Documents/org-data/notes.org")
         "* %? :NOTE:\n\n  %a"
         :empty-lines-after 1 :clock-in t :clock-resume t)
        ("j" "journal" entry
-        (file+olp+datetree "~/Dropbox/org/journal.org")
+        (file+olp+datetree "~/Documents/org-data/journal.org")
         "* %?\n  "
         :empty-lines-after 1 :clock-in t :clock-resume t)
        ("p" "phone" entry
-        (file "~/Dropbox/org/refile.org")
+        (file "~/Documents/org-data/refile.org")
         "* PHONE %? :PHONE:\n  "
         :empty-lines-after 1 :clock-in t :clock-resume t)
        ("m" "mail" entry
-        (file "~/Dropbox/org/refile.org")
+        (file "~/Documents/org-data/refile.org")
         "* MAIL from %:from on %:subject\n\n  %a"
         :empty-lines-after 1 :clock-in t :clock-resume t))))
 
@@ -1042,7 +1041,6 @@ Some basic defaults and customizations
   (setq-default fill-column 80)
 
   (setq abbrev-all-caps t
-	auto-insert-mode t
 	auto-save-no-message t
 	bookmark-save-flag 1
 	bookmark-use-annotations t
@@ -1064,8 +1062,7 @@ Some basic defaults and customizations
 	semantic-imenu-auto-rebuild-directory-indexes t
 	tab-always-indent 'complete
 	tab-width 4
-	tool-bar-mode nil
-	version-control t)
+	tool-bar-mode nil)
 
 #+end_src
 
@@ -1911,6 +1908,61 @@ layer which does not mess with editing etc.
 
 #+end_src
 
+** git-commit
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package git-commit
+    :ensure t)
+    :config
+    (global-git-commit-mode)
+
+#+end_src
+
+** git-timemachine
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package git-timemachine
+    :ensure t
+    :commands (git-timemachine-toggle git-timemachine 
+               git-timemachine-switch-browser))
+
+#+end_src
+
+** gitignore-mode
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package gitignore-mode
+    :ensure t)
+
+#+end_src
+
+** magit
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package magit
+    :ensure t
+    :commands (magit-status magit-dispatch-popup)
+    :bind (("C-x g" . magit-status)
+           ("C-x M-g" . magit-dispatch-popup)))
+
+#+end_src
+
+** magit-popup
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package magit-popup
+    :ensure t)
+
+#+end_src
+
+** forge
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package forge
+    :ensure t)
+
+#+end_src
+
 ** diff-hl 
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -1958,7 +2010,8 @@ layer which does not mess with editing etc.
     ;; (add-hook 'clojure-mode-hook #'lsp)
     ;; (add-hook 'clojurec-mode-hook #'lsp)
     ;; (add-hook 'clojurescript-mode-hook #'lsp)
-    (add-hook 'js2-mode-hook #'lsp))
+    ;; (add-hook 'js2-mode-hook #'lsp)
+    )
 
   (use-package company-lsp
     :ensure t
@@ -2108,6 +2161,39 @@ on GitHub]]
         (use-package wgrep
           :ensure t)
         (add-hook 'grep-setup-hook 'wgrep-setup)))
+
+#+end_src
+
+** deadgrep
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package deadgrep
+    :ensure t)
+
+#+end_src
+
+** ag
+   
+   Using ~ag~ package for searches. This needs some OS support
+
+  - On Linux ~apt-get install silversearcher-ag~
+  - On OSX ~brew install the_silver_searcher~
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package ag
+    :ensure t
+    :commands
+    (ag ag-files ag-regex ag-project ag-project-files ag-project-regexp)
+    :config
+    (bind-key "M-?" 'ag-project))
+
+#+end_src
+
+** dumb-jump
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package dumb-jump
+    :ensure t)
 
 #+end_src
 
@@ -2539,11 +2625,12 @@ Setup version control stuff
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package ereader
     :ensure t)
 
 #+end_src
+
 * Keymaps
 
 *** read-write-toggle
@@ -2987,15 +3074,15 @@ Setup ~clojure-mode~ and ~cider~.
     :mode "\\.js\\'"
     :interpreter ("node" . js2-mode)
     :init
-    (flycheck-add-mode 'javascript-eslint 'js2-mode)
     (setq-default js2-bounce-indent-p nil)
     (setq js-indent-level 2
-          js2-include-node-externs t
-          js2-mode-assume-strict t
-          js2-highlight-level 3
-          js2-global-externs '("describe" "it" "before"
-                               "after" "beforeEach" "afterEach"))
+	  js2-include-node-externs t
+	  js2-mode-assume-strict t
+	  js2-highlight-level 3
+	  js2-global-externs '("describe" "it" "before"
+			       "after" "beforeEach" "afterEach"))
     :config
+    (flycheck-add-mode 'javascript-eslint 'js2-mode)
     (add-hook 'js2-mode-hook #'js2-imenu-extras-mode)
     (js2-imenu-extras-setup)
     (define-key js2-mode-map (kbd "M-.") nil))
@@ -3093,7 +3180,7 @@ Setup ~clojure-mode~ and ~cider~.
 
 *** ng2
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package ng2-mode
     :ensure t)
 
@@ -3117,7 +3204,7 @@ Setup ~clojure-mode~ and ~cider~.
 
 *** tide
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package tide
     :ensure t)
 
