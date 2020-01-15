@@ -1106,10 +1106,13 @@ Some basic defaults and customizations
 *** display-fill-column-indicator
 
 #+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package display-fill-column-indicator
+  (when (>= emacs-major-version 27)
+    (use-package display-fill-column-indicator
     :config
     (add-hook 'text-mode-hook 'display-fill-column-indicator-mode)
-    (add-hook 'prog-mode-hook 'display-fill-column-indicator-mode))
+    (add-hook 'prog-mode-hook 'display-fill-column-indicator-mode)))
+
+
 
 #+end_src
 
