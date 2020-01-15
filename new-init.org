@@ -67,7 +67,7 @@ The below has been borrowed from Doom Emacs.
 
 Defer garbage collection further back in the startup process
 
-#+begin_src emacs-lisp :tangle tangle-early-init.el
+#+begin_src emacs-lisp :tangle no
   (setq gc-cons-threshold 268435456)
 
 #+end_src
@@ -118,14 +118,14 @@ Prevent the glimpse of un-styled Emacs by setting these early.
 
 One less file to load at startup
 
-#+begin_src emacs-lisp :tangle tangle-early-init.el
+#+begin_src emacs-lisp :tangle no
 (setq site-run-file nil)
 
 #+end_src
 
 * GC Settings
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (defvar tx-gc-cons-threshold 16777216 ; 16mb
     "The default value to use for `gc-cons-threshold'. If you experience freezing,
   decrease this. If you experience stuttering, increase this.")
@@ -139,7 +139,7 @@ One less file to load at startup
 
 Function to restore default gc etc after init.
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (defun tx-restore-startup-optimizations ()
     "Resets garbage collection settings to reasonable defaults (a large
   `gc-cons-threshold' can cause random freezes otherwise) and resets
@@ -182,7 +182,7 @@ Function to restore default gc etc after init.
 
 Set things for fast load
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (if (ignore-errors (or after-init-time noninteractive))
       (setq gc-cons-threshold tx-gc-cons-threshold)
     ;; A big contributor to startup times is garbage collection. We up the gc
@@ -325,7 +325,7 @@ then load it
 		     "/usr/bin/play")
 	  emacspeak-soxplay-command (if *is-a-mac*
 					"/usr/local/bin/play -v 1.2 %s earwax &"
-				      "/usr/bin/play -v 1.2 %s earwax &")
+				      "/usr/bin/play -v 1.0 %s earwax &")
 	  tts-default-speech-rate 90)
 
     (add-hook 'emacspeak-startup-hook
@@ -376,7 +376,7 @@ them.
     
     
       ;; (bind-key "<f5>" 'my-hydra-window/body)
-      ;; (bind-key "<f7>" 'my-hydra-wizards/body)
+ 
       ;; (bind-key "C-z" 'my-hydra-zoom/body)
       )
 
@@ -876,125 +876,140 @@ normally ensure a 'stable' environment.
 * Hydra
 
  #+begin_src emacs-lisp :tangle tangle-init.el
-   (use-package winner
-     :config
-     (winner-mode 1))
-
-   (use-package windmove
-     :config
-     (windmove-default-keybindings))
-
    (use-package hydra
-     :ensure t
-     :config
-     (defun hydra-move-splitter-left (arg)
-       "Move window splitter left."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'right))
-           (shrink-window-horizontally arg)
-         (enlarge-window-horizontally arg)))
-
-     (defun hydra-move-splitter-right (arg)
-       "Move window splitter right."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'right))
-           (enlarge-window-horizontally arg)
-         (shrink-window-horizontally arg)))
-
-     (defun hydra-move-splitter-up (arg)
-       "Move window splitter up."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'up))
-           (enlarge-window arg)
-         (shrink-window arg)))
-
-     (defun hydra-move-splitter-down (arg)
-       "Move window splitter down."
-       (interactive "p")
-       (if (let ((windmove-wrap-around))
-             (windmove-find-other-window 'up))
-           (shrink-window arg)
-         (enlarge-window arg)))
-
-     (when *run_emacspeak*
-       (defhydra my-hydra-wizards ()
-         "Emacspeak Wizards"
-         ("c" emacspeak-wizards-byte-compile-current-buffer "Byte")
-         ;; ("b" emacspeak-wizards-cycle-browser "Browser")
-         ("e" emacspeak-wizards-eww-buffer-list "eww")
-         ("r" emacspeak-wizards-find-file-as-root "root")
-         ("g" emacspeak-wizards-find-grep "Grep")
-         ("f" emacspeak-wizards-finder-find "Find")
-         ("F" emacspeak-wizards-generate-finder "Finder")
-         ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-         ("s" emacspeak-wizards-spot-words "Spot")
-         ("t" emacspeak-wizards-tramp-open-location "Tramp")
-         ("q" nil "Quit"))
-
-       )
-
-     (defhydra my-hydra-zoom ()
-       "zoom"
-       ("-" text-scale-decrease "out")
-       ("+" text-scale-increase "in")
-       ("0" (text-scale-adjust 0) "reset")
-       ("q" nil "quit" :color blue))
-
-     ;;  (defhydra my-hydra-error ()
-     ;;     "goto-error"
-     ;;     ("h" first-error "first")
-     ;;     ("j" next-error "next")
-     ;;     ("k" previous-error "prev")
-     ;;     ("v" recenter-top-bottom "recenter")
-     ;;     ("q" nil "quit"))
-     ;; -
-     (require 'winner)
-     (defhydra my-hydra-window (:color red :hint nil)
-       "
-    Split: _v_ert _x_:horz
-   Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
-     Move: _s_wap
-   Frames: _f_rame new  _df_ delete
-     Misc: _m_ark _a_ce  _u_ndo  _r_edo"
-       ("h" windmove-left)
-       ("j" windmove-down)
-       ("k" windmove-up)
-       ("l" windmove-right)
-       ("H" hydra-move-splitter-left)
-       ("J" hydra-move-splitter-down)
-       ("K" hydra-move-splitter-up)
-       ("L" hydra-move-splitter-right)
-       ("|" (lambda ()
-              (interactive)
-              (split-window-right)
-              (windmove-right)))
-       ("_" (lambda ()
-              (interactive)
-              (split-window-below)
-              (windmove-down)))
-       ("v" split-window-right)
-       ("x" split-window-below)
-       ;;("t" transpose-frame "'")
-       ;; winner-mode must be enabled
-       ("u" winner-undo)
-       ("r" winner-redo) ;;Fixme, not working?
-       ("o" delete-other-windows :exit t)
-       ("a" ace-window :exit t)
-       ("f" make-frame :exit t)
-       ("s" ace-swap-window)
-       ("da" ace-delete-window)
-       ("dw" delete-window)
-       ("db" kill-this-buffer)
-       ("df" delete-frame :exit t)
-       ("q" nil)
-       ;;("i" ace-maximize-window "ace-one" :color blue)
-       ;;("b" ido-switch-buffer "buf")
-       ("m" headlong-bookmark-jump)))
+     :ensure t)
 
  #+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when *run_emacspeak*
+    (defhydra my-hydra-wizards ()
+      "Emacspeak Wizards"
+      ("a" emacspeak-annotate-add-annotation "anotate")
+      ("b" emacspeak-wizards-byte-compile-current-buffer "Byte")
+      ('c' emacspeak-copy-current-file "copy")
+      ("e" emacspeak-wizards-eww-buffer-list "eww")
+      ("r" emacspeak-wizards-find-file-as-root "root")
+      ("g" emacspeak-wizards-find-grep "Grep")
+      ("f" emacspeak-wizards-finder-find "Find")
+      ("F" emacspeak-wizards-generate-finder "Finder")
+      ("m" emacspeak-wizards-move-and-speak "speak")
+      ("s" emacspeak-wizards-spot-words "Spot")
+      ("t" emacspeak-wizards-tramp-open-location "Tramp")
+      ("z" emacspeak-wizards-execute-asynchronously "Async")
+      ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
+      ("q" nil "Quit")))
+
+  (bind-key "<f7>" 'my-hydra-wizards/body)
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+  (use-package winner
+    :config
+    (winner-mode 1))
+
+  (use-package windmove
+    :config
+    (windmove-default-keybindings))
+
+  (defun hydra-move-splitter-left (arg)
+    "Move window splitter left."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+	  (windmove-find-other-window 'right))
+	(shrink-window-horizontally arg)
+      (enlarge-window-horizontally arg)))
+
+  (defun hydra-move-splitter-right (arg)
+    "Move window splitter right."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+	  (windmove-find-other-window 'right))
+	(enlarge-window-horizontally arg)
+      (shrink-window-horizontally arg)))
+
+  (defun hydra-move-splitter-up (arg)
+    "Move window splitter up."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+	  (windmove-find-other-window 'up))
+	(enlarge-window arg)
+      (shrink-window arg)))
+
+  (defun hydra-move-splitter-down (arg)
+    "Move window splitter down."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+	  (windmove-find-other-window 'up))
+	(shrink-window arg)
+      (enlarge-window arg)))
+
+       (require 'winner)
+       (defhydra my-hydra-window (:color red :hint nil)
+	 "
+      Split: _v_ert _x_:horz
+     Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
+       Move: _s_wap
+     Frames: _f_rame new  _df_ delete
+       Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+	 ("h" windmove-left)
+	 ("j" windmove-down)
+	 ("k" windmove-up)
+	 ("l" windmove-right)
+	 ("H" hydra-move-splitter-left)
+	 ("J" hydra-move-splitter-down)
+	 ("K" hydra-move-splitter-up)
+	 ("L" hydra-move-splitter-right)
+	 ("|" (lambda ()
+		(interactive)
+		(split-window-right)
+		(windmove-right)))
+	 ("_" (lambda ()
+		(interactive)
+		(split-window-below)
+		(windmove-down)))
+	 ("v" split-window-right)
+	 ("x" split-window-below)
+	 ;;("t" transpose-frame "'")
+	 ;; winner-mode must be enabled
+	 ("u" winner-undo)
+	 ("r" winner-redo) ;;Fixme, not working?
+	 ("o" delete-other-windows :exit t)
+	 ("a" ace-window :exit t)
+	 ("f" make-frame :exit t)
+	 ("s" ace-swap-window)
+	 ("da" ace-delete-window)
+	 ("dw" delete-window)
+	 ("db" kill-this-buffer)
+	 ("df" delete-frame :exit t)
+	 ("q" nil)
+	 ;;("i" ace-maximize-window "ace-one" :color blue)
+	 ;;("b" ido-switch-buffer "buf")
+	 ("m" headlong-bookmark-jump))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+  (defhydra my-hydra-error ()
+    "goto-error"
+    ("h" first-error "first")
+    ("j" next-error "next")
+    ("k" previous-error "prev")
+    ("v" recenter-top-bottom "recenter")
+    ("q" nil "quit"))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+  (defhydra my-hydra-zoom ()
+    "zoom"
+    ("-" text-scale-decrease "out")
+    ("+" text-scale-increase "in")
+    ("0" (text-scale-adjust 0) "reset")
+    ("q" nil "quit" :color blue))
+
+#+end_src
 
 * OSX Tweaks 
 
@@ -1047,11 +1062,11 @@ Some basic defaults and customizations
 	confirm-kill-processes nil
 	delete-by-moving-to-trash t
 	delete-old-versions t
-	desktop-save-mode t
 	dynamic-completion-mode t
 	electric-pair-mode t
 	focus-follows-mouse t
 	indent-tabs-mode nil
+	inhibit-splash-screen t
 	kill-do-not-save-duplicates t
 	line-move-visual nil
 	load-prefer-newer t
@@ -1672,9 +1687,36 @@ which adds some editing tweaks
   (use-package origami
     :ensure t
     :bind (:map origami-mode-map
-           ("C-c f" . origami-recursively-toggle-node)
-           ("C-c F" . origami-toggle-all-nodes))
-    :commands (origami-mode))
+		("C-c f" . origami-recursively-toggle-node)
+		("C-c F" . origami-toggle-all-nodes))
+    :commands (origami-mode)
+    :config
+    (add-hook 'prog-mode-hook 'origami-mode))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (global-set-key
+   (kbd "C-c /")
+   (defhydra emacspeak-origami
+     (:color red
+	     :body-pre
+	     (progn
+	       (origami-mode 1)
+	       (emacspeak-hydra-body-pre "Origami")
+	       (emacspeak-hydra-toggle-talkative))
+	     :hint nil
+	     :pre emacspeak-hydra-pre :post emacspeak-hydra-post)
+     "
+      _o_pen node    _n_ext fold       toggle _f_orward
+      _c_lose node   _p_revious fold   toggle _a_ll
+      "
+     ("o" origami-open-node)
+     ("c" origami-close-node)
+     ("n" origami-next-fold)
+     ("p" origami-previous-fold)
+     ("f" origami-forward-toggle-node)
+     ("a" origami-toggle-all-nodes)))
 
 #+end_src
 
@@ -1793,6 +1835,24 @@ to add some paredit specific advice to provide speech feedback for this mode.
     :ensure t
     :config
     (add-hook 'prog-mode-hook 'paredit-everywhere-mode))
+
+#+end_src
+
+** Smartparens
+
+Not sure I like this mode compared to paredit. Disabling it for now.
+
+#+begin_src emacs-lisp :tangle no
+  (use-package smartparens-config
+    :ensure smartparens
+    :config
+    (progn
+      (sp-use-smartparens-bindings)
+      (smartparens-global-mode)
+      (show-smartparens-global-mode))
+    (add-hook 'emacs-lisp-mode-hook 'turn-on-smartparens-strict-mode)
+    (add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
+    (add-hook 'markdown-mode-hook 'turn-on-smartparens-strict-mode))
 
 #+end_src
 
@@ -2608,7 +2668,7 @@ Setup version control stuff
     (elfeed-org))
 
 #+end_src
-
+ 
 ** Gnuplot
 
 #+begin_src emacs-lisp :tangle no
@@ -2621,7 +2681,8 @@ Setup version control stuff
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package nov
-    :ensure t)
+    :ensure t
+    :mode "\\.epub\\'")
 
 #+end_src
 
@@ -2635,7 +2696,7 @@ Setup version control stuff
 
 *** read-write-toggle
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (defun tx/read-write-toggle ()
     "Toggles read-only in any relevant mode: ag-mode, Dired, or
   just any file at all."
@@ -2652,14 +2713,14 @@ Setup version control stuff
 
 *** Scratch
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (defun tx/scratch ()
       (interactive)
       (switch-to-buffer-other-window (get-buffer-create "*scratch*")))
 
 #+end_src
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (defun tx/make-org-scratch ()
     (interactive)
     (find-file "~/Dropbox/org/scratch.org"))
@@ -2684,7 +2745,7 @@ Setup version control stuff
 
 ** Launcher Map
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (bind-keys :prefix-map launcher-map
              :prefix "C-x l"
              ("A" . terminal) ;; save "a" for open-agenda
