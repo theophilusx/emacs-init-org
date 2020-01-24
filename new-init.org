@@ -1968,6 +1968,34 @@ layer which does not mess with editing etc.
 
 #+end_src
 
+** magit
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package magit
+    :ensure t
+    :commands (magit-status magit-dispatch-popup)
+    :bind (("C-x g" . magit-status)
+           ("C-x M-g" . magit-dispatch-popup)))
+
+#+end_src
+
+** magit-popup
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package magit-popup
+    :ensure t)
+
+#+end_src
+
+** forge
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package forge
+    :ensure t)
+
+#+end_src
+
+
 ** git-commit
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -1992,33 +2020,6 @@ layer which does not mess with editing etc.
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package gitignore-mode
-    :ensure t)
-
-#+end_src
-
-** magit
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package magit
-    :ensure t
-    :commands (magit-status magit-dispatch-popup)
-    :bind (("C-x g" . magit-status)
-           ("C-x M-g" . magit-dispatch-popup)))
-
-#+end_src
-
-** magit-popup
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package magit-popup
-    :ensure t)
-
-#+end_src
-
-** forge
-
-#+begin_src emacs-lisp :tangle tangle-init.el
-  (use-package forge
     :ensure t)
 
 #+end_src
