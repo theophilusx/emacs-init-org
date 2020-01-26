@@ -645,8 +645,8 @@ normally ensure a 'stable' environment.
      org-enforce-todo-checkbox-dependencies t
      org-enforce-todo-dependencies t
      org-export-backends '(ascii beamer html
-                                 latex texinfo
-                                 md odt org)
+				 latex texinfo
+				 md odt org)
      org-export-coding-system 'utf-8
      org-hide-block-startup t
      org-log-done 'time
@@ -655,171 +655,172 @@ normally ensure a 'stable' environment.
      org-list-indent-offset 2
      org-log-refile 'time
      org-modules '(org-crypt
-                   ol-docview
-                   ol-eww
-                   ol-info
-                   ol-bibtex
-                   ol-irc)
+		   ol-docview
+		   ol-eww
+		   ol-info
+		   ol-bibtex
+		   ol-irc)
      org-plantuml-jar-path (expand-file-name "~/.emacs.d/jars/plantuml.jar")
      org-pretty-entities t
      org-refile-allow-creating-parent-nodes 'confirm
      org-refile-targets (quote ((nil :maxlevel . 5)
-                                (org-agenda-files :maxlevel . 5)))
+				(org-agenda-files :maxlevel . 5)))
      org-refile-use-outline-path (quote file)
      org-src-tab-acts-natively t
      org-src-window-setup 'current-window
      org-startup-align-all-tables t
      org-startup-with-inline-images (display-graphic-p)
+     org-startup-indented t
      org-support-shift-select t
      org-time-clocksum-format '(:hours "%d" :require-hours t
-                                       :minutes ":%02d" :require-minutes t)
+				       :minutes ":%02d" :require-minutes t)
      org-use-sub-superscripts (quote {}))
 
     (setq
      org-capture-templates
      (quote
       (("t" "todo" entry
-        (file "~/Documents/org-data/refile.org")
-        "* TODO %?\n\n  %a"
-        :empty-lines-after 1 :clock-in t :clock-resume t)
+	(file "~/Documents/org-data/refile.org")
+	"* TODO %?\n\n  %a"
+	:empty-lines-after 1 :clock-in t :clock-resume t)
        ("r" "respond" entry
-        (file "~/Documents/org-data/refile.org")
-        "* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
-        :empty-lines-after 1 :clock-in t :clock-resume t)
+	(file "~/Documents/org-data/refile.org")
+	"* NEXT Respond to %:from on %:subject\n  SCHEDULED: %t\n  %a"
+	:empty-lines-after 1 :clock-in t :clock-resume t)
        ("n" "note" entry
-        (file "~/Documents/org-data/notes.org")
-        "* %? :NOTE:\n\n  %a"
-        :empty-lines-after 1 :clock-in t :clock-resume t)
+	(file "~/Documents/org-data/notes.org")
+	"* %? :NOTE:\n\n  %a"
+	:empty-lines-after 1 :clock-in t :clock-resume t)
        ("j" "journal" entry
-        (file+olp+datetree "~/Documents/org-data/journal.org")
-        "* %?\n  "
-        :empty-lines-after 1 :clock-in t :clock-resume t)
+	(file+olp+datetree "~/Documents/org-data/journal.org")
+	"* %?\n  "
+	:empty-lines-after 1 :clock-in t :clock-resume t)
        ("p" "phone" entry
-        (file "~/Documents/org-data/refile.org")
-        "* PHONE %? :PHONE:\n  "
-        :empty-lines-after 1 :clock-in t :clock-resume t)
+	(file "~/Documents/org-data/refile.org")
+	"* PHONE %? :PHONE:\n  "
+	:empty-lines-after 1 :clock-in t :clock-resume t)
        ("m" "mail" entry
-        (file "~/Documents/org-data/refile.org")
-        "* MAIL from %:from on %:subject\n\n  %a"
-        :empty-lines-after 1 :clock-in t :clock-resume t))))
+	(file "~/Documents/org-data/refile.org")
+	"* MAIL from %:from on %:subject\n\n  %a"
+	:empty-lines-after 1 :clock-in t :clock-resume t))))
 
     (setq
      org-todo-keywords (quote
-                        ((sequence "TODO(t)"
-                                   "NEXT(n)"
-                                   "STARTED(s!)"
-                                   "DELEGATED(w@/!)"
-                                   "HOLD(h@/!)"
-                                   "|"
-                                   "CANCELLED(c@)"
-                                   "DONE(d!)"))))
+			((sequence "TODO(t)"
+				   "NEXT(n)"
+				   "STARTED(s!)"
+				   "DELEGATED(w@/!)"
+				   "HOLD(h@/!)"
+				   "|"
+				   "CANCELLED(c@)"
+				   "DONE(d!)"))))
 
     (setq
      org-agenda-custom-commands
      (quote
       (("n" "Agenda and all TODO's"
-        ((agenda "" nil)
-         (alltodo "" nil))
-        nil)
+	((agenda "" nil)
+	 (alltodo "" nil))
+	nil)
        ("wr" "Weekly Report"
-        ((todo "DONE|CANCELLED"
-               ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
-         (todo "STARTED|NEXT"
-               ((org-agenda-overriding-header "WIP")))
-         (todo "HOLD|DELEGATED"
-               ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
-         (todo "TODO"
-               ((org-agenda-overriding-header "Task Backlog"))))
-        nil nil))))
+	((todo "DONE|CANCELLED"
+	       ((org-agenda-overriding-header "Completed and Cancelled : Last Week")))
+	 (todo "STARTED|NEXT"
+	       ((org-agenda-overriding-header "WIP")))
+	 (todo "HOLD|DELEGATED"
+	       ((org-agenda-overriding-header "On Hold and Delegated Tasks")))
+	 (todo "TODO"
+	       ((org-agenda-overriding-header "Task Backlog"))))
+	nil nil))))
 
      (setq org-latex-classes
-          '(("beamer"
-             "\\documentclass[presentation]{beamer}"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-            ("hitec-article"
-             "\\documentclass[12pt]{hitec}
+	  '(("beamer"
+	     "\\documentclass[presentation]{beamer}"
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+	    ("hitec-article"
+	     "\\documentclass[12pt]{hitec}
     [DEFAULT-PACKAGES]
     [PACKAGES]
     [NO-EXTRA]
     \\settextfraction{0.95}\n"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-             ("\\paragraph{%s}" . "\\paragraph*{%s}")
-             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-            ("article" "\\documentclass[11pt]{article}"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-             ("\\paragraph{%s}" . "\\paragraph*{%s}")
-             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-            ("korma-article" "\\documentclass[11pt]{scrartcl}"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-             ("\\paragraph{%s}" . "\\paragraph*{%s}")
-             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-            ("report"
-             "\\documentclass[11pt]{report}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-            ("korma-report"
-             "\\documentclass[11pt]{scrreport}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-            ("korma-book"
-             "\\documentclass[11pt]{scrbook}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-            ("book"
-             "\\documentclass[11pt]{book}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+	     ("\\paragraph{%s}" . "\\paragraph*{%s}")
+	     ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+	    ("article" "\\documentclass[11pt]{article}"
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+	     ("\\paragraph{%s}" . "\\paragraph*{%s}")
+	     ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+	    ("korma-article" "\\documentclass[11pt]{scrartcl}"
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+	     ("\\paragraph{%s}" . "\\paragraph*{%s}")
+	     ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+	    ("report"
+	     "\\documentclass[11pt]{report}"
+	     ("\\part{%s}" . "\\part*{%s}")
+	     ("\\chapter{%s}" . "\\chapter*{%s}")
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+	    ("korma-report"
+	     "\\documentclass[11pt]{scrreport}"
+	     ("\\part{%s}" . "\\part*{%s}")
+	     ("\\chapter{%s}" . "\\chapter*{%s}")
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+	    ("korma-book"
+	     "\\documentclass[11pt]{scrbook}"
+	     ("\\part{%s}" . "\\part*{%s}")
+	     ("\\chapter{%s}" . "\\chapter*{%s}")
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+	    ("book"
+	     "\\documentclass[11pt]{book}"
+	     ("\\part{%s}" . "\\part*{%s}")
+	     ("\\chapter{%s}" . "\\chapter*{%s}")
+	     ("\\section{%s}" . "\\section*{%s}")
+	     ("\\subsection{%s}" . "\\subsection*{%s}")
+	     ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
     (setq org-latex-hyperref-template
-          "\\hypersetup{pdfauthor={%a},
-                        pdftitle={%t},
-                        pdfkeywords={%k},
-                        pdfsubject={%d},
-                        pdfcreator={%c},
-                        pdflang={%L},
-                        colorlinks=true,
-                        linkcolor=blue}")
+	  "\\hypersetup{pdfauthor={%a},
+			pdftitle={%t},
+			pdfkeywords={%k},
+			pdfsubject={%d},
+			pdfcreator={%c},
+			pdflang={%L},
+			colorlinks=true,
+			linkcolor=blue}")
     (setq org-latex-listings t
-          org-latex-listings-options '(("basicstyle" "\\tiny")
-                                       ("frame" "single")
-                                       ("stringstyle" "\\color{orange}")
-                                       ("commentstyle" "\\color{cyan}")
-                                       ("keywordstyle" "\\color{blue}")
-                                       ("showstringspaces" "false")
-                                       ("breakatwhitespace" "false")
-                                       ("breaklines" "true")))
+	  org-latex-listings-options '(("basicstyle" "\\tiny")
+				       ("frame" "single")
+				       ("stringstyle" "\\color{orange}")
+				       ("commentstyle" "\\color{cyan}")
+				       ("keywordstyle" "\\color{blue}")
+				       ("showstringspaces" "false")
+				       ("breakatwhitespace" "false")
+				       ("breaklines" "true")))
     (setq org-latex-pdf-process
-          '("lualatex -interaction nonstopmode -output-directory %o %f"
-            "lualatex -interaction nonstopmode -output-directory %o %f"
-            "lualatex -interaction nonstopmode -output-directory %o %f"))
+	  '("lualatex -interaction nonstopmode -output-directory %o %f"
+	    "lualatex -interaction nonstopmode -output-directory %o %f"
+	    "lualatex -interaction nonstopmode -output-directory %o %f"))
     (setq org-latex-packages-alist
-          '(("" "parskip")
-            ("" "xcolor")
-            ("" "listings")))
+	  '(("" "parskip")
+	    ("" "xcolor")
+	    ("" "listings")))
     (setq org-html-checkbox-type 'unicode
-          org-html-html5-fancy t
-          org-html-doctype "html5")
+	  org-html-html5-fancy t
+	  org-html-doctype "html5")
     (setq org-ascii-charset 'utf-8
-          org-ascii-text-width 79)
+	  org-ascii-text-width 79)
     :config
     (org-element-update-syntax)
     (org-clock-persistence-insinuate)
@@ -887,7 +888,7 @@ normally ensure a 'stable' environment.
       "Emacspeak Wizards"
       ("a" emacspeak-annotate-add-annotation "anotate")
       ("b" emacspeak-wizards-byte-compile-current-buffer "Byte")
-      ('c' emacspeak-copy-current-file "copy")
+      ("c" emacspeak-copy-current-file "copy")
       ("e" emacspeak-wizards-eww-buffer-list "eww")
       ("r" emacspeak-wizards-find-file-as-root "root")
       ("g" emacspeak-wizards-find-grep "Grep")
@@ -898,9 +899,11 @@ normally ensure a 'stable' environment.
       ("t" emacspeak-wizards-tramp-open-location "Tramp")
       ("z" emacspeak-wizards-execute-asynchronously "Async")
       ("!" emacspeak-wizards-shell-command-on-current-file "cmd")
-      ("q" nil "Quit")))
+      ("q" nil "Quit"))
 
-  (bind-key "<f7>" 'my-hydra-wizards/body)
+    (bind-key "<f7>" 'my-hydra-wizards/body))
+
+
 
 #+end_src
 
@@ -1073,6 +1076,7 @@ Some basic defaults and customizations
 	parse-sexp-ignore-comments t
 	save-interprogram-paste-before-kill t
 	scroll-bar-mode nil
+	search-invisible t
 	select-enable-primary t
 	semantic-imenu-auto-rebuild-directory-indexes t
 	tab-always-indent 'complete
@@ -1149,7 +1153,6 @@ Some basic defaults and customizations
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package saveplace
-    :demand t
     :init 
     (setq save-place-file (expand-file-name ".saveplace" user-emacs-directory))
     :config
@@ -2686,7 +2689,7 @@ Setup version control stuff
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package nov
     :ensure t
-    :mode "\\.epub\\'")
+    :mode ("\\.epub\\'" . nov-mode))
 
 #+end_src
 
