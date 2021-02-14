@@ -1,0 +1,536 @@
+#+TITLE: Emacs init.el File
+#+DATE: \today
+#+AUTHOR: Tim Cross
+
+* Early Init
+
+Emacs 27 introduces an early init file. This is a good place to set some frame defaults and tweak the gc to speed up init process
+The below has been borrowed from Doom Emacs.
+
+** Set Some Constants
+ I set a couple of constants which can then be used to control configuration
+ settings in my init file.
+
+*** Mac or Linux?
+
+ I run emacs on both OSX and Linux. To handle differences in configuration
+ settings for the two platforms, I set a constant which determines if emacs is
+ running on OSX or not.
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *is-a-mac* (eq system-type 'darwin)
+     "T if emacs is running under OSX, nil otherwise.")
+
+ #+end_src
+
+
+*** Load Emacspeak
+
+ #+begin_src emacs-lisp :tangle tangle-early-init.el
+   (defconst *run_emacspeak* t)
+ #+end_src
+
+* Load Path
+
+The following adds additional directories to the emacs load-path so that
+emacs can find various additional libraries etc
+
+Any small third party libraries I use which are not packaged in an ELPA
+repository go in the ~.emacs.d/lib~  subdirectory.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (add-to-list 'load-path (expand-file-name "lib" user-emacs-directory))
+
+#+end_src
+
+* Emacspeak
+
+Now load Emacspeak. As Emacspeak makes extensive use of Emacs' =defacvice=
+facility, it is important that it is loaded as early as possible in the Emacs
+boot process.
+
+First, setup a constant which tells emacs where to look for the emacspeak distro
+
+** Emacspeak Loading Constants
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when *run_emacspeak*
+    (defconst *emacspeak-src-dir* (if (getenv "EMACSPEAK_DIR")
+                                      (expand-file-name (getenv "EMACSPEAK_DIR"))
+                                    (expand-file-name "~/git/emacspeak/trunk"))
+      "Where emacs will find the emacspeak distro")
+
+    (defconst *dtk-program* (if (getenv "DTK_PROGRAM")
+                                (getenv "DTK_PROGRAM")
+                              (if *is-a-mac*
+                                  "mac"
+                                "espeak")))
+
+    (require 'info)
+    (add-to-list 'Info-additional-directory-list
+                 (expand-file-name "info"  *emacspeak-src-dir*)))
+
+#+end_src
+
+** Load Emacspeak
+
+When emacs is not being run in batch mode and when emacspeak is not yet loaded,
+then load it
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when (and *run_emacspeak*
+             (not noninteractive)
+             (not (featurep 'emacspeak)))
+    (add-to-list 'load-path *emacspeak-src-dir*)
+    (setenv "EMACSPEAK_DIR" *emacspeak-src-dir*)
+    (setenv "DTK_PROGRAM" *dtk-program*)
+    (setq dtk-program *dtk-program*
+          dtk-use-tones nil
+          emacspeak-erc-my-nick "theophilusx"
+          emacspeak-erc-speak-all-participants t
+          emacspeak-mail-alert nil
+          emacspeak-play-emacspeak-startup-icon nil
+          emacspeak-vm-use-raman-settings nil
+          mac-default-speech-rate 360
+          outloud-default-speech-rate 90
+          espeak-default-speech-rate 250
+          sox-play (if *is-a-mac*
+                       "/usr/local/bin/play"
+                     "/usr/bin/play")
+          emacspeak-soxplay-command (if *is-a-mac*
+                                        "/usr/local/bin/play -v 1.2 %s earwax &"
+                                      "/usr/bin/play -v 1.2 %s earwax &")
+          tts-default-speech-rate 90)
+
+    (add-hook 'emacspeak-startup-hook
+              (lambda ()
+                ;; (dtk-set-rate tts-default-speech-rate 1)
+                (dtk-interp-sync)
+                (emacspeak-sounds-select-theme "3d/")))
+
+    (load-file (concat *emacspeak-src-dir* "/lisp/emacspeak-setup.el")))
+
+#+end_src
+
+* Custom
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (if *is-a-mac*
+      (setq custom-file (expand-file-name "mac-custom.el" user-emacs-directory))
+    (setq custom-file (expand-file-name "linux-custom.el" user-emacs-directory)))
+
+  (when (file-exists-p custom-file)
+    (load custom-file))
+
+#+end_src
+
+* ELPA
+
+ELPA has made managing add-on elisp packages *much* easier than it use to
+be. The trick is to only load packages you really want/need and not get carried
+away loading lots of additional packages /just in case/.
+
+
+First, we need to load package.el and then we need to add some additional
+package repositories. I add
+
+   - The Org repository so that I can use most recent org-plus-contrib package
+   - The melpa repository
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (require 'package)
+
+  (setq package-enable-at-startup nil
+        package-archive-priorities '(("org" . 2) ("melpa" . 1) ("gnu" . 0)))
+
+  (add-to-list 'package-archives `("melpa" . "https://melpa.org/packages/"))
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+  (when (< emacs-major-version 27)
+    (package-initialize))
+
+#+end_src
+
+* Use Package
+
+I just found John Wiegley's use-package macro, which I think is a really
+convenient way to manage the installation and configuration of ELPA
+packages. Therefore, I plan to migrate my configuration to use that package.
+
+We have a slight bootstrap or /chicken and egg/ problem, we need the use-package
+package from ELPA before we can use it, but it is what we want to use to install
+the package. Therefore, need a simple light weight way to get that package. Lets
+do the simple way
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'diminish)
+    (package-install 'delight)
+    (package-install 'bind-key)
+    (package-install 'use-package))
+
+  (setq use-package-verbose nil)
+#+end_src
+
+* OSX Tweaks
+
+Some tweaks to make emacs and OSX get on better. Note that I also install the
+coreutils package from homebrew to get some GNU flavoured utilities. These tend
+to start with 'g', so we need to do some additional variable settings.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when *is-a-mac*
+    (setq mac-command-modifier 'meta)
+    (setq mac-option-modifier 'none)
+    (setq dired-free-space-program "gdf")
+    (setq insert-directory-program "gls")
+    (setq default-input-method "MacOSX")
+    ;; Make mouse wheel / trackpad scrolling less jerky
+    (setq mouse-wheel-scroll-amount '(1 ((shift) . 5)
+                                        ((control))))
+    (dolist (multiple '("" "double-" "triple-"))
+      (dolist (direction '("right" "left"))
+        (global-set-key (read-kbd-macro
+                         (concat "<" multiple "wheel-" direction ">")) 'ignore)))
+    (bind-key "M-'" 'ns-next-frame)
+    (bind-key "M-h" 'ns-do-hide-emacs)
+    (bind-key "M-`" 'ms-do-hide-others)
+    (use-package applescript-mode
+      :ensure t
+      :mode ("\\.applescript" . applescript-mode))
+    ;; (use-package osx-plist
+    ;;   :ensure t)
+    (use-package osx-trash
+      :ensure t
+      :config (osx-trash-setup))
+    (use-package grab-mac-link
+      :ensure t
+      :bind (:map org-mode-map ("C-c g" . grab-mac-link))))
+
+#+end_src
+
+* Fonts
+
+Set the default font
+
+** Font Variables
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (if *is-a-mac*
+      (defvar tx-font (font-spec :family "Fira Code" :size 26))
+    (defvar tx-font (font-spec :family "Fira Code" :size 24)))
+
+  (defvar tx-variable-pitch-font (cond
+                                  (*is-a-mac* (font-spec :family "Helvetica"))
+                                  ((string= system-name "tim-desktop")
+                                   (font-spec :family "Noto Sans"))
+                                  (t (font-spec :family "DejaVu Serif"))))
+
+  (defvar tx-serif-font (cond
+                         (*is-a-mac* (font-spec :family "Times"))
+                         ((string= system-name "tim-desktop")
+                          (font-spec :family "Noto Serif Display"))
+                         (t (font-spec :family "DejaVu Serif"))))
+
+  (defvar tx-unicode-font
+    (if *is-a-mac*
+        (font-spec :family "Apple Color Emoji")
+      (font-spec :family "Noto Color Emoji")))
+
+#+end_src
+
+** Set Fonts
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (set-face-attribute 'default nil :font tx-font)
+  (set-face-attribute 'fixed-pitch-serif nil :font tx-serif-font)
+  (set-face-attribute 'variable-pitch nil :font tx-variable-pitch-font)
+  (set-fontset-font t 'unicode tx-unicode-font nil 'prepend)
+
+  (when *is-a-mac*
+    (mac-auto-operator-composition-mode))
+
+#+end_src
+
+* Mail
+** google-contacts
+
+Ability to access google contacts is useful.
+
+#+begin_src emacs-lisp :tangle no
+  (use-package google-contacts
+    :ensure t
+    :init
+    (setq plstore-cache-passphrase-for-symmetric-encryption t)
+    :config
+    ;; (require 'google-contacts-message)
+    (require 'google-org-contacts))
+#+end_src
+
+** Mu4e
+
+First, setup some load paths.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (require 'info)
+
+  (if *is-a-mac*
+      (progn
+        (setq mu4e-lisp "/usr/local/share/emacs/site-lisp/mu/mu4e")
+        (setq mu4e-info "/usr/local/share/info"))
+    (setq mu4e-lisp "/usr/share/emacs/site-lisp/mu4e")
+    (setq mu4e-info "/usr/share/info"))
+
+  (add-to-list 'load-path (expand-file-name mu4e-lisp))
+  (add-to-list 'Info-additional-directory-list (expand-file-name mu4e-info))
+
+#+end_src
+
+Next, load some additional packages we need.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (when *run_emacspeak*
+      (require 'emacspeak-mu4e))
+
+  (require 'org-mu4e)
+
+  (use-package "org-mime"
+    :ensure t)
+
+#+end_src
+
+Setup mu4e alert
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package mu4e-alert
+    :ensure t
+    :config
+    (setq mu4e-alert-interesting-mail-query
+          (if (string= system-name "arch-vbox")
+              (concat
+               "(maildir:/gmail/INBOX OR "
+               "maildir:/outlook/INBOX) AND "
+               "flag:unread AND NOT flag:trashed")
+            (concat
+             "(maildir:/gmail/INBOX OR "
+             "maildir:/outlook/INBOX OR "
+             "maildir:/sheep/INBOX) AND "
+             "flag:unread AND NOT flag:trashed")))
+    (mu4e-alert-enable-mode-line-display))
+
+#+end_src
+
+Now setup mu4e.
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package mu4e
+    :init
+    (setq tx-gmail-email "theophilusx@gmail.com"
+          tx-sheepcrc-email "tcross8@une.edu.au"
+          tx-hotmail-email "blind-bat@hotmail.com")
+    (setq mu4e-maildir (expand-file-name "~/Maildir")
+          mu4e-attachment-dir (expand-file-name "~/Desktop")
+          mu4e-get-mail-command "mbsync -a"
+          mu4e-hide-index-messages t
+          mu4e-headers-include-related nil
+          mu4e-change-filenames-when-moving t
+          mu4e-context-policy 'pick-first
+          mu4e-compose-context-policy nil
+          mu4e-view-fields '(:from :to :cc :subject :date :attachments)
+          mu4e-view-scroll-to-next nil
+          mu4e-view-show-addresses t
+          mu4e-view-use-gnus t
+          mu4e-update-interval (* 60 10)
+          mu4e-user-mail-address-list '("theophilusx@gmail.com"
+                                        "tcross8@une.edu.au"
+                                        "tcross@une.edu.au"
+                                        "blind-bat@hotmail.com"))
+    (setq org-mu4e-link-query-in-headers-mode nil)
+    :config
+    (add-hook 'message-mode-hook 'turn-on-orgtbl)
+    ;;(add-hook 'message-mode-hook 'outline-minor-mode)
+    (setq mu4e-bookmarks '())
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name "Last 7 days"
+                  :query "date:7d..now AND NOT flag:trashed"
+                  :key ?w))
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name "Messages with images"
+                  :query "mime:image/* AND NOT flag:trashed"
+                  :key ?p))
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name "Today's messages"
+                  :query "date:today..now AND NOT flag:trashed"
+                  :key ?t))
+    (add-to-list 'mu4e-bookmarks
+                 (make-mu4e-bookmark
+                  :name  "Unread messages"
+                  :query (if (string= system-name "arch-vbox")
+                             (concat "(maildir:/gmail/INBOX OR "
+                                     "maildir:/outlook/INBOX) AND "
+                                     "flag:unread AND NOT flag:trashed")
+                           (concat "(maildir:/gmail/INBOX OR "
+                                   "maildir:/outlook/INBOX OR "
+                                   "maildir:/sheep/INBOX) AND "
+                                   "flag:unread AND NOT flag:trashed"))
+                  :key ?u))
+    (setq mu4e-contexts '())
+    (add-to-list 'mu4e-contexts
+                 (make-mu4e-context
+                  :name "Outlook"
+                  :enter-func
+                  (lambda ()
+                    (mu4e-message "Entering Outlook context"))
+                  :leave-func
+                  (lambda ()
+                    (mu4e-message "Leaving Outlook context"))
+                  ;; we match based on the contact-fields of the message
+                  :match-func
+                  (lambda (msg)
+                    (when msg
+                      (mu4e-message-contact-field-matches msg
+                                                          :to
+                                                          "blind-bat@hotmail.com")))
+                  :vars '((user-mail-address . "blind-bat@hotmail.com")
+                          (user-full-name . "Tim Cross")
+                          (mu4e-compose-signature . (concat "Tim Cross\n"))
+                          (mu4e-drafts-folder . "/outlook/Drafts")
+                          (mu4e-sent-folder . "/outlook/Sent Mail")
+                          (mu4e-trash-folder . "/outlook/Deleted Items")
+                          (mu4e-refile-folder . "/outlook/Archive")
+                          (mu4e-maildir-shortcuts . (("/outlook/INBOX" . ?i)
+                                                     ("/outlook/Sent Mail" . ?s)
+                                                     ("/outlook/Archive" . ?a)
+                                                     ("/outlook/Drafts" . ?d)))
+                          (smtpmail-smtp-server . "smtp-mail.outlook.com")
+                          (smtpmail-smtp-service . 587)
+                          (mu4e-sent-messages-behavior . delete))))
+    (if (string= system-name "tim-desktop")
+        (add-to-list 'mu4e-contexts
+                     (make-mu4e-context
+                      :name "Sheep"
+                      :enter-func
+                      (lambda ()
+                        (mu4e-message "Entering Sheep context"))
+                      :leave-func
+                      (lambda ()
+                        (mu4e-message "Leaving Sheep context"))
+                      ;; we match based on the contact-fields of the message
+                      :match-func
+                      (lambda (msg)
+                        (when msg
+                          (mu4e-message-contact-field-matches msg
+                                                              :to
+                                                              "tcross8@une.edu.au")))
+                      :vars
+                      '((user-mail-address . "tcross8@une.edu.au")
+                        (user-full-name . "Tim Cross")
+                        (mu4e-compose-signature .
+                                                (concat
+                                                 "Tim Cross\n"
+                                                 "DBA/Developer - "
+                                                 "Livestock App Building\n"
+                                                 "School of Science and "
+                                                 "Technology\n"
+                                                 "Room 253 Booth Block (C027), "
+                                                 "Univrsity of New England\n"))
+                        (mu4e-drafts-folder . "/sheep/Drafts")
+                        (mu4e-sent-folder . "/sheep/Sent Items")
+                        (mu4e-trash-folder . "/sheep/Deleted Items")
+                        (mu4e-refile-folder . "/sheep/Archive")
+                        (mu4e-maildir-shortcuts . (("/sheep/INBOX" . ?i)
+                                                   ("/sheep/Sent Items" . ?s)
+                                                   ("/sheep/Archive" . ?a)
+                                                   ("/sheep/Drafts" . ?d)))
+                        (smtpmail-smtp-server . "mailhub.une.edu.au")
+                        (smtpmail-smtp-service . 25)
+                        (mu4e-sent-messages-behavior . sent)))))
+    (add-to-list 'mu4e-contexts
+                 (make-mu4e-context
+                  :name "Private"
+                  :enter-func (lambda ()
+                                (mu4e-message "Entering Private context"))
+                  :leave-func
+                  (lambda ()
+                    (mu4e-message "Leaving Private context"))
+                  ;; we match based on the contact-fields of the message
+                  :match-func
+                  (lambda (msg)
+                    (when msg
+                      (mu4e-message-contact-field-matches msg :to "theophilusx@gmail.com")))
+                  :vars
+                  '((user-mail-address . "theophilusx@gmail.com")
+                    (user-full-name . "Tim Cross")
+                    (mu4e-compose-signature . (concat "Tim Cross\n"))
+                    (mu4e-drafts-folder . "/gmail/Drafts")
+                    (mu4e-sent-folder . "/gmail/Sent Mail")
+                    (mu4e-trash-folder . "/gmail/Bin")
+                    (mu4e-refile-folder . "/gmail/All Mail")
+                    (mu4e-maildir-shortcuts . (("/gmail/INBOX" . ?i)
+                                               ("/gmail/Sent Mail" . ?s)
+                                               ("/gmail/All Mail" . ?a)
+                                               ("/gmail/Drafts" . ?d)
+                                               ("/gmail/Starred" . ?f)))
+                    (smtpmail-smtp-server . "smtp.gmail.com")
+                    (smtpmail-smtp-service . 587)
+                    (mu4e-sent-messages-behavior . delete)))))
+
+#+end_src
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package orgalist
+    :after mu4e
+    :config
+    (add-to-list 'orgalist-context-function
+                 '(mu4e-compose-mode . orgalist-message-mode-context))
+    (add-hook 'mu4e-compose-mode-hook #'orgalist-mode))
+#+end_src
+
+I no longer have a UNE staff account, so have removed the associated context for
+that account. However, may still need it if I want to look at the messages I
+have archived on this system, so keeping it below for reference.
+
+#+BEGIN_EXAMPLE
+  (make-mu4e-context
+              :name "Work"
+              :enter-func (lambda ()
+                            (mu4e-message "Switch to the Work context"))
+              ;; we match based on the contact-fields of the message
+              :match-func (lambda (msg)
+                            (when msg
+                              (mu4e-message-contact-field-matches msg :to "tcross@une.edu.au")))
+              :vars '((user-mail-address . "tcross@une.edu.au")
+                      (user-full-name . "Tim Cross")
+                      (mu4e-compose-signature . (concat "Tim Cross\n"
+                                                        "www.une.edu.au\n"
+                                                        "CRICOS Provider Number: 00003G"))
+                      (mu4e-drafts-folder . "/une/Drafts")
+                      (mu4e-sent-folder . "/une/Sent")
+                      (mu4e-trash-folder . "/une/Deleted Items")
+                      (mu4e-refile-folder . "/une/Archive")
+                      (mu4e-maildir-shortcuts . (("/une/Inbox" . ?i)
+                                                 ("/une/Sent" . ?s)
+                                                 ("/une/Drafts" . ?d)))
+                      (smtpmail-smtp-server . "smtp.office365.com")
+                      (smtpmail-smtp-service . 587)
+                      (mu4e-sent-messages-behavior . sent)))
+
+#+END_EXAMPLE
+
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package smtpmail
+    :config
+    (setq message-send-mail-function 'smtpmail-send-it
+          smtpmail-stream-type 'starttls
+          smtpmail-debug-info nil
+          smtpmail-debug-verb nil
+          smtpmail-default-smtp-server "smtp.gmail.com")
+    (setq smtpmail-queue-mail nil  ;; start in normal mode
+          smtpmail-queue-dir   (expand-file-name "~/Maildir/queue/cur"))
+    ;; don't keep message buffers around
+    (setq message-kill-buffer-on-exit t))
+
+#+end_src
