@@ -98,11 +98,9 @@ Prevent the glimpse of un-styled Emacs by setting these early.
   (setq initial-frame-alist '((vertical-scroll-bars)
                                (horizontal-scroll-bars)
                                (tool-bar-lines . 0)
-                               (menu-bar-lines . 0)
                                (width . 90)
                                (height . 34)))
   (setq default-frame-alist '((tool-bar-lines . 0)
-                               (menu-bar-lines . 0)
                                (vertical-scroll-bars)
                                (top . 10)
                                (left . 10)
@@ -306,7 +304,6 @@ then load it
     (setenv "DTK_PROGRAM" *dtk-program*)
     (setq dtk-program *dtk-program*
 	  dtk-use-tones nil
-	  emacspeak-auditory-icon-function 'emacspeak-soxplay-auditory-icon
 	  emacspeak-epub-calibre-root-dir "/home/tim/Documents/Calibre"
 	  emacspeak-epub-calibre-sqlite "/usr/bin/sqlite3"
 	  emacspeak-erc-my-nick "theophilusx"
@@ -470,7 +467,7 @@ do the simple way
 
 * Appearance 
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package night-owl-theme
     :ensure t
     :init 
@@ -487,7 +484,11 @@ do the simple way
      night-owl-use-variable-pitch t)
     :config
     (load-theme 'night-owl))
+#+end_src
 
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package gotham-theme
+    :ensure t)
 #+end_src
 
 ** Diminish Mode
@@ -1523,7 +1524,7 @@ which adds some editing tweaks
  Allow region oriented commands to work on the current line if no region is
  defined.
 
- #+begin_src emacs-lisp :tangle tangle-init.el
+ #+begin_src emacs-lisp :tangle no
    (use-package whole-line-or-region
      :ensure t
      :delight
@@ -2001,7 +2002,6 @@ layer which does not mess with editing etc.
 
 #+end_src
 
-
 ** git-commit
 
 #+begin_src emacs-lisp :tangle tangle-init.el
@@ -2077,7 +2077,7 @@ layer which does not mess with editing etc.
     ;; (add-hook 'clojure-mode-hook #'lsp)
     ;; (add-hook 'clojurec-mode-hook #'lsp)
     ;; (add-hook 'clojurescript-mode-hook #'lsp)
-    ;; (add-hook 'js2-mode-hook #'lsp)
+    (add-hook 'js2-mode-hook #'lsp)
     )
 
   (use-package company-lsp
@@ -2972,11 +2972,14 @@ Setup ~clojure-mode~ and ~cider~.
 
 #+end_src
 
-*** flycheck-joker
+*** clojure linters
 
 #+begin_src emacs-lisp :tangle tangle-init.el
   (use-package flycheck-joker
      :ensure t)
+
+  (use-package flycheck-clj-kondo
+    :ensure t)
 
 #+end_src
 
@@ -3185,7 +3188,7 @@ Setup ~clojure-mode~ and ~cider~.
 
 *** tern
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package tern
     :ensure t
     :delight
@@ -3196,7 +3199,7 @@ Setup ~clojure-mode~ and ~cider~.
 
 *** company-tern
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package company-tern
     :ensure t
     :config
@@ -3213,7 +3216,7 @@ Setup ~clojure-mode~ and ~cider~.
 
 *** indium
 
-#+begin_src emacs-lisp :tangle tangle-init.el
+#+begin_src emacs-lisp :tangle no
   (use-package indium
     :ensure t
     :delight
@@ -3676,4 +3679,29 @@ Start the emacs server so that we can use emacsclient
 
 #+end_src
 
+* Evi
 
+#+begin_src emacs-lisp :tangle tangle-init.el
+  (use-package evil
+    :ensure t
+    :init
+    (setq evil-want-integration t) ;; optional since it's already set to t by default.
+    (setq evil-want-keybinding nil)
+    :config
+    (evil-mode 1))
+
+  (use-package evil-collection
+    :after evil
+    :ensure t
+    :config
+    (evil-collection-init))
+
+  (use-package evil-surround
+    :ensure t
+    :config
+    (global-evil-surround-mode 1))
+
+  ;; (use-package evil-mu4e
+  ;;   :ensure t
+  ;;   )
+#+end_src
